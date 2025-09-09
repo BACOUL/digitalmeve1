@@ -1,36 +1,19 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Tokens de design (peuvent être utilisés via var() si besoin) */
-:root {
-  --dm-bg: #0B1220;        /* night blue */
-  --dm-surface: #111827;   /* slate-900 */
-  --dm-text: #E5E7EB;      /* slate-200 */
-  --dm-primary-from: #20C997; /* emerald */
-  --dm-primary-to: #0EA5E9;   /* sky */
-  --dm-accent: #22D3EE;
-  --dm-danger: #F43F5E;
-  --radius-2xl: 1.25rem;
+/* Typography base */
+@layer base {
+  html, body {
+    @apply bg-[#0B1220] text-slate-100;
+  }
+  ::selection {
+    @apply bg-emerald-300/30;
+  }
 }
 
-html, body {
-  height: 100%;
-}
-
-body {
-  background: var(--dm-bg);
-  color: var(--dm-text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Utilitaires pratiques */
-.btn-primary {
-  @apply inline-flex items-center justify-center px-5 py-3 rounded-2xl font-semibold text-slate-900
-         bg-gradient-to-r from-dm-emerald to-dm-sky shadow-glow hover:brightness-110 transition;
-}
-
-.card {
-  @apply rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-md shadow-lg;
+/* Smooth transitions for themey bits */
+@layer utilities {
+  .tap-highlight-none { -webkit-tap-highlight-color: transparent; }
 }
