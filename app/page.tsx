@@ -1,48 +1,69 @@
-// app/page.tsx
 import Link from "next/link";
-import ValueProps from "@/components/ValueProps";
-import HowItWorks from "@/components/HowItWorks";
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <>
+    <main className="min-h-screen bg-dm-bg text-dm-text">
       {/* HERO */}
-      <section className="mx-auto max-w-7xl px-4 py-16 md:py-24">
-        <p className="text-xs uppercase tracking-widest text-slate-400">
-          The .MEVE Standard
-        </p>
-        <h1 className="mt-3 text-4xl md:text-6xl font-semibold tracking-tight">
-          Verify any document <span className="whitespace-nowrap">in seconds.</span>
-        </h1>
-        <p className="mt-5 max-w-2xl text-lg md:text-xl text-slate-300">
-          A simple, portable proof that certifies{" "}
-          <strong>existence</strong>, <strong>integrity</strong> (SHA-256), and{" "}
-          <strong>authenticity</strong> of any file.
-        </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          <Link href="/generate" className="btn-primary">
-            Generate a proof
-          </Link>
-          <Link
-            href="/verify"
-            className="rounded-2xl border border-white/10 px-5 py-3 text-slate-200 hover:bg-white/5 transition text-center"
-          >
-            Verify a proof
-          </Link>
+      <section className="relative overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 pt-16 pb-14 md:pt-24 md:pb-20">
+          <p className="uppercase tracking-[0.2em] text-xs text-slate-300/70">
+            THE .MEVE STANDARD
+          </p>
+
+          <h1 className="mt-4 text-4xl md:text-6xl font-extrabold leading-tight text-white">
+            Verify any document
+            <br className="hidden md:block" /> in seconds.
+          </h1>
+
+          <p className="mt-5 max-w-2xl text-lg md:text-xl text-slate-200/90">
+            A simple, portable proof that certifies{" "}
+            <span className="font-semibold text-white">existence</span>,{" "}
+            <span className="font-semibold text-white">integrity</span> (SHA-256),
+            and <span className="font-semibold text-white">authenticity</span> of any file.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/generate"
+              className="inline-flex items-center justify-center rounded-2xl px-6 py-4 font-semibold text-slate-900
+                         bg-gradient-to-r from-dm-emerald to-dm-sky shadow-glow hover:brightness-110 transition"
+            >
+              Generate a proof
+            </Link>
+            <Link
+              href="/verify"
+              className="inline-flex items-center justify-center rounded-2xl px-6 py-4 font-semibold
+                         border border-white/15 bg-white/5 hover:bg-white/10 transition"
+            >
+              Verify a proof
+            </Link>
+          </div>
+
+          <p className="mt-4 text-sm text-slate-300/80">
+            Open standard • No file storage • Privacy-first
+          </p>
         </div>
-        <p className="mt-4 text-sm text-slate-400">
-          Open standard • No file storage • Privacy-first
-        </p>
       </section>
 
       {/* VALUE PROPOSITION */}
-      <ValueProps />
+      <section className="py-16 md:py-20 bg-dm-surface">
+        <div className="max-w-6xl mx-auto px-6 grid gap-6 md:gap-8 md:grid-cols-3">
+          <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 text-center">
+            <h3 className="text-xl font-semibold mb-2 text-dm-emerald">Existence</h3>
+            <p>Timestamped proof that your file existed at a specific moment.</p>
+          </div>
 
-      {/* HOW IT WORKS */}
-      <HowItWorks />
-      <div className="mt-8 rounded-2xl p-6 bg-gradient-to-r from-dm-emerald to-dm-sky text-slate-900 font-semibold text-center">
-  Tailwind OK — custom colors loaded (.dm-emerald → .dm-sky)
-</div>
-    </>
+          <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 text-center">
+            <h3 className="text-xl font-semibold mb-2 text-dm-sky">Integrity</h3>
+            <p>A SHA-256 cryptographic fingerprint ensures file integrity.</p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 text-center">
+            <h3 className="text-xl font-semibold mb-2 text-dm-accent">Authenticity</h3>
+            <p>Certified issuers validate authenticity: Personal, Pro, or Official.</p>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
