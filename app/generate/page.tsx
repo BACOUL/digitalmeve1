@@ -3,45 +3,104 @@
 import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
+import ProgressBar from "@/components/ProgressBar";
+
+// Utilitaire pour extraire le nom de fichier depuis Content-Disposition
+function filenameFromCD(cd: string | null, fallback: string) {
+  const m = cd?.match(/filename="?([^"]+)"?/i);
+  return m?.[1] ?? fallback;
+}
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("");
-  const [meta, setMeta] = useState("");
   const [alsoJson, setAlsoJson] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const [uploadPct, setUploadPct] = useState<number | undefined>(undefined);
+  const [processing, setProcessing] = useState(false);
+
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMsg(null); setErr(null);
-    if (!file) return setErr("Please select a file first.");
+    setMsg(null);
+    setErr(null);
+    setUploadPct(undefined);
+    setProcessing(false);
 
-    let metaJson: any;
-    if (meta.trim()) {
-      try { metaJson = JSON.parse(meta); } catch { return setErr("Invalid JSON in meta."); }
+    if (!file) {
+      setErr("Please select a file first.");
+      return;
     }
 
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (metaJson) form.append("meta", new Blob([JSON.stringify(metaJson)], { type: "application/json" }));
     if (alsoJson) form.append("also_json", "1");
 
     try {
-      setLoading(true);
+      // ---- Upload avec barre de progression (XMLHttpRequest) ----
+      const xhr = new XMLHttpRequest();
+      const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
+        xhr.open("POST", "/api/proxy/generate", true);
+        xhr.responseType = "blob";
 
-      const res = await fetch("/api/proxy/generate", { method: "POST", body: form });
-      if (!res.ok) throw new Error(await res.text().catch(()=>"Generation failed."));
+        // progression d'upload
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) {
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            setUploadPct(pct);
+          }
+        };
 
-      const ct = res.headers.get("Content-Type") || "";
-      const cd = res.headers.get("Content-Disposition");
-      const fallbackPrimary = file.name.replace(/\.(\w+)$/i, (_m, g)=>`${file.name.slice(0,-(g.length+1))}.meve.${g}`);
-      const primaryName = cd?.match(/filename="?([^"]+)"?/i)?.[1] ?? fallbackPrimary;
+        xhr.onloadstart = () => {
+          setUploadPct(0);
+          setProcessing(false);
+        };
 
-      // Téléchargement du corps (binaire OU json selon la réponse)
-      const blob = await res.blob();
+        xhr.onreadystatechange = () => {
+          // une fois l'upload fini et la réponse en cours -> état "processing"
+          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+            setProcessing(true);
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.ontimeout = () => reject(new Error("Request timeout"));
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // reconstruire les headers
+            const h = new Headers();
+            const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
+            for (const line of raw) {
+              const parts = line.split(": ");
+              const key = parts.shift();
+              const value = parts.join(": ");
+              if (key) h.append(key, value);
+            }
+            resolve({ blob: xhr.response, headers: h });
+          } else {
+            // lire l'erreur texte si possible
+            const reader = new FileReader();
+            reader.onload = () => reject(new Error(String(reader.result || "Generation failed.")));
+            reader.onerror = () => reject(new Error("Generation failed."));
+            reader.readAsText(xhr.response ?? new Blob());
+          }
+        };
+
+        xhr.send(form);
+      });
+
+      const { blob, headers } = await promise;
+
+      // ---- Téléchargement du résultat ----
+      const cd = headers.get("Content-Disposition");
+      const ct = headers.get("Content-Type") || "";
+      const ext = file.name.split(".").pop() || "bin";
+      const base = file.name.replace(new RegExp(`\\.${ext}$`, "i"), "");
+      const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -52,15 +111,16 @@ export default function GeneratePage() {
       URL.revokeObjectURL(url);
 
       setMsg(`Downloaded ${primaryName}`);
+      setProcessing(false);
 
-      // Cas idéal long terme : si la réponse était binaire ET alsoJson cochée,
-      // on peut enchaîner un second appel "JSON" plus tard (quand l'API l'exposera).
-      // Pour l’instant on s’arrête ici : soit le backend a renvoyé le .meve.json,
-      // soit le fichier intégré.
+      // Si le backend renvoie (temporairement) du JSON au lieu d'un binaire,
+      // le nom fallback deviendra `${base}.${ext}.meve.json` grâce au header côté proxy.
+      if (ct.includes("application/json")) {
+        // rien de plus à faire (le fichier JSON s'est téléchargé ci-dessus)
+      }
     } catch (e: any) {
       setErr(e?.message ?? "Generation failed.");
-    } finally {
-      setLoading(false);
+      setProcessing(false);
     }
   }
 
@@ -86,32 +146,30 @@ export default function GeneratePage() {
               className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
           </div>
-          <div>
-            <label htmlFor="meta" className="text-sm text-slate-300">Meta (JSON, optional)</label>
-            <textarea
-              id="meta"
-              value={meta}
-              onChange={(e) => setMeta(e.target.value)}
-              rows={3}
-              placeholder='{"documentType":"invoice","version":1}'
-              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
+          <div className="flex items-end">
+            <label className="flex items-center gap-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={alsoJson}
+                onChange={(e) => setAlsoJson(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-slate-900"
+              />
+              Also download a separate <code>.meve.json</code>
+            </label>
           </div>
         </div>
 
-        <label className="flex items-center gap-3 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={alsoJson}
-            onChange={(e) => setAlsoJson(e.target.checked)}
-            className="h-4 w-4 rounded border-white/20 bg-slate-900"
-          />
-          Also download a separate <code>.meve.json</code> (when available)
-        </label>
+        {/* Barre de progression */}
+        {(uploadPct !== undefined || processing) && (
+          <div className="space-y-2">
+            {uploadPct !== undefined && <ProgressBar value={uploadPct} label="Uploading" />}
+            {processing && <ProgressBar label="Processing…" />}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
-          <CTAButton type="submit" disabled={loading} aria-label="Generate proof">
-            {loading ? "Generating..." : "Generate Proof"}
+          <CTAButton type="submit" aria-label="Generate proof">
+            Generate Proof
           </CTAButton>
           {file && <span className="text-sm text-slate-400 truncate">Selected: {file.name}</span>}
         </div>
@@ -125,4 +183,4 @@ export default function GeneratePage() {
       </form>
     </section>
   );
-  }
+}
