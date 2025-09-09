@@ -1,9 +1,12 @@
+// app/layout.tsx
 import "./globals.css";
 import type { Metadata } from "next";
+import Header from "../components/Header";
 
 export const metadata: Metadata = {
-  title: "DigitalMeve",
-  description: "Vos subventions. En un clic.",
+  title: "DigitalMeve — The .MEVE Standard",
+  description:
+    "A simple, portable proof that certifies existence, integrity (SHA-256), and authenticity of any document.",
 };
 
 export default function RootLayout({
@@ -12,32 +15,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
-      <body>
-        {/* Header / Menu */}
-        <header className="w-full bg-white shadow-md p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-teal-600">DigitalMeve</h1>
-          <nav className="space-x-6">
-            <a href="/" className="text-gray-700 hover:text-teal-600">
-              Accueil
-            </a>
-            <a href="/services" className="text-gray-700 hover:text-teal-600">
-              Services
-            </a>
-            <a href="/contact" className="text-gray-700 hover:text-teal-600">
-              Contact
-            </a>
-          </nav>
-        </header>
+    <html lang="en">
+      <body className="min-h-screen bg-white text-slate-900 antialiased">
+        {/* Global Header */}
+        <Header />
 
-        {/* Contenu des pages */}
-        <main className="p-8">{children}</main>
+        {/* Page content */}
+        <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
 
         {/* Footer */}
-        <footer className="w-full bg-gray-100 text-center p-4 mt-8">
-          <p className="text-sm text-gray-600">
-            © 2025 DigitalMeve. Tous droits réservés.
-          </p>
+        <footer className="border-t border-slate-200">
+          <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-slate-600">
+            © {new Date().getFullYear()} DigitalMeve — All rights reserved.
+          </div>
         </footer>
       </body>
     </html>
