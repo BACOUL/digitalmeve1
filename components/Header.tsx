@@ -1,124 +1,78 @@
 // components/Header.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
-const nav = [
-  { href: '/generate', label: 'Generate' },
-  { href: '/verify',   label: 'Verify' },
-  { href: '/docs',     label: 'Docs' },
-  { href: '/pricing',  label: 'Pricing' },
-  { href: '/contact',  label: 'Contact' },
-];
-
-function NavLink({
-  href,
-  label,
-  active,
-  onClick,
-}: {
-  href: string;
-  label: string;
-  active: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={[
-        'text-sm transition-colors',
-        active ? 'text-teal-700 font-medium' : 'text-slate-700 hover:text-teal-700',
-      ].join(' ')}
-    >
-      {label}
-    </Link>
-  );
-}
+import Link from "next/link";
+import { useState } from "react";
 
 export default function Header() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [elevated, setElevated] = useState(false);
-
-  // Ombre subtile au scroll
-  useEffect(() => {
-    const onScroll = () => setElevated(window.scrollY > 2);
-    onScroll();
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   return (
-    <header
-      className={[
-        'sticky top-0 z-50 border-b border-slate-200',
-        'bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60',
-        elevated ? 'shadow-sm' : '',
-      ].join(' ')}
-    >
-      <nav className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        {/* Brand (texte pour l’instant ; remplace par <img src="/logo.svg" .../> si tu ajoutes un logo dans /public) */}
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          Digital<span className="text-teal-600">Meve</span>
+    <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-slate-200">
+      <div className="mx-auto max-w-6xl px-4 flex items-center justify-between h-16">
+        {/* Logo */}
+        <Link href="/" className="text-xl font-bold text-slate-900">
+          Digital<span className="text-sky-500">Meve</span>
         </Link>
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-6">
-          {nav.map((item) => (
-            <NavLink
-              key={item.href}
-              href={item.href}
-              label={item.label}
-              active={pathname === item.href}
-            />
-          ))}
+        {/* Desktop menu */}
+        <nav className="hidden md:flex space-x-6 text-sm font-medium">
+          <Link href="/generate" className="hover:text-sky-500 transition">
+            Generate
+          </Link>
+          <Link href="/verify" className="hover:text-sky-500 transition">
+            Verify
+          </Link>
+          <Link href="/docs" className="hover:text-sky-500 transition">
+            Docs
+          </Link>
+          <Link href="/pricing" className="hover:text-sky-500 transition">
+            Pricing
+          </Link>
+          <Link href="/contact" className="hover:text-sky-500 transition">
+            Contact
+          </Link>
+        </nav>
+
+        {/* CTA */}
+        <div className="hidden md:block">
           <Link
             href="/generate"
-            className="ml-2 rounded-lg bg-teal-600 px-4 py-2 text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-900 font-semibold shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:brightness-110 transition"
           >
-            Get Started
+            Generate Proof
           </Link>
         </div>
 
-        {/* Mobile burger */}
+        {/* Mobile menu button */}
         <button
-          aria-label="Open menu"
-          className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen(!open)}
+          className="md:hidden p-2 text-slate-700 hover:text-sky-500 focus:outline-none"
         >
-          {/* Icône burger simple */}
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          </svg>
+          ☰
         </button>
-      </nav>
+      </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile menu dropdown */}
       {open && (
-        <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-4">
-            {nav.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                active={pathname === item.href}
-                onClick={() => setOpen(false)}
-              />
-            ))}
-            <Link
-              href="/generate"
-              onClick={() => setOpen(false)}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-white text-center hover:bg-teal-700"
-            >
-              Get Started
-            </Link>
-          </div>
+        <div className="md:hidden bg-white border-t border-slate-200 px-4 py-2 space-y-2">
+          <Link href="/generate" className="block hover:text-sky-500">
+            Generate
+          </Link>
+          <Link href="/verify" className="block hover:text-sky-500">
+            Verify
+          </Link>
+          <Link href="/docs" className="block hover:text-sky-500">
+            Docs
+          </Link>
+          <Link href="/pricing" className="block hover:text-sky-500">
+            Pricing
+          </Link>
+          <Link href="/contact" className="block hover:text-sky-500">
+            Contact
+          </Link>
         </div>
       )}
     </header>
   );
-          }
+      }
