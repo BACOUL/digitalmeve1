@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === DigitalMeve tokens === */
+:root {
+  --dm-bg: #0B1220; /* Bleu nuit */
+  --dm-surface: #111827; 
+  --dm-text: #E5E7EB;
+  --dm-gradient-start: #20C997; /* Vert */
+  --dm-gradient-end: #0EA5E9;   /* Bleu */
+  --dm-accent: #22D3EE;
+  --dm-danger: #F43F5E;
+}
+
+/* Body setup */
+html, body {
+  height: 100%;
+}
+
+body {
+  @apply bg-[var(--dm-bg)] text-[var(--dm-text)] antialiased;
+  font-family: Inter, sans-serif;
+}
+
+/* Links */
+a {
+  @apply transition-colors duration-200;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply px-5 py-3 rounded-2xl font-semibold text-slate-900 
+    bg-gradient-to-r from-emerald-400 to-sky-400 
+    shadow-[0_0_40px_rgba(34,211,238,0.35)] hover:brightness-110;
+}
