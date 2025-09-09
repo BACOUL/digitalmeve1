@@ -1,78 +1,80 @@
 // components/Header.tsx
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useState } from "react";
+import { useState } from 'react';
+import Link from 'next/link';
+import BrandLogo from './BrandLogo';
+
+const NAV = [
+  { href: '/', label: 'Home' },
+  { href: '/generate', label: 'Generate' },
+  { href: '/verify', label: 'Verify' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/pricing', label: 'Pricing' },
+];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-slate-200">
-      <div className="mx-auto max-w-6xl px-4 flex items-center justify-between h-16">
-        {/* Logo */}
-        <Link href="/" className="text-xl font-bold text-slate-900">
-          Digital<span className="text-sky-500">Meve</span>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-900/60 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+        <Link href="/" className="shrink-0">
+          <BrandLogo />
         </Link>
 
-        {/* Desktop menu */}
-        <nav className="hidden md:flex space-x-6 text-sm font-medium">
-          <Link href="/generate" className="hover:text-sky-500 transition">
-            Generate
-          </Link>
-          <Link href="/verify" className="hover:text-sky-500 transition">
-            Verify
-          </Link>
-          <Link href="/docs" className="hover:text-sky-500 transition">
-            Docs
-          </Link>
-          <Link href="/pricing" className="hover:text-sky-500 transition">
-            Pricing
-          </Link>
-          <Link href="/contact" className="hover:text-sky-500 transition">
-            Contact
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-6 md:flex">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm text-slate-300 hover:text-white transition"
+            >
+              {item.label}
+            </Link>
+          ))}
+          <Link href="/generate" className="btn-primary">
+            Generate a proof
           </Link>
         </nav>
 
-        {/* CTA */}
-        <div className="hidden md:block">
-          <Link
-            href="/generate"
-            className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-900 font-semibold shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:brightness-110 transition"
-          >
-            Generate Proof
-          </Link>
-        </div>
-
-        {/* Mobile menu button */}
+        {/* Mobile burger */}
         <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden p-2 text-slate-700 hover:text-sky-500 focus:outline-none"
+          aria-label="Open menu"
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-200 md:hidden"
         >
-          ☰
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" />
+          </svg>
         </button>
       </div>
 
-      {/* Mobile menu dropdown */}
+      {/* Mobile drawer */}
       {open && (
-        <div className="md:hidden bg-white border-t border-slate-200 px-4 py-2 space-y-2">
-          <Link href="/generate" className="block hover:text-sky-500">
-            Generate
-          </Link>
-          <Link href="/verify" className="block hover:text-sky-500">
-            Verify
-          </Link>
-          <Link href="/docs" className="block hover:text-sky-500">
-            Docs
-          </Link>
-          <Link href="/pricing" className="block hover:text-sky-500">
-            Pricing
-          </Link>
-          <Link href="/contact" className="block hover:text-sky-500">
-            Contact
-          </Link>
+        <div className="md:hidden">
+          <div className="space-y-1 border-t border-white/10 bg-slate-900/80 px-4 py-3">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="block rounded-xl px-3 py-2 text-slate-200 hover:bg-white/5"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link
+              href="/generate"
+              onClick={() => setOpen(false)}
+              className="btn-primary mt-2 w-full text-center"
+            >
+              Generate a proof
+            </Link>
+          </div>
         </div>
       )}
     </header>
   );
-      }
+                                 }
