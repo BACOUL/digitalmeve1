@@ -8,13 +8,15 @@ import { MobileMenu } from "@/components/MobileMenu";
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
-        <BrandLogo />
+        <Link href="/" className="flex items-center space-x-2">
+          <BrandLogo />
+          <span className="text-lg font-bold text-slate-100">DigitalMeve</span>
+        </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-200">
+        {/* Desktop navigation */}
+        <nav className="hidden items-center space-x-8 md:flex">
           <Link href="/generate" className="hover:text-emerald-400 transition">
             Generate
           </Link>
@@ -24,21 +26,19 @@ export function Header() {
           <Link href="/docs" className="hover:text-emerald-400 transition">
             Docs
           </Link>
-          <Link href="/pricing" className="hover:text-emerald-400 transition">
-            Pricing
+          <Link href="/pro" className="hover:text-emerald-400 transition">
+            Pro
           </Link>
           <Link href="/contact" className="hover:text-emerald-400 transition">
             Contact
           </Link>
+          <CTAButton aria-label="Generate your proof">Generate Proof</CTAButton>
         </nav>
 
-        {/* CTA visible seulement en desktop */}
-        <div className="hidden md:block">
-          <CTAButton>Generate Proof</CTAButton>
+        {/* Mobile menu */}
+        <div className="md:hidden">
+          <MobileMenu />
         </div>
-
-        {/* Menu Mobile */}
-        <MobileMenu />
       </div>
     </header>
   );
