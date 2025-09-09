@@ -1,19 +1,42 @@
 // app/page.tsx
-export default function Home() {
+import Link from "next/link";
+
+export default function HomePage() {
   return (
-    <section className="py-16">
-      <h1 className="text-3xl md:text-5xl font-display font-semibold tracking-tight">
-        The <span className="text-dm-accent">.MEVE</span> Standard
-      </h1>
-      <p className="mt-4 max-w-2xl text-slate-300">
-        Verify any document in seconds: timestamps, hashes and issuer levels — globally.
+    <section className="mx-auto max-w-7xl px-4 py-16 md:py-24">
+      {/* Eyebrow */}
+      <p className="text-xs uppercase tracking-widest text-slate-400">
+        The .MEVE Standard
       </p>
-      <div className="mt-8 flex gap-3">
-        <a href="/generate" className="btn-primary">Generate a proof</a>
-        <a href="/verify" className="rounded-2xl border border-white/10 px-5 py-3 text-slate-200 hover:bg-white/5 transition">
+
+      {/* Headline */}
+      <h1 className="mt-3 text-4xl md:text-6xl font-semibold tracking-tight">
+        Verify any document <span className="whitespace-nowrap">in seconds.</span>
+      </h1>
+
+      {/* Subheadline */}
+      <p className="mt-5 max-w-2xl text-lg md:text-xl text-slate-300">
+        A simple, portable proof that certifies <strong>existence</strong>,{" "}
+        <strong>integrity</strong> (SHA-256), and <strong>authenticity</strong> of any file.
+      </p>
+
+      {/* CTAs */}
+      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+        <Link href="/generate" className="btn-primary">
+          Generate a proof
+        </Link>
+        <Link
+          href="/verify"
+          className="rounded-2xl border border-white/10 px-5 py-3 text-slate-200 hover:bg-white/5 transition text-center"
+        >
           Verify a proof
-        </a>
+        </Link>
       </div>
+
+      {/* Trust line */}
+      <p className="mt-4 text-sm text-slate-400">
+        Open standard • No file storage • Privacy-first
+      </p>
     </section>
   );
 }
