@@ -1,17 +1,24 @@
-import Link from "next/link";
+"use client";
 
-export function CTAButton({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
+import { cn } from "@/lib/utils";
+
+interface GlowCTAProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+
+export function GlowCTA({ children, className, ...props }: GlowCTAProps) {
   return (
-    <Link
-      href={href}
-      className={[
-        "rounded-2xl px-6 py-3 font-semibold text-slate-900",
-        "bg-gradient-to-r from-emerald-400 to-sky-400 hover:brightness-110",
-        "shadow-[0_0_40px_rgba(34,211,238,0.35)] transition",
-        className,
-      ].join(" ")}
+    <button
+      {...props}
+      className={cn(
+        "relative inline-flex items-center justify-center px-5 py-2.5 rounded-2xl font-semibold text-slate-900",
+        "bg-gradient-to-r from-emerald-400 to-sky-400",
+        "shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:brightness-110",
+        "transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2",
+        className
+      )}
     >
       {children}
-    </Link>
+    </button>
   );
 }
