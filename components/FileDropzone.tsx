@@ -4,11 +4,15 @@ import { useCallback, useState } from "react";
 
 type Props = {
   onSelected: (file: File) => void;
-  maxMB?: number; // default 25
-  accept?: string; // ex: "*/*"
+  maxMB?: number;
+  accept?: string;
 };
 
-export default function FileDropzone({ onSelected, maxMB = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB ?? 25), accept = "*/*" }: Props) {
+export default function FileDropzone({
+  onSelected,
+  maxMB = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB ?? 25),
+  accept = "*/*",
+}: Props) {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,10 +57,12 @@ export default function FileDropzone({ onSelected, maxMB = Number(process.env.NE
 
       <label htmlFor="file-input" className="block cursor-pointer">
         <div className="text-slate-200 font-medium">Drop your file here</div>
-        <div className="mt-1 text-sm text-slate-400">or click to browse (max {maxMB} MB)</div>
+        <div className="mt-1 text-sm text-slate-400">
+          or click to browse (max {maxMB} MB)
+        </div>
       </label>
 
       {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
     </div>
   );
-}
+          }
