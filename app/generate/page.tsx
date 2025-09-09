@@ -15,74 +15,48 @@ export default function GeneratePage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMsg(null);
-    setErr(null);
-
+    setMsg(null); setErr(null);
     if (!file) return setErr("Please select a file first.");
 
-    // meta JSON valide
     let metaJson: any;
     if (meta.trim()) {
-      try {
-        metaJson = JSON.parse(meta);
-      } catch {
-        return setErr("Invalid JSON in meta.");
-      }
+      try { metaJson = JSON.parse(meta); } catch { return setErr("Invalid JSON in meta."); }
     }
 
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
     if (metaJson) form.append("meta", new Blob([JSON.stringify(metaJson)], { type: "application/json" }));
-    if (alsoJson) form.append("also_json", "1"); // <- option conforme à ta spec
+    if (alsoJson) form.append("also_json", "1");
 
     try {
       setLoading(true);
 
-      // 1) Appel principal : doit retourner un fichier *.meve.<ext> (binaire)
       const res = await fetch("/api/proxy/generate", { method: "POST", body: form });
+      if (!res.ok) throw new Error(await res.text().catch(()=>"Generation failed."));
 
       const ct = res.headers.get("Content-Type") || "";
+      const cd = res.headers.get("Content-Disposition");
+      const fallbackPrimary = file.name.replace(/\.(\w+)$/i, (_m, g)=>`${file.name.slice(0,-(g.length+1))}.meve.${g}`);
+      const primaryName = cd?.match(/filename="?([^"]+)"?/i)?.[1] ?? fallbackPrimary;
 
-      if (res.ok && !ct.includes("application/json")) {
-        // => flux binaire (meve.pdf) : on télécharge
-        const dispo = res.headers.get("Content-Disposition");
-        const fallback = `${file.name.replace(/\.(\w+)$/i, "")}.meve.${file.name.split(".").pop()}`;
-        const filename = dispo?.match(/filename="?([^"]+)"?/i)?.[1] ?? fallback;
+      // Téléchargement du corps (binaire OU json selon la réponse)
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = primaryName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
 
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+      setMsg(`Downloaded ${primaryName}`);
 
-        setMsg(`Downloaded ${filename}`);
-      } else {
-        // => JSON (fallback backend actuel) : on propose le .meve.json
-        const text = await res.text();
-        try {
-          const body = JSON.parse(text);
-          const proof = body?.proof ?? body;
-          const pretty = JSON.stringify(proof, null, 2);
-          const jsonName = `${file.name}.meve.json`;
-          const blob = new Blob([pretty], { type: "application/json;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = jsonName;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-          setMsg(`Downloaded ${jsonName}`);
-        } catch {
-          throw new Error(text || "Unexpected response from API.");
-        }
-      }
+      // Cas idéal long terme : si la réponse était binaire ET alsoJson cochée,
+      // on peut enchaîner un second appel "JSON" plus tard (quand l'API l'exposera).
+      // Pour l’instant on s’arrête ici : soit le backend a renvoyé le .meve.json,
+      // soit le fichier intégré.
     } catch (e: any) {
       setErr(e?.message ?? "Generation failed.");
     } finally {
@@ -94,8 +68,8 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Upload any file. You’ll get a <code className="text-slate-300">name.meve.ext</code> (proof embedded in metadata).  
-        Optionally, also download a separate <code className="text-slate-300">.meve.json</code>.
+        Upload any file. You’ll get <code className="text-slate-300">name.meve.ext</code> (proof embedded in metadata).
+        Optionally, also download a separate <code className="text-slate-300">name.ext.meve.json</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -132,7 +106,7 @@ export default function GeneratePage() {
             onChange={(e) => setAlsoJson(e.target.checked)}
             className="h-4 w-4 rounded border-white/20 bg-slate-900"
           />
-          Also download a separate .meve.json
+          Also download a separate <code>.meve.json</code> (when available)
         </label>
 
         <div className="flex items-center gap-3">
@@ -151,4 +125,4 @@ export default function GeneratePage() {
       </form>
     </section>
   );
-                            }
+  }
