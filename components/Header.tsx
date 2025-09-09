@@ -1,129 +1,160 @@
-// components/Header.tsx
+// app/components/Header.tsx
 "use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { site } from "@/config/site";
+
+const nav = [
+  { href: "/generate", label: "Generate" },
+  { href: "/verify", label: "Verify" },
+  { href: "/docs", label: "Docs" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/contact", label: "Contact" },
+];
 
 export default function Header() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
-  // Fermer si clic en dehors
+  // Ferme le menu dès qu’on change de page
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    setOpen(false);
+  }, [pathname]);
+
+  // Ferme avec la touche Échap
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Fermer avec Échap + bloquer le scroll quand ouvert
+  // Lock du scroll quand menu ouvert
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    const root = document.documentElement;
+    if (open) {
+      const prev = root.style.overflow;
+      root.style.overflow = "hidden";
+      return () => {
+        root.style.overflow = prev;
+      };
+    }
   }, [open]);
 
-  // Ombre au scroll
+  // Clic extérieur pour fermer
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    function onClickOutside(e: MouseEvent) {
+      if (!open) return;
+      const el = panelRef.current;
+      if (el && !el.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
 
   return (
-    <header className={["sticky top-0 z-50 border-b border-white/10 transition", scrolled ? "glass shadow-lg" : "glass"].join(" ")}>
-      <div className="container-max h-14 flex items-center justify-between">
-        {/* Logo texte provisoire */}
-        <Link href="/" className="inline-flex items-center gap-2" aria-label="Go to homepage">
-          <span className="h-2.5 w-2.5 rounded-md bg-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.8)]" />
-          <span className="font-semibold tracking-tight text-white">
-            {site.name.slice(0,7)}<span className="text-emerald-400">{site.name.slice(7)}</span>
-          </span>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[rgba(11,18,32,0.6)] backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-3">
+        {/* Logo */}
+        <Link
+          href="/"
+          className="flex items-center gap-2"
+          aria-label="DigitalMeve Home"
+          onClick={() => setOpen(false)}
+        >
+          <div className="h-7 w-7 rounded-md bg-gradient-to-br from-dm-emerald to-dm-sky shadow-glow" />
+          <span className="font-semibold text-white">DigitalMeve</span>
         </Link>
 
         {/* Nav desktop */}
-        <nav className="hidden md:flex items-center gap-6" aria-label="Primary">
-          {site.nav.map((l) => {
-            const active = pathname === l.href;
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={["text-sm transition", active ? "text-white" : "text-white/80 hover:text-white"].join(" ")}
-                aria-current={active ? "page" : undefined}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
+        <nav className="hidden items-center gap-6 md:flex">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm text-white/80 hover:text-white transition"
+            >
+              {item.label}
+            </Link>
+          ))}
           <Link
-            href={site.cta.href}
-            className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-900
-                       bg-gradient-to-r from-emerald-400 to-sky-400 hover:brightness-110
-                       shadow-[0_0_30px_rgba(56,189,248,0.35)] transition"
+            href="/generate"
+            className="rounded-2xl bg-gradient-to-r from-dm-emerald to-dm-sky px-4 py-2 text-sm font-semibold text-slate-900 shadow-glow hover:brightness-110 transition"
           >
-            {site.cta.label}
+            Generate
           </Link>
         </nav>
 
-        {/* Menu mobile */}
-        <div className="md:hidden relative" ref={menuRef}>
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="rounded-lg p-2 text-white/90 hover:bg-white/5 active:bg-white/10"
-            aria-label="Toggle menu"
-            aria-expanded={open}
-            aria-controls="mobile-menu"
+        {/* Burger mobile */}
+        <button
+          type="button"
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition"
+          aria-label="Open navigation"
+          aria-controls="mobile-nav"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {/* Icône burger / close */}
+          <svg
+            className={`h-5 w-5 ${open ? "hidden" : "block"}`}
+            viewBox="0 0 24 24"
+            fill="none"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" className="fill-current">
-              {open ? <path d="M6 6L18 18M6 18L18 6" /> : <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" />}
-            </svg>
-          </button>
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <svg
+            className={`h-5 w-5 ${open ? "block" : "hidden"}`}
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
 
-          {open && (
-            <div
-              id="mobile-menu"
-              role="dialog"
-              aria-modal="true"
-              className="absolute right-0 mt-2 w-64 rounded-2xl border border-white/10
-                         bg-slate-900/95 backdrop-blur shadow-xl p-2 animate-slideDown"
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          aria-hidden="true"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Panneau mobile */}
+      <div
+        id="mobile-nav"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        className={`md:hidden fixed inset-x-3 top-16 z-50 origin-top rounded-2xl border border-white/10 bg-[rgba(17,24,39,0.95)] p-3 backdrop-blur-md transition-transform duration-200 ${
+          open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
+        }`}
+      >
+        <div className="flex flex-col">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className="rounded-xl px-4 py-3 text-white/90 hover:bg-white/10 active:bg-white/15 transition"
             >
-              {site.nav.map((l) => {
-                const active = pathname === l.href;
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    className={["block rounded-lg px-3 py-2 text-sm hover:bg-white/5", active ? "text-white" : "text-white/90"].join(" ")}
-                    aria-current={active ? "page" : undefined}
-                  >
-                    {l.label}
-                  </Link>
-                );
-              })}
-              <Link
-                href={site.cta.href}
-                onClick={() => setOpen(false)}
-                className="mt-2 block rounded-xl px-3 py-2 text-center text-sm font-semibold text-slate-900
-                           bg-gradient-to-r from-emerald-400 to-sky-400 hover:brightness-110"
-              >
-                {site.cta.label}
-              </Link>
-            </div>
-          )}
+              {item.label}
+            </Link>
+          ))}
+
+          <Link
+            href="/generate"
+            onClick={() => setOpen(false)}
+            className="mt-2 rounded-2xl bg-gradient-to-r from-dm-emerald to-dm-sky px-4 py-3 text-center text-sm font-semibold text-slate-900 shadow-glow hover:brightness-110 transition"
+          >
+            Generate
+          </Link>
         </div>
       </div>
     </header>
   );
-                                }
+                    }
