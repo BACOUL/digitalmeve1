@@ -1,154 +1,104 @@
-// components/Header.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-const NAV = [
-  { href: "/generate", label: "Generate" },
-  { href: "/verify", label: "Verify" },
-  { href: "/docs", label: "Docs" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/contact", label: "Contact" },
-];
+import { useState } from "react";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const [elevated, setElevated] = useState(false);
 
-  useEffect(() => {
-    const onScroll = () => setElevated(window.scrollY > 10);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    // Lock body scroll when mobile menu is open
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  const BuildChip = () => (
+    <span className="hidden md:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70">
+      <span>Build</span>
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" />
+      <time>{new Date().toISOString().slice(0, 19).replace("T", " ")}</time>
+    </span>
+  );
 
   return (
-    <div
-      className={[
-        "sticky top-0 z-50",
-        "backdrop-blur-md bg-white/[0.04] border-b border-white/10",
-        elevated ? "shadow-[0_2px_30px_rgba(0,0,0,0.35)]" : "shadow-none",
-      ].join(" ")}
-      role="banner"
-    >
-      <nav
-        className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
-        aria-label="Main"
-      >
-        {/* Logo (wordmark temporaire) */}
-        <Link
-          href="/"
-          className="font-extrabold tracking-tight text-slate-100"
-          aria-label="DigitalMeve — Home"
-        >
-          <span className="text-white">Digital</span>
-          <span className="text-emerald-400">Meve</span>
-        </Link>
-
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-8">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-slate-200/80 hover:text-white transition-colors"
-            >
-              {item.label}
+    <header className="fixed inset-x-0 top-0 z-40">
+      {/* Barre translucide */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mt-4 rounded-2xl border border-white/10 bg-[rgba(12,18,32,0.55)] backdrop-blur-md">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* Logo */}
+            <Link href="/" className="inline-flex items-center gap-2">
+              <span className="h-3 w-3 rounded-md bg-emerald-400 inline-block" />
+              <span className="font-semibold tracking-tight text-white">
+                Digital<span className="text-emerald-300">Meve</span>
+              </span>
             </Link>
-          ))}
 
-          <Link
-            href="/generate"
-            className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold text-slate-900
-                       bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_30px_rgba(34,211,238,0.25)]
-                       hover:brightness-110 active:scale-[0.98] transition"
-          >
-            Get Started
-          </Link>
-        </div>
+            {/* Nav desktop */}
+            <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
+              <Link href="/generate" className="hover:text-white">Generate</Link>
+              <Link href="/verify" className="hover:text-white">Verify</Link>
+              <Link href="/docs" className="hover:text-white">Docs</Link>
+              <Link href="/pricing" className="hover:text-white">Pricing</Link>
+              <Link href="/contact" className="hover:text-white">Contact</Link>
 
-        {/* Mobile burger */}
-        <button
-          onClick={() => setOpen(true)}
-          className="md:hidden inline-flex items-center justify-center rounded-lg p-2 text-slate-200/80 hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
-          aria-label="Open menu"
-          aria-controls="mobile-menu"
-          aria-expanded={open}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
-      </nav>
-
-      {/* Mobile overlay */}
-      {open && (
-        <div
-          id="mobile-menu"
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 md:hidden"
-        >
-          {/* backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-          {/* panel */}
-          <div className="absolute top-0 right-0 h-full w-[88%] max-w-[360px] bg-[#0B1220] border-l border-white/10 shadow-2xl">
-            <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-              <span className="font-extrabold text-white">Digital<span className="text-emerald-400">Meve</span></span>
-              <button
-                onClick={() => setOpen(false)}
-                className="inline-flex items-center justify-center rounded-lg p-2 text-slate-200/80 hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
-                aria-label="Close menu"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="px-5 py-4 flex flex-col gap-1" role="menu">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  role="menuitem"
-                  className="rounded-xl px-3 py-3 text-base text-slate-200/90 hover:text-white hover:bg-white/5 active:bg-white/10 transition"
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              <BuildChip />
 
               <Link
                 href="/generate"
-                role="menuitem"
-                className="mt-2 inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900
-                           bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_30px_rgba(34,211,238,0.25)]
-                           hover:brightness-110 active:scale-[0.98] transition"
-                onClick={() => setOpen(false)}
+                className="ml-2 inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-slate-900
+                           bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_28px_rgba(34,211,238,0.25)]
+                           hover:brightness-110 transition"
               >
                 Get Started
               </Link>
+            </nav>
 
-              <p className="mt-4 text-xs text-slate-400/80 px-1">
-                Open standard · No file storage · Privacy-first
-              </p>
+            {/* Burger mobile */}
+            <button
+              onClick={() => setOpen(true)}
+              className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/80"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Drawer mobile */}
+      {open && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div className="absolute right-0 top-0 h-full w-[78%] max-w-[320px] bg-[#0B1220] border-l border-white/10 p-6">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-white">Menu</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/80"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 text-white/90">
+              <Link href="/generate" onClick={() => setOpen(false)}>Generate</Link>
+              <Link href="/verify" onClick={() => setOpen(false)}>Verify</Link>
+              <Link href="/docs" onClick={() => setOpen(false)}>Docs</Link>
+              <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
+              <Link href="/contact" onClick={() => setOpen(false)}>Contact</Link>
+
+              <Link
+                href="/generate"
+                onClick={() => setOpen(false)}
+                className="mt-4 inline-flex items-center justify-center rounded-xl px-4 py-3 font-semibold text-slate-900
+                           bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+              >
+                Get Started
+              </Link>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </header>
   );
-            }
+          }
