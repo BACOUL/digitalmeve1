@@ -1,33 +1,27 @@
 // app/layout.tsx
-import "./globals.css";
-import type { Metadata } from "next";
-import Header from "../components/Header";
+import './globals.css';
+import type { Metadata } from 'next';
+import Header from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: "DigitalMeve — The .MEVE Standard",
-  description:
-    "A simple, portable proof that certifies existence, integrity (SHA-256), and authenticity of any document.",
+  title: 'DigitalMeve — The .MEVE Standard',
+  description: 'Timestamp, hash and certify any file. Verify in seconds.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digitalmeve.vercel.app'),
+  openGraph: {
+    title: 'DigitalMeve — The .MEVE Standard',
+    description: 'Timestamp, hash and certify any file. Verify in seconds.',
+    type: 'website',
+  },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-slate-900 antialiased">
-        {/* Global Header */}
+      <body className="min-h-screen bg-[var(--dm-bg)] text-[var(--dm-text)]">
         <Header />
-
-        {/* Page content */}
-        <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
-
-        {/* Footer */}
-        <footer className="border-t border-slate-200">
-          <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-slate-600">
-            © {new Date().getFullYear()} DigitalMeve — All rights reserved.
-          </div>
+        <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">{children}</main>
+        <footer className="border-t border-white/10 py-8 text-center text-sm text-slate-400">
+          © {new Date().getFullYear()} DigitalMeve — .MEVE Standard
         </footer>
       </body>
     </html>
