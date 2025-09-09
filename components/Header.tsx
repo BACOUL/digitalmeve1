@@ -10,9 +10,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href="/" className="flex items-center">
           <BrandLogo />
-          <span className="text-lg font-bold text-slate-100">DigitalMeve</span>
         </Link>
 
         {/* Desktop navigation */}
