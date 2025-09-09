@@ -1,40 +1,33 @@
-// app/layout.tsx
-import type { Metadata } from "next";
 import "./globals.css";
-import Header from "../components/Header";
+import type { Metadata } from "next";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "DigitalMeve — The .MEVE Standard",
   description:
-    "A 2-second, portable proof of existence, integrity (SHA-256), and authenticity for any file.",
-  metadataBase: new URL("https://digitalmeve.com"),
-  openGraph: {
-    title: "DigitalMeve — The .MEVE Standard",
-    description:
-      "A 2-second, portable proof of existence, integrity (SHA-256), and authenticity.",
-    url: "https://digitalmeve.com",
-    siteName: "DigitalMeve",
-    images: [{ url: "/og/cover.png", width: 1200, height: 630, alt: "DigitalMeve" }],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "DigitalMeve — The .MEVE Standard",
-    description:
-      "A 2-second, portable proof of existence, integrity (SHA-256), and authenticity.",
-    images: ["/og/cover.png"],
-  },
+    "Portable proof of existence, integrity (SHA-256) and authenticity for any file. Privacy-first.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-screen bg-[#0B1220] text-slate-100 antialiased">
-        {/* Sticky glass header */}
+      <body className="min-h-full bg-[#0B1220] text-white antialiased">
+        {/* décor très léger */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div
+            className="absolute -top-40 -left-40 h-[34rem] w-[34rem] rounded-full opacity-20 blur-3xl"
+            style={{ background: "radial-gradient(closest-side, #22D3EE, transparent 70%)" }}
+          />
+          <div
+            className="absolute -bottom-40 -right-40 h-[34rem] w-[34rem] rounded-full opacity-10 blur-3xl"
+            style={{ background: "radial-gradient(closest-side, #20C997, transparent 70%)" }}
+          />
+        </div>
+
         <Header />
 
-        {/* Page content */}
-        <main className="relative">{children}</main>
+        {/* marge pour passer sous le header */}
+        <div className="pt-28 md:pt-32">{children}</div>
       </body>
     </html>
   );
