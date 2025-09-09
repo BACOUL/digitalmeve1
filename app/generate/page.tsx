@@ -8,66 +8,83 @@ export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("");
   const [meta, setMeta] = useState("");
+  const [alsoJson, setAlsoJson] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setMessage(null);
+    setMsg(null);
+    setErr(null);
 
-    if (!file) {
-      setError("Please select a file first.");
-      return;
-    }
+    if (!file) return setErr("Please select a file first.");
 
-    let metaJson: any = undefined;
+    // meta JSON valide
+    let metaJson: any;
     if (meta.trim()) {
       try {
         metaJson = JSON.parse(meta);
       } catch {
-        setError("Invalid JSON in meta.");
-        return;
+        return setErr("Invalid JSON in meta.");
       }
     }
 
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (metaJson)
-      form.append(
-        "meta",
-        new Blob([JSON.stringify(metaJson)], { type: "application/json" })
-      );
+    if (metaJson) form.append("meta", new Blob([JSON.stringify(metaJson)], { type: "application/json" }));
+    if (alsoJson) form.append("also_json", "1"); // <- option conforme à ta spec
 
     try {
       setLoading(true);
+
+      // 1) Appel principal : doit retourner un fichier *.meve.<ext> (binaire)
       const res = await fetch("/api/proxy/generate", { method: "POST", body: form });
 
-      if (!res.ok) {
-        const details = await res.text();
-        throw new Error(details || "Generation failed.");
+      const ct = res.headers.get("Content-Type") || "";
+
+      if (res.ok && !ct.includes("application/json")) {
+        // => flux binaire (meve.pdf) : on télécharge
+        const dispo = res.headers.get("Content-Disposition");
+        const fallback = `${file.name.replace(/\.(\w+)$/i, "")}.meve.${file.name.split(".").pop()}`;
+        const filename = dispo?.match(/filename="?([^"]+)"?/i)?.[1] ?? fallback;
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        setMsg(`Downloaded ${filename}`);
+      } else {
+        // => JSON (fallback backend actuel) : on propose le .meve.json
+        const text = await res.text();
+        try {
+          const body = JSON.parse(text);
+          const proof = body?.proof ?? body;
+          const pretty = JSON.stringify(proof, null, 2);
+          const jsonName = `${file.name}.meve.json`;
+          const blob = new Blob([pretty], { type: "application/json;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = jsonName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          setMsg(`Downloaded ${jsonName}`);
+        } catch {
+          throw new Error(text || "Unexpected response from API.");
+        }
       }
-
-      const dispo = res.headers.get("Content-Disposition");
-      let filename = "proof.meve.json";
-      const m = dispo?.match(/filename="?([^"]+)"?/i);
-      if (m?.[1]) filename = m[1];
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      setMessage("Your .meve JSON proof has been downloaded.");
-    } catch (err: any) {
-      setError(err?.message ?? "Unexpected error.");
+    } catch (e: any) {
+      setErr(e?.message ?? "Generation failed.");
     } finally {
       setLoading(false);
     }
@@ -77,7 +94,8 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Drop a file (up to 25 MB). Processed in memory. No storage.
+        Upload any file. You’ll get a <code className="text-slate-300">name.meve.ext</code> (proof embedded in metadata).  
+        Optionally, also download a separate <code className="text-slate-300">.meve.json</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -107,17 +125,25 @@ export default function GeneratePage() {
           </div>
         </div>
 
+        <label className="flex items-center gap-3 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={alsoJson}
+            onChange={(e) => setAlsoJson(e.target.checked)}
+            className="h-4 w-4 rounded border-white/20 bg-slate-900"
+          />
+          Also download a separate .meve.json
+        </label>
+
         <div className="flex items-center gap-3">
           <CTAButton type="submit" disabled={loading} aria-label="Generate proof">
             {loading ? "Generating..." : "Generate Proof"}
           </CTAButton>
-          {file && (
-            <span className="text-sm text-slate-400 truncate">Selected: {file.name}</span>
-          )}
+          {file && <span className="text-sm text-slate-400 truncate">Selected: {file.name}</span>}
         </div>
 
-        {message && <p className="text-sm text-emerald-300">{message}</p>}
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {msg && <p className="text-sm text-emerald-300">{msg}</p>}
+        {err && <p className="text-sm text-rose-400">{err}</p>}
 
         <p className="mt-6 text-xs text-slate-500">
           DigitalMeve does not store your documents. Files are processed in memory only.
@@ -125,4 +151,4 @@ export default function GeneratePage() {
       </form>
     </section>
   );
-          }
+                            }
