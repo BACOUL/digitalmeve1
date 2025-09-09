@@ -40,6 +40,9 @@ export default function HomePage() {
 
       {/* HOW IT WORKS */}
       <HowItWorks />
+      <div className="mt-8 rounded-2xl p-6 bg-gradient-to-r from-dm-emerald to-dm-sky text-slate-900 font-semibold text-center">
+  Tailwind OK — custom colors loaded (.dm-emerald → .dm-sky)
+</div>
     </>
   );
 }
