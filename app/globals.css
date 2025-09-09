@@ -122,3 +122,31 @@ section:hover .aurora {
   .aurora, .noise { animation: none !important; }
   section:hover .aurora { transform: none !important; }
   }
+/* Drawer mobile: inert visuel propre */
+@supports (backdrop-filter: blur(4px)) {
+  .drawer-blur { backdrop-filter: blur(6px); }
+}
+
+/* Beam (balayage lumineux sous le titre) */
+.beam {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(50% - 3rem);
+  width: 120%;
+  height: 120px;
+  background: radial-gradient(closest-side, rgba(34,211,238,0.12), transparent 70%);
+  filter: blur(24px);
+  mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+  opacity: .7;
+  animation: beam-scan 10s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes beam-scan {
+  0%   { transform: translate(-50%, -40px) rotate(-1deg); opacity:.55; }
+  50%  { transform: translate(-50%, 10px) rotate(1deg); opacity:.8; }
+  100% { transform: translate(-50%, -40px) rotate(-1deg); opacity:.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beam { animation: none; }
+}
