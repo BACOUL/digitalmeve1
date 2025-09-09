@@ -2,11 +2,11 @@
 
 import { cn } from "@/lib/utils";
 
-interface GlowCTAProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface CTAButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-export function GlowCTA({ children, className, ...props }: GlowCTAProps) {
+export function CTAButton({ children, className, ...props }: CTAButtonProps) {
   return (
     <button
       {...props}
