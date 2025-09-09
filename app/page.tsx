@@ -1,6 +1,7 @@
 // app/page.tsx
 import Link from "next/link";
 import ValueProps from "@/components/ValueProps";
+import HowItWorks from "@/components/HowItWorks";
 
 export default function HomePage() {
   return (
@@ -36,6 +37,9 @@ export default function HomePage() {
 
       {/* VALUE PROPOSITION */}
       <ValueProps />
+
+      {/* HOW IT WORKS */}
+      <HowItWorks />
     </>
   );
 }
