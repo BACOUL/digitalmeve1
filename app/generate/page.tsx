@@ -114,9 +114,9 @@ export default function GeneratePage() {
       setProcessing(false);
 
       // Si le backend renvoie (temporairement) du JSON au lieu d'un binaire,
-      // le nom fallback deviendra `${base}.${ext}.meve.json` grâce au header côté proxy.
+      // le nom fallback devient `${base}.${ext}.meve.json` via le header du proxy.
       if (ct.includes("application/json")) {
-        // rien de plus à faire (le fichier JSON s'est téléchargé ci-dessus)
+        // rien à faire de plus
       }
     } catch (e: any) {
       setErr(e?.message ?? "Generation failed.");
@@ -146,6 +146,7 @@ export default function GeneratePage() {
               className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
           </div>
+
           <div className="flex items-end">
             <label className="flex items-center gap-3 text-sm text-slate-300">
               <input
@@ -159,19 +160,14 @@ export default function GeneratePage() {
           </div>
         </div>
 
-        {/* Barre de progression */}
-        {(uploadPct !== undefined || processing) && (
-          <div className="space-y-2">
-            {uploadPct !== undefined && <ProgressBar value={uploadPct} label="Uploading" />}
-            {processing && <ProgressBar label="Processing…" />}
-          </div>
-        )}
-
-        <div className="flex items-center gap-3">
+        {/* CTA + barre fine collée dessous */}
+        <div className="w-full sm:w-auto">
           <CTAButton type="submit" aria-label="Generate proof">
             Generate Proof
           </CTAButton>
-          {file && <span className="text-sm text-slate-400 truncate">Selected: {file.name}</span>}
+          {(uploadPct !== undefined || processing) && (
+            <ProgressBar value={processing ? undefined : uploadPct} />
+          )}
         </div>
 
         {msg && <p className="text-sm text-emerald-300">{msg}</p>}
@@ -183,4 +179,4 @@ export default function GeneratePage() {
       </form>
     </section>
   );
-}
+        }
