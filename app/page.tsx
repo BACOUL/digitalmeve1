@@ -20,11 +20,7 @@ export default function HomePage() {
         </div>
 
         <div className="mx-auto max-w-6xl px-4 py-20 sm:py-24">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-emerald-300">
-            <Users className="h-5 w-5" aria-hidden />
-            Private by design <span className="text-slate-400">·</span> No signup
-          </span>
-
+          {/* Titre */}
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
             DigitalMeve —{" "}
             <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
@@ -32,20 +28,21 @@ export default function HomePage() {
             </span>
           </h1>
 
+          {/* Sous-titre (version validée) */}
           <p className="mt-4 max-w-2xl text-lg text-slate-300">
-            DigitalMeve delivers a simple, universal digital proof — free for everyone.
-            <br className="hidden sm:block" />
-            <span className="text-slate-400">
-              We never store your documents — they’re used to create the proof, then discarded.
-            </span>
+            DigitalMeve provides a{" "}
+            <strong className="text-slate-100">simple</strong>,{" "}
+            <strong className="text-slate-100">universal</strong>, and{" "}
+            <strong className="text-slate-100">free</strong> digital proof for everyone.
           </p>
 
+          {/* CTA */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
               href="/generate"
               className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-medium text-slate-900 bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_40px_rgba(34,211,238,0.35)] hover:brightness-110 transition"
             >
-              Get Started Free
+              Get Started
               <ArrowRight className="h-5 w-5" aria-hidden />
             </a>
             <a
@@ -57,17 +54,24 @@ export default function HomePage() {
             </a>
           </div>
 
+          {/* Lien rapides */}
           <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-slate-400">
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-5 w-5 text-emerald-300" aria-hidden /> Embedded for PDF & PNG
             </span>
             <span className="hidden sm:inline">•</span>
-            <a href="/verify" className="inline-flex items-center gap-2 underline decoration-sky-400/60 hover:text-slate-200">
+            <a
+              href="/verify"
+              className="inline-flex items-center gap-2 underline decoration-sky-400/60 hover:text-slate-200"
+            >
               <ShieldCheck className="h-5 w-5" aria-hidden />
               Verify a proof
             </a>
             <span className="hidden sm:inline">•</span>
-            <a href="/personal" className="inline-flex items-center gap-2 underline decoration-sky-400/60 hover:text-slate-200">
+            <a
+              href="/personal"
+              className="inline-flex items-center gap-2 underline decoration-sky-400/60 hover:text-slate-200"
+            >
               <Users className="h-5 w-5" aria-hidden />
               For Individuals
             </a>
@@ -88,7 +92,10 @@ export default function HomePage() {
             </div>
             <h3 className="mt-2 text-lg font-medium">Upload your document</h3>
             <p className="mt-2 text-slate-400">Drop any document — PDF, image, or more.</p>
-            <a href="/generate" className="mt-4 inline-flex items-center gap-2 text-sm underline decoration-emerald-400/60 hover:text-slate-200">
+            <a
+              href="/generate"
+              className="mt-4 inline-flex items-center gap-2 text-sm underline decoration-emerald-400/60 hover:text-slate-200"
+            >
               Try now <ArrowRight className="h-5 w-5" aria-hidden />
             </a>
           </div>
@@ -113,7 +120,10 @@ export default function HomePage() {
             <p className="mt-2 text-slate-400">
               Keep a portable certificate (<code className="text-slate-300">.meve.json</code>) or share the verified document anytime.
             </p>
-            <a href="/verify" className="mt-4 inline-flex items-center gap-2 text-sm underline decoration-sky-400/60 hover:text-slate-200">
+            <a
+              href="/verify"
+              className="mt-4 inline-flex items-center gap-2 text-sm underline decoration-sky-400/60 hover:text-slate-200"
+            >
               Verify a document <ArrowRight className="h-5 w-5" aria-hidden />
             </a>
           </div>
@@ -201,4 +211,4 @@ export default function HomePage() {
       </section>
     </main>
   );
-}
+      }
