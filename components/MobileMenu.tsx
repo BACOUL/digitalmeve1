@@ -1,141 +1,167 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { X, ArrowRight, Users, ShieldCheck, FilePlus2, HelpCircle, Briefcase } from "lucide-react";
+import { useEffect } from "react";
+import { X, Users, ShieldCheck, FileText, Briefcase, HelpCircle, Mail } from "lucide-react";
+import { CTAButton } from "@/components/CTAButton";
+
+// Si ton BrandLogo n'accepte pas className, on l'affiche sans prop.
 import { BrandLogo } from "@/components/BrandLogo";
 
-type Props = { open: boolean; onClose: () => void };
+type Props = {
+  open: boolean;
+  onClose: () => void;
+};
 
 export function MobileMenu({ open, onClose }: Props) {
-  const pathname = usePathname();
-  const firstLinkRef = useRef<HTMLAnchorElement>(null);
-
-  // Scroll lock + Focus & ESC
+  // Empêche le scroll derrière le menu et nettoie à la fermeture
   useEffect(() => {
     if (!open) return;
-    document.documentElement.classList.add("overflow-hidden");
-    const t = setTimeout(() => firstLinkRef.current?.focus(), 80);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      clearTimeout(t);
-      document.documentElement.classList.remove("overflow-hidden");
-      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
-  const groups: { title: string; items: { href: string; label: string; icon: JSX.Element }[] }[] = [
-    {
-      title: "Individuals",
-      items: [
-        { href: "/", label: "Home", icon: <Users className="h-5 w-5" aria-hidden /> },
-        { href: "/#how-it-works", label: "How it works", icon: <HelpCircle className="h-5 w-5" aria-hidden /> },
-        { href: "/personal#examples", label: "Examples", icon: <Users className="h-5 w-5" aria-hidden /> },
-        { href: "/personal#faq", label: "FAQ", icon: <HelpCircle className="h-5 w-5" aria-hidden /> },
-        { href: "/generate", label: "Generate (Start free)", icon: <FilePlus2 className="h-5 w-5" aria-hidden /> },
-        { href: "/verify", label: "Verify a document", icon: <ShieldCheck className="h-5 w-5" aria-hidden /> },
-      ],
-    },
-    {
-      title: "Professionals",
-      items: [
-        { href: "/pro", label: "Overview", icon: <Briefcase className="h-5 w-5" aria-hidden /> },
-        { href: "/pro#pricing", label: "Pricing", icon: <Briefcase className="h-5 w-5" aria-hidden /> },
-        { href: "/pro#contact", label: "Contact Sales", icon: <ArrowRight className="h-5 w-5" aria-hidden /> },
-      ],
-    },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Mobile menu">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[100] md:hidden"
+    >
       {/* Overlay */}
       <button
         aria-label="Close menu"
-        className="absolute inset-0 bg-gradient-to-br from-black/70 via-slate-950/65 to-black/70 backdrop-blur-sm"
         onClick={onClose}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
       />
 
-      {/* Panel glass + glow (classe sur UNE SEULE LIGNE) */}
-      <div className="absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto border-l border-white/10 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)] shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl animate-[slidein_.22s_ease] will-change-transform">
-        {/* Brand + Close */}
+      {/* Drawer */}
+      <div
+        className="
+          absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto
+          border-l border-white/10
+          bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)]
+          shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl
+          animate-[slidein_.22s_ease] will-change-transform
+        "
+        style={{
+          // petite animation d’entrée
+          // @ts-ignore – keyframes utilitaires
+          "--tw-translate-x": "0",
+        } as any}
+      >
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-4">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
-            {/* ⬇️ Correction : on n'envoie plus className au Logo */}
-            <span className="inline-block h-6 w-6">
-              <BrandLogo />
-            </span>
+            <BrandLogo />
             <span className="font-medium text-slate-100">DigitalMeve</span>
           </Link>
           <button
-            onClick={onClose}
-            className="rounded-lg border border-white/10 p-2 text-slate-300 hover:bg-white/10"
             aria-label="Close"
+            onClick={onClose}
+            className="rounded-xl border border-white/10 p-2 text-slate-300 hover:bg-white/10"
           >
-            <X className="h-5 w-5" aria-hidden />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Groups */}
-        <nav className="mt-2 px-2 pb-6">
-          {groups.map((group) => (
-            <div key={group.title} className="mb-5">
-              <div className="px-3 pb-2 text-xs uppercase tracking-wide text-slate-400/80">{group.title}</div>
-              <ul className="space-y-1">
-                {group.items.map((item, i) => {
-                  const active = pathname === item.href || (item.href.includes("#") && pathname === item.href.split("#")[0]);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        ref={i === 0 ? firstLinkRef : undefined}
-                        href={item.href}
-                        onClick={onClose}
-                        className={`group flex items-center justify-between rounded-xl px-3 py-3 text-base outline-none transition ${
-                          active ? "bg-white/10 text-slate-100" : "text-slate-200 hover:bg-white/5 focus:bg-white/10"
-                        }`}
-                      >
-                        <span className="flex items-center gap-3">
-                          {item.icon}
-                          {item.label}
-                        </span>
-                        <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-slate-200" aria-hidden />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+        {/* Sections */}
+        <nav className="px-3 pb-6">
+          {/* Individuals */}
+          <div className="px-1 py-2 text-xs uppercase tracking-wide text-slate-400">
+            Individuals
+          </div>
+          <ul className="space-y-1">
+            <li>
+              <Link
+                href="/generate"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/10"
+              >
+                <FileText className="h-5 w-5 text-emerald-300" />
+                <span>Generate</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/verify"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/10"
+              >
+                <ShieldCheck className="h-5 w-5 text-sky-300" />
+                <span>Verify</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/personal"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/10"
+              >
+                <Users className="h-5 w-5 text-emerald-300" />
+                <span>For Individuals</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/faq"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/10"
+              >
+                <HelpCircle className="h-5 w-5 text-slate-300" />
+                <span>FAQ</span>
+              </Link>
+            </li>
+          </ul>
 
-          {/* CTA en bas — Individuals d’abord */}
-          <div className="mt-6 px-1 pb-6">
-            <Link
-              href="/generate"
-              onClick={onClose}
-              className="block rounded-2xl px-4 py-3 text-center text-slate-900 font-medium bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_36px_rgba(34,211,238,0.28)] hover:brightness-110 transition"
-            >
-              Start now — it’s free
+          {/* Professionals */}
+          <div className="mt-5 px-1 py-2 text-xs uppercase tracking-wide text-slate-400">
+            Professionals
+          </div>
+          <ul className="space-y-1">
+            <li>
+              <Link
+                href="/pro"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/10"
+              >
+                <Briefcase className="h-5 w-5 text-sky-300" />
+                <span>Overview</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/10"
+              >
+                <Mail className="h-5 w-5 text-slate-300" />
+                <span>Contact</span>
+              </Link>
+            </li>
+          </ul>
+
+          {/* CTA */}
+          <div className="mt-6 space-y-2 px-1">
+            <Link href="/generate" onClick={onClose} className="inline-flex w-full">
+              <CTAButton aria-label="Start Free" className="w-full justify-center">
+                Start Free
+              </CTAButton>
             </Link>
-            <p className="mt-2 text-center text-xs text-slate-500">No signup · Instant proof</p>
+            <Link
+              href="/pro"
+              onClick={onClose}
+              className="inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm hover:bg-white/10"
+            >
+              For Professionals
+            </Link>
           </div>
         </nav>
       </div>
-
-      <style jsx>{`
-        @keyframes slidein {
-          from {
-            transform: translateX(22%);
-            opacity: 0.6;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
-      }
+}
