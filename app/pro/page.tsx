@@ -1,14 +1,3 @@
-import ProLanding from "@/components/ProLanding";
-
-export const metadata = {
-  title: "DigitalMeve Pro — API & Institutional",
-  description:
-    "For professionals and institutions: API access, higher limits, SLAs, and dedicated support. Coming soon — contact sales.",
-};
-
-export default function ProPage() {
-  return <ProLanding />;
-}
 import { Briefcase, ServerCog, CheckCircle2, Mail, ArrowRight, ShieldCheck, Boxes } from "lucide-react";
 
 export default function ProPage() {
@@ -25,9 +14,7 @@ export default function ProPage() {
             <Briefcase className="h-3.5 w-3.5" aria-hidden />
             For Professionals & Institutions
           </span>
-          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">
-            Integrate .MEVE into your workflow
-          </h1>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Integrate .MEVE into your workflow</h1>
           <p className="mt-3 max-w-2xl text-slate-300">
             Automate certification and verification at scale. Keep your files readable and verifiable across systems.
           </p>
@@ -82,9 +69,7 @@ export default function ProPage() {
             </a>
           </div>
 
-          <p className="mt-6 text-xs text-slate-500">
-            Note: “Official” tier is not part of the current offering.
-          </p>
+          <p className="mt-6 text-xs text-slate-500">Note: “Official” tier is not part of the current offering.</p>
         </div>
       </section>
     </main>
