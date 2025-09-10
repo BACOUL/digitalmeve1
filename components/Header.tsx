@@ -21,21 +21,11 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center space-x-6 md:flex">
-          <Link href="/generate" className="hover:text-emerald-400 transition">
-            Generate
-          </Link>
-          <Link href="/verify" className="hover:text-emerald-400 transition">
-            Verify
-          </Link>
-          <Link href="/docs" className="hover:text-emerald-400 transition">
-            Docs
-          </Link>
-          <Link href="/pro" className="hover:text-emerald-400 transition">
-            Pro
-          </Link>
-          <Link href="/contact" className="hover:text-emerald-400 transition">
-            Contact
-          </Link>
+          <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
+          <Link href="/verify" className="hover:text-emerald-400 transition">Verify</Link>
+          <Link href="/docs" className="hover:text-emerald-400 transition">Docs</Link>
+          <Link href="/pro" className="hover:text-emerald-400 transition">Pro</Link>
+          <Link href="/contact" className="hover:text-emerald-400 transition">Contact</Link>
           <CTAButton aria-label="Start Free">Get Started</CTAButton>
         </nav>
 
@@ -46,13 +36,13 @@ export function Header() {
           aria-controls="mobile-menu"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen(true)}
-          className="md:hidden rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 hover:bg-white/10"
+          className="md:hidden rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
           <Menu className="h-6 w-6" />
         </button>
       </div>
 
-      {/* Mobile menu (drawer) */}
+      {/* Drawer mobile */}
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </header>
   );
