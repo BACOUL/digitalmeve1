@@ -5,14 +5,30 @@ import { Upload, X } from "lucide-react";
 
 type Props = {
   onSelected: (file: File | null) => void;
-  accept?: string;          // ex: ".pdf,.png,application/pdf"
-  maxSizeMB?: number;       // ex: 50
-  label?: string;           // ex: "Choose a file"
+  /** Évite image/* et video/* pour ne pas faire apparaître la Caméra sur Android */
+  accept?: string;
+  maxSizeMB?: number;
+  label?: string;
 };
 
 export default function FileDropzone({
   onSelected,
-  accept,
+  // ✅ Par défaut : liste d’extensions/MIME “documents” sans wildcards média
+  accept = [
+    ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp",
+    ".txt", ".json", ".csv",
+    ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    "application/pdf",
+    "application/json",
+    "text/plain",
+    "text/csv",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ].join(","),
   maxSizeMB = 100,
   label = "Choose a file",
 }: Props) {
@@ -86,6 +102,8 @@ export default function FileDropzone({
           className="hidden"
           onChange={onInputChange}
           accept={accept}
+          // 🔒 Ne pas mettre capture pour éviter l’appareil photo
+          // capture={undefined}
           aria-describedby="file-help"
         />
         <div className="flex flex-col items-center gap-2">
@@ -93,18 +111,16 @@ export default function FileDropzone({
           <p className="text-slate-200 font-medium">{label}</p>
           <p id="file-help" className="text-xs text-slate-500">
             Drag & drop or click to select. Max {maxSizeMB} MB.
-            {accept ? <> Accepted: <code className="text-slate-300">{accept}</code></> : null}
           </p>
         </div>
       </label>
 
-      {/* Aperçu fichier sélectionné */}
       {file && (
         <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2">
           <div className="min-w-0">
             <p className="truncate text-sm text-slate-200">{file.name}</p>
             <p className="text-xs text-slate-500">
-              {(file.size / 1024).toFixed(1)} KB
+              {formatBytes(file.size)}
             </p>
           </div>
           <button
@@ -121,3 +137,13 @@ export default function FileDropzone({
     </div>
   );
 }
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(2)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(2)} GB`;
+          }
