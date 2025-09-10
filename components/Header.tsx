@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { CTAButton } from "@/components/CTAButton";
 import { MobileMenu } from "@/components/MobileMenu";
 import { Menu } from "lucide-react";
 
 export function Header() {
-  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
@@ -18,8 +19,8 @@ export function Header() {
           <span className="sr-only">DigitalMeve</span>
         </Link>
 
-        {/* Desktop navigation */}
-        <nav className="hidden items-center space-x-8 md:flex">
+        {/* Desktop nav */}
+        <nav className="hidden items-center space-x-6 md:flex">
           <Link href="/generate" className="hover:text-emerald-400 transition">
             Generate
           </Link>
@@ -35,32 +36,24 @@ export function Header() {
           <Link href="/contact" className="hover:text-emerald-400 transition">
             Contact
           </Link>
-
-          {/* CTA simple en <a> pour éviter les soucis de props */}
-          <a
-            href="/generate"
-            aria-label="Start Free"
-            className="relative inline-flex items-center justify-center rounded-2xl px-5 py-2.5 font-semibold text-slate-900
-                       bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_30px_rgba(34,211,238,0.45)]
-                       hover:brightness-110 transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
-          >
-            Start Free
-          </a>
+          <CTAButton aria-label="Start Free">Get Started</CTAButton>
         </nav>
 
-        {/* Mobile menu trigger */}
+        {/* Hamburger */}
         <button
           type="button"
           aria-label="Open menu"
-          onClick={() => setOpen(true)}
-          className="md:hidden inline-flex items-center rounded-xl border border-white/10 bg-white/5 p-2 text-slate-200 hover:bg-white/10"
+          aria-controls="mobile-menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(true)}
+          className="md:hidden rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 hover:bg-white/10"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" />
         </button>
       </div>
 
-      {/* Drawer mobile */}
-      <MobileMenu open={open} onClose={() => setOpen(false)} />
+      {/* Mobile menu (drawer) */}
+      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </header>
   );
 }
