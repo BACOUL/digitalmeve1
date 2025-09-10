@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { MobileMenu } from "@/components/MobileMenu";
-import { Menu, Users, Briefcase } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -19,52 +19,48 @@ export function Header() {
         </Link>
 
         {/* Desktop navigation */}
-        <nav className="hidden items-center gap-6 md:flex">
-          {/* Individuals group */}
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-emerald-300" aria-hidden />
-            <Link href="/personal" className="hover:text-emerald-400 transition">Individuals</Link>
-            <span className="text-slate-600">/</span>
-            <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
-            <span className="text-slate-600">/</span>
-            <Link href="/verify" className="hover:text-emerald-400 transition">Verify</Link>
-          </div>
-
-          {/* Professionals group */}
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-sky-300" aria-hidden />
-            <Link href="/pro" className="hover:text-emerald-400 transition">Professionals</Link>
-            <span className="text-slate-600">/</span>
-            <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
-            <span className="text-slate-600">/</span>
-            <Link href="/contact" className="hover:text-emerald-400 transition">Contact</Link>
-          </div>
-
-          {/* Docs */}
-          <Link href="/docs" className="hover:text-emerald-400 transition">Docs</Link>
-
-          {/* CTA */}
-          <Link
-            href="/generate"
-            className="rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-2 font-semibold text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.35)] hover:brightness-110 transition"
-            aria-label="Get started free"
-          >
-            Get Started Free
+        <nav className="hidden items-center space-x-8 md:flex">
+          <Link href="/generate" className="hover:text-emerald-400 transition">
+            Generate
           </Link>
+          <Link href="/verify" className="hover:text-emerald-400 transition">
+            Verify
+          </Link>
+          <Link href="/docs" className="hover:text-emerald-400 transition">
+            Docs
+          </Link>
+          <Link href="/pro" className="hover:text-emerald-400 transition">
+            Pro
+          </Link>
+          <Link href="/contact" className="hover:text-emerald-400 transition">
+            Contact
+          </Link>
+
+          {/* CTA simple en <a> pour éviter les soucis de props */}
+          <a
+            href="/generate"
+            aria-label="Start Free"
+            className="relative inline-flex items-center justify-center rounded-2xl px-5 py-2.5 font-semibold text-slate-900
+                       bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_30px_rgba(34,211,238,0.45)]
+                       hover:brightness-110 transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+          >
+            Start Free
+          </a>
         </nav>
 
-        {/* Mobile hamburger */}
+        {/* Mobile menu trigger */}
         <button
-          onClick={() => setOpen(true)}
-          className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 hover:bg-white/10 md:hidden"
+          type="button"
           aria-label="Open menu"
+          onClick={() => setOpen(true)}
+          className="md:hidden inline-flex items-center rounded-xl border border-white/10 bg-white/5 p-2 text-slate-200 hover:bg-white/10"
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5" />
         </button>
       </div>
 
-      {/* Drawer menu */}
+      {/* Drawer mobile */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
-      }
+}
