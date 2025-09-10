@@ -1,18 +1,22 @@
+// app/verify/page.tsx
 "use client";
 
 import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
+import { ShieldCheck, ShieldX, Info, Copy, ChevronDown, ChevronRight } from "lucide-react";
 
 type VerifyResult = {
-  status: "valid" | "valid_document_missing" | "invalid";
+  ok: boolean;
   reason?: string;
   created_at?: string;
+  version?: string;
+  proof?: any; // payload complet (on l’affiche en “Technical details”)
   doc?: {
     name?: string;
     mime?: string;
     size?: number;
-    sha256: string;
+    sha256?: string;
   };
   issuer?: {
     name?: string;
@@ -21,50 +25,51 @@ type VerifyResult = {
     website?: string;
     verified_domain?: boolean;
   };
-  meta?: Record<string, unknown>;
 };
 
 export default function VerifyPage() {
-  // Un seul input suffit pour la plupart des cas :
-  //  - document original (ex: .pdf, .png, .txt, etc.) -> preuve intégrée (meve_proof)
-  //  - ou sidecar .meve.json -> vérification partielle
-  // Optionnellement, on autorise un "original file" quand l’utilisateur charge un .meve.json
-  const [proofOrFile, setProofOrFile] = useState<File | null>(null);
-  const [original, setOriginal] = useState<File | null>(null);
-
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [result, setResult] = useState<VerifyResult | null>(null);
+  const [res, setRes] = useState<VerifyResult | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    setResult(null);
+    setRes(null);
+    setShowRaw(false);
+    setCopied(false);
 
-    if (!proofOrFile) {
-      setErr("Please select a file (.pdf/.png with embedded proof OR a .meve.json).");
+    if (!file) {
+      setErr("Please select a file or an HTML certificate first.");
       return;
     }
 
     try {
       setLoading(true);
-
       const form = new FormData();
-      form.append("file", proofOrFile);
-      if (original) form.append("original", original);
+      form.append("file", file);
 
-      const res = await fetch("/api/proxy/verify", {
-        method: "POST",
-        body: form,
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
+      const r = await fetch("/api/proxy/verify", { method: "POST", body: form });
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
         throw new Error(t || "Verification failed.");
       }
+      const data = (await r.json()) as any;
 
-      const data = (await res.json()) as VerifyResult;
-      setResult(data);
+      // Normalisation minimale pour l’affichage
+      const normalized: VerifyResult = {
+        ok: !!data.ok,
+        reason: data.reason,
+        created_at: data.created_at ?? data.createdAt,
+        version: data.version,
+        proof: data.proof ?? data, // on garde tout pour le panneau “Technical details”
+        doc: data.doc,
+        issuer: data.issuer,
+      };
+      setRes(normalized);
     } catch (e: any) {
       setErr(e?.message ?? "Verification failed.");
     } finally {
@@ -72,49 +77,35 @@ export default function VerifyPage() {
     }
   }
 
-  const statusBadge = (s: VerifyResult["status"]) => {
-    if (s === "valid")
-      return (
-        <span className="inline-flex items-center rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-300 border border-emerald-400/30">
-          ✅ Valid
-        </span>
-      );
-    if (s === "valid_document_missing")
-      return (
-        <span className="inline-flex items-center rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-300 border border-amber-400/30">
-          ⚠️ Valid (document missing)
-        </span>
-      );
-    return (
-      <span className="inline-flex items-center rounded-full bg-rose-400/10 px-2.5 py-1 text-xs font-medium text-rose-300 border border-rose-400/30">
-        ❌ Invalid
-      </span>
-    );
-  };
+  function copyRaw() {
+    if (!res?.proof) return;
+    navigator.clipboard.writeText(JSON.stringify(res.proof, null, 2)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    });
+  }
+
+  const doc = res?.doc ?? {};
+  const issuer = res?.issuer ?? {};
+  const createdAt = res?.created_at ?? "";
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-slate-100">Verify a proof</h1>
+    <section className="mx-auto max-w-5xl px-4 py-12">
+      <h1 className="text-3xl font-bold text-slate-100">Verify a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Drop a verified file (e.g. <code className="text-slate-300">name.meve.pdf/png</code>) or a{" "}
-        <code className="text-slate-300">.meve.json</code> sidecar. If you upload a sidecar, you may also provide
-        the original file for full verification.
+        Drop a verified file (<code className="text-slate-300">name.meve.pdf/png</code>) or an{" "}
+        <span className="text-slate-200">HTML certificate</span> (<code className="text-slate-300">.html</code>). We’ll
+        validate integrity and authenticity.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm text-slate-300">File or Proof (.meve.json)</label>
-            <FileDropzone onSelected={setProofOrFile} />
-          </div>
-
-          <div>
-            <label className="text-sm text-slate-300">Original file (optional)</label>
-            <FileDropzone onSelected={setOriginal} />
-            <p className="mt-1 text-xs text-slate-500">
-              Use this only if the first input is a <code>.meve.json</code> and you have the original.
-            </p>
-          </div>
+        <div>
+          <label className="text-sm text-slate-300">File or HTML certificate</label>
+          <FileDropzone
+            onSelected={setFile}
+            accept=".html,.htm,.pdf,.png,.jpg,.jpeg,application/pdf,image/*,text/html"
+            label="Choose a file or an HTML certificate"
+          />
         </div>
 
         <div>
@@ -124,82 +115,132 @@ export default function VerifyPage() {
         </div>
 
         {err && <p className="text-sm text-rose-400">{err}</p>}
+      </form>
 
-        {result && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-100">Result</h2>
-              {statusBadge(result.status)}
-            </div>
-
-            {result.reason && (
-              <p className="mt-2 text-sm text-slate-400">
-                <span className="text-slate-300">Details:</span> {result.reason}
-              </p>
-            )}
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/10 p-4">
-                <h3 className="text-sm font-medium text-slate-200">Document</h3>
-                <ul className="mt-2 text-sm text-slate-400 space-y-1">
-                  {result.doc?.name && (
-                    <li>
-                      <span className="text-slate-300">Name:</span> {result.doc.name}
-                    </li>
-                  )}
-                  {result.doc?.mime && (
-                    <li>
-                      <span className="text-slate-300">MIME:</span> {result.doc.mime}
-                    </li>
-                  )}
-                  {typeof result.doc?.size === "number" && (
-                    <li>
-                      <span className="text-slate-300">Size:</span> {result.doc.size} bytes
-                    </li>
-                  )}
-                  {result.doc?.sha256 && (
-                    <li className="break-all">
-                      <span className="text-slate-300">SHA-256:</span> {result.doc.sha256}
-                    </li>
-                  )}
-                </ul>
-              </div>
-
-              <div className="rounded-xl border border-white/10 p-4">
-                <h3 className="text-sm font-medium text-slate-200">Issuer</h3>
-                <ul className="mt-2 text-sm text-slate-400 space-y-1">
-                  {result.issuer?.name && (
-                    <li>
-                      <span className="text-slate-300">Name:</span> {result.issuer.name}
-                    </li>
-                  )}
-                  {result.issuer?.identity && (
-                    <li className="break-all">
-                      <span className="text-slate-300">Identity:</span> {result.issuer.identity}
-                    </li>
-                  )}
-                  {result.issuer?.type && (
-                    <li>
-                      <span className="text-slate-300">Type:</span> {result.issuer.type}
-                    </li>
-                  )}
-                  {result.issuer?.website && (
-                    <li className="break-all">
-                      <span className="text-slate-300">Website:</span> {result.issuer.website}
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </div>
-
-            {result.created_at && (
-              <p className="mt-4 text-xs text-slate-500">
-                Created at: {new Date(result.created_at).toUTCString()}
-              </p>
+      {res && (
+        <div className="mt-10 space-y-6">
+          {/* Banner status */}
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+            {res.ok ? (
+              <>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/15">
+                  <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                </div>
+                <div>
+                  <p className="font-medium text-emerald-300">Valid proof</p>
+                  {res.reason && <p className="text-sm text-slate-400">{res.reason}</p>}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-400/15">
+                  <ShieldX className="h-5 w-5 text-rose-300" />
+                </div>
+                <div>
+                  <p className="font-medium text-rose-300">Invalid proof</p>
+                  {res.reason && <p className="text-sm text-slate-400">{res.reason}</p>}
+                </div>
+              </>
             )}
           </div>
-        )}
-      </form>
+
+          {/* 3 cards grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Document</p>
+              <div className="mt-2 space-y-1 text-sm">
+                <p className="truncate">
+                  <span className="text-slate-400">Name:</span>{" "}
+                  <span className="text-slate-200">{doc.name || "—"}</span>
+                </p>
+                <p>
+                  <span className="text-slate-400">Type:</span>{" "}
+                  <span className="text-slate-200">{doc.mime || "—"}</span>
+                </p>
+                <p className="break-all">
+                  <span className="text-slate-400">SHA-256:</span>{" "}
+                  <span className="text-slate-200">{doc.sha256 || "—"}</span>
+                </p>
+                {typeof doc.size === "number" && (
+                  <p>
+                    <span className="text-slate-400">Size:</span>{" "}
+                    <span className="text-slate-200">{doc.size} B</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Issuer</p>
+              <div className="mt-2 space-y-1 text-sm">
+                <p>
+                  <span className="text-slate-400">Name:</span>{" "}
+                  <span className="text-slate-200">{issuer.name || "—"}</span>
+                </p>
+                <p className="break-all">
+                  <span className="text-slate-400">Identity:</span>{" "}
+                  <span className="text-slate-200">{issuer.identity || "—"}</span>
+                </p>
+                <p>
+                  <span className="text-slate-400">Type:</span>{" "}
+                  <span className="text-slate-200">{issuer.type || "—"}</span>
+                </p>
+                <p>
+                  <span className="text-slate-400">Verified domain:</span>{" "}
+                  <span className="text-slate-200">{issuer.verified_domain ? "Yes" : "No"}</span>
+                </p>
+                {issuer.website && (
+                  <p className="break-all">
+                    <span className="text-slate-400">Website:</span>{" "}
+                    <span className="text-slate-200">{issuer.website}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Metadata</p>
+              <div className="mt-2 space-y-1 text-sm">
+                <p>
+                  <span className="text-slate-400">Version:</span>{" "}
+                  <span className="text-slate-200">{res.version || "—"}</span>
+                </p>
+                <p>
+                  <span className="text-slate-400">Created at:</span>{" "}
+                  <span className="text-slate-200">{createdAt || "—"}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Technical details (JSON) */}
+          <div className="rounded-2xl border border-white/10 bg-slate-900/60">
+            <button
+              onClick={() => setShowRaw((v) => !v)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
+            >
+              <span className="inline-flex items-center gap-2 text-sm text-slate-200">
+                <Info className="h-4 w-4" /> Technical details (JSON)
+              </span>
+              {showRaw ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+            {showRaw && (
+              <div className="space-y-3 px-4 pb-4">
+                <pre className="max-h-80 overflow-auto rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-slate-200">
+{JSON.stringify(res.proof ?? {}, null, 2)}
+                </pre>
+                <button
+                  onClick={copyRaw}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10"
+                >
+                  <Copy className="h-4 w-4" />
+                  {copied ? "Copied!" : "Copy JSON"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
-          }
+}
