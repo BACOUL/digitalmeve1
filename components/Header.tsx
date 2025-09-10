@@ -22,32 +22,15 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
-          {/* Particuliers */}
-          <Link href="/generate" className="hover:text-emerald-400 transition">
-            Generate
-          </Link>
-          <Link href="/verify" className="hover:text-emerald-400 transition">
-            Verify
-          </Link>
-          <Link href="/docs" className="hover:text-emerald-400 transition">
-            Docs
-          </Link>
-          <Link href="/faq" className="hover:text-emerald-400 transition">
-            FAQ
-          </Link>
+          <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
+          <Link href="/verify" className="hover:text-emerald-400 transition">Verify</Link>
+          <Link href="/docs" className="hover:text-emerald-400 transition">Docs</Link>
+          <Link href="/faq" className="hover:text-emerald-400 transition">FAQ</Link>
 
-          {/* Pro */}
-          <Link href="/pro" className="hover:text-sky-300 transition">
-            For Professionals
-          </Link>
-          <Link href="/pricing" className="hover:text-sky-300 transition">
-            Pricing
-          </Link>
-          <Link href="/contact" className="hover:text-sky-300 transition">
-            Contact
-          </Link>
+          <Link href="/pro" className="hover:text-sky-300 transition">For Professionals</Link>
+          <Link href="/pricing" className="hover:text-sky-300 transition">Pricing</Link>
+          <Link href="/contact" className="hover:text-sky-300 transition">Contact</Link>
 
-          {/* CTA */}
           <Link
             href="/generate"
             aria-label="Start Free"
@@ -64,17 +47,14 @@ export default function Header() {
           aria-label="Open menu"
           aria-haspopup="dialog"
           aria-expanded={open}
-          aria-controls="mobile-menu-panel"
           className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
         >
           <Menu className="h-5 w-5" />
         </button>
       </div>
 
-      {/* Mobile full-screen menu */}
-      <div id="mobile-menu-panel">
-        <MobileMenu open={open} onClose={() => setOpen(false)} />
-      </div>
+      {/* Menu mobile plein écran */}
+      <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
 }
