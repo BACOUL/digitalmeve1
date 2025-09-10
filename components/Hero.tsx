@@ -23,17 +23,15 @@ export function Hero() {
           <span className="text-slate-100">Standard</span>
         </h1>
 
+        {/* Sous-titre simplifié (sans jargon) */}
         <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-          A simple, portable proof that certifies{" "}
-          <strong className="text-slate-100">existence</strong>,{" "}
-          <strong className="text-slate-100">integrity</strong> (SHA-256), and{" "}
-          <strong className="text-slate-100">authenticity</strong> of any file — in seconds.
+          A simple, universal and free digital proof for your documents.
         </p>
 
         {/* CTA row */}
         <div className="mt-8 flex items-center justify-center gap-4">
           <Link href="/generate" className="inline-flex">
-            <CTAButton aria-label="Generate a proof">Generate a proof</CTAButton>
+            <CTAButton aria-label="Start Free">Start Free</CTAButton>
           </Link>
           <Link
             href="/verify"
@@ -43,9 +41,14 @@ export function Hero() {
           </Link>
         </div>
 
-        {/* Pills */}
+        {/* Pills (révisés, ton plus chaleureux) */}
         <div className="mt-10 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center">
-          {["Open standard", "No file storage", "Privacy-first", "API & CLI"].map((label) => (
+          {[
+            "Free · Simple · Instant",
+            "Works with PDF & images",
+            "Open standard",
+            "API & CLI",
+          ].map((label) => (
             <span
               key={label}
               className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 text-sm text-slate-300 backdrop-blur-md"
