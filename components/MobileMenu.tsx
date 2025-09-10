@@ -59,12 +59,15 @@ export function MobileMenu({ open, onClose }: Props) {
         onClick={onClose}
       />
 
-      {/* Panel glass + glow (⚠️ classe sur UNE SEULE LIGNE) */}
+      {/* Panel glass + glow (classe sur UNE SEULE LIGNE) */}
       <div className="absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto border-l border-white/10 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)] shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl animate-[slidein_.22s_ease] will-change-transform">
         {/* Brand + Close */}
         <div className="flex items-center justify-between px-4 py-4">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
-            <BrandLogo className="h-6 w-6" />
+            {/* ⬇️ Correction : on n'envoie plus className au Logo */}
+            <span className="inline-block h-6 w-6">
+              <BrandLogo />
+            </span>
             <span className="font-medium text-slate-100">DigitalMeve</span>
           </Link>
           <button
@@ -135,4 +138,4 @@ export function MobileMenu({ open, onClose }: Props) {
       `}</style>
     </div>
   );
-}
+      }
