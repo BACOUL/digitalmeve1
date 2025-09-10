@@ -1,36 +1,52 @@
 "use client";
 
 type Props = {
-  value?: number; // 0..100 ; undefined = indéterminé
+  /** 0..100 pour déterminé. undefined => indéterminé (processing) */
+  value?: number;
+  label?: string;
+  className?: string;
 };
 
-export default function ProgressBar({ value }: Props) {
-  const indeterminate = value === undefined;
+export default function ProgressBar({ value, label, className }: Props) {
+  const determinate = typeof value === "number";
 
   return (
-    <div className="relative w-full h-1 overflow-hidden rounded-full bg-white/10 mt-1">
-      {indeterminate ? (
-        <div className="absolute left-0 top-0 h-full w-1/3 animate-[progress_1.2s_infinite] rounded-full bg-gradient-to-r from-emerald-400 to-sky-400" />
-      ) : (
-        <div
-          className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-[width]"
-          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-        />
+    <div className={["w-full mt-3", className].filter(Boolean).join(" ")}>
+      {label && (
+        <div className="mb-1 flex items-center justify-between text-xs text-slate-400">
+          <span>{label}</span>
+          {determinate && <span>{value}%</span>}
+        </div>
       )}
+      <div
+        className="h-2 w-full overflow-hidden rounded-lg bg-white/10"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={determinate ? value : undefined}
+        aria-label={label || "progress"}
+      >
+        {determinate ? (
+          <div
+            className="h-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-[width] duration-150"
+            style={{ width: `${Math.max(0, Math.min(100, value!))}%` }}
+          />
+        ) : (
+          <div className="h-full w-1/2 animate-[progress_1.2s_ease_infinite] bg-gradient-to-r from-emerald-400 to-sky-400" />
+        )}
+      </div>
 
+      {/* keyframes inline via Tailwind arbitrary, compatible */}
       <style jsx>{`
         @keyframes progress {
           0% {
-            margin-left: -35%;
-            width: 35%;
+            transform: translateX(-100%);
           }
           50% {
-            margin-left: 20%;
-            width: 45%;
+            transform: translateX(20%);
           }
           100% {
-            margin-left: 100%;
-            width: 35%;
+            transform: translateX(100%);
           }
         }
       `}</style>
