@@ -1,3 +1,4 @@
+// components/Header.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,39 +10,71 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-semibold">
-              <span className="text-emerald-300">Digital</span>
-              <span className="text-sky-300">Meve</span>
-            </span>
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/70 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2" aria-label="DigitalMeve Home">
+          <span className="text-lg font-semibold leading-none">
+            <span className="text-emerald-300">Digital</span>
+            <span className="text-sky-300">Meve</span>
+          </span>
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-6 md:flex">
+          {/* Particuliers */}
+          <Link href="/generate" className="hover:text-emerald-400 transition">
+            Generate
+          </Link>
+          <Link href="/verify" className="hover:text-emerald-400 transition">
+            Verify
+          </Link>
+          <Link href="/docs" className="hover:text-emerald-400 transition">
+            Docs
+          </Link>
+          <Link href="/faq" className="hover:text-emerald-400 transition">
+            FAQ
           </Link>
 
-          {/* Desktop nav (on garde simple) */}
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
-            <Link href="/verify"   className="hover:text-emerald-400 transition">Verify</Link>
-            <Link href="/docs"     className="hover:text-emerald-400 transition">Docs</Link>
-            <Link href="/pro"      className="hover:text-emerald-400 transition">Pro</Link>
-            <Link href="/contact"  className="hover:text-emerald-400 transition">Contact</Link>
-          </nav>
+          {/* Pro */}
+          <Link href="/pro" className="hover:text-sky-300 transition">
+            For Professionals
+          </Link>
+          <Link href="/pricing" className="hover:text-sky-300 transition">
+            Pricing
+          </Link>
+          <Link href="/contact" className="hover:text-sky-300 transition">
+            Contact
+          </Link>
 
-          {/* Mobile trigger */}
-          <button
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+          {/* CTA */}
+          <Link
+            href="/generate"
+            aria-label="Start Free"
+            className="rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-5 py-2.5 font-semibold text-slate-950 shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:brightness-110 transition"
           >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
+            Start Free
+          </Link>
+        </nav>
 
-      {/* Le panneau est rendu dans un portal (document.body) */}
-      <MobileMenu open={open} onClose={() => setOpen(false)} />
-    </>
+        {/* Mobile trigger */}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-controls="mobile-menu-panel"
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Mobile full-screen menu */}
+      <div id="mobile-menu-panel">
+        <MobileMenu open={open} onClose={() => setOpen(false)} />
+      </div>
+    </header>
   );
 }
