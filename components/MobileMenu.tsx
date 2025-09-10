@@ -13,16 +13,13 @@ import {
   Users,
 } from "lucide-react";
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-};
+type Props = { open: boolean; onClose: () => void };
 
 export function MobileMenu({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] md:hidden">
+    <div id="mobile-menu" className="fixed inset-0 z-[60] md:hidden">
       {/* Backdrop */}
       <button
         aria-label="Close menu"
@@ -35,9 +32,10 @@ export function MobileMenu({ open, onClose }: Props) {
         className="absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto border-l border-white/10 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)] shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl animate-[slidein_.22s_ease] will-change-transform"
         style={{ animation: "slidein .22s ease" }}
       >
-        {/* Header */}
+        {/* Header of drawer */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
-          <Link href="/" onClick={onClose} className="flex items-center gap-2">
+          <Link href="/" onClick={onClose} className="flex items-center">
+            {/* Logo ONLY to avoid title duplicate */}
             <BrandLogo />
             <span className="sr-only">DigitalMeve</span>
           </Link>
@@ -50,12 +48,12 @@ export function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Nav */}
+        {/* Navigation */}
         <nav className="px-3 py-4">
           {/* Individuals */}
           <div className="px-2 py-3">
             <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wide text-emerald-300/80">
-              <Users className="h-4 w-4" /> For Individuals
+              <Users className="h-4 w-4" /> Individuals
             </p>
             <ul className="space-y-1">
               <li>
@@ -96,7 +94,7 @@ export function MobileMenu({ open, onClose }: Props) {
           {/* Pro */}
           <div className="px-2 py-3">
             <p className="mb-2 text-xs uppercase tracking-wide text-sky-300/80">
-              Pro
+              Professionals
             </p>
             <ul className="space-y-1">
               <li>
@@ -149,4 +147,4 @@ export function MobileMenu({ open, onClose }: Props) {
       `}</style>
     </div>
   );
-}
+        }
