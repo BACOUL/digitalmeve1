@@ -1,67 +1,95 @@
 // lib/watermark-pdf.ts
-import { PDFDocument, rgb, degrees } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, degrees } from "pdf-lib";
+
+export type WatermarkOptions = {
+  text?: string;                 // texte du filigrane
+  position?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center" | "diagonal";
+  opacity?: number;              // 0..1
+  size?: number;                 // taille de police de base
+  margin?: number;               // marge depuis les bords
+  color?: { r: number; g: number; b: number }; // 0..1
+  allPages?: boolean;            // true = toutes les pages, false = seulement la 1ère
+};
 
 /**
- * Ajoute un filigrane discret en bas-droite sur CHAQUE page d'un PDF.
- * - badge ".MEVE CERTIFIED"
- * - texte DigitalMeve (semi-transparent)
+ * Ajoute un filigrane texte sur un PDF et retourne un Blob PDF.
+ * Compatible Node 20/Edge (utilise Response(...).blob() pour éviter les soucis de types).
  */
-export async function addMeveWatermarkToPdf(pdfBlob: Blob): Promise<Blob> {
-  const srcBytes = new Uint8Array(await pdfBlob.arrayBuffer());
-  const pdfDoc = await PDFDocument.load(srcBytes, { ignoreEncryption: true });
+export async function watermarkPdf(
+  input: Blob,
+  {
+    text = "DigitalMeve",
+    position = "bottom-right",
+    opacity = 0.18,
+    size = 14,
+    margin = 16,
+    color = { r: 0.059, g: 0.918, b: 0.776 }, // proche emerald/screen
+    allPages = true,
+  }: WatermarkOptions = {}
+): Promise<Blob> {
+  const buf = await input.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(buf);
+  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const pages = pdfDoc.getPages();
-  for (const page of pages) {
+  const targetPages = allPages ? pages : [pages[0]];
+
+  for (const page of targetPages) {
     const { width, height } = page.getSize();
 
-    // Ruban bas-droite
-    const ribbonW = 170;
-    const ribbonH = 28;
-    const pad = 16;
+    const textWidth = font.widthOfTextAtSize(text, size);
+    const textHeight = font.heightAtSize(size);
 
-    // Fond ruban (dégradé simulé par deux rectangles)
-    page.drawRectangle({
-      x: width - ribbonW - pad,
-      y: pad,
-      width: ribbonW,
-      height: ribbonH,
-      color: rgb(0.06, 0.10, 0.20), // slate-900 approx
-      opacity: 0.78,
-      borderColor: rgb(0.9, 0.9, 0.9),
-      borderWidth: 0.2,
-    });
+    let x = margin;
+    let y = height - textHeight - margin;
+    let rotate = 0;
 
-    // Texte ruban
-    page.drawText(".MEVE CERTIFIED", {
-      x: width - ribbonW - pad + 12,
-      y: pad + 8,
-      size: 10,
-      color: rgb(0.70, 0.95, 0.90), // vert clair
-    });
+    switch (position) {
+      case "top-left":
+        x = margin;
+        y = height - textHeight - margin;
+        break;
+      case "top-right":
+        x = width - textWidth - margin;
+        y = height - textHeight - margin;
+        break;
+      case "bottom-left":
+        x = margin;
+        y = margin;
+        break;
+      case "bottom-right":
+        x = width - textWidth - margin;
+        y = margin;
+        break;
+      case "center":
+        x = (width - textWidth) / 2;
+        y = (height - textHeight) / 2;
+        break;
+      case "diagonal":
+        // diagonale douce au centre
+        rotate = -35;
+        x = (width - textWidth) / 2;
+        y = (height - textHeight) / 2;
+        break;
+    }
 
-    // Surlignage discret (ligne accent)
-    page.drawRectangle({
-      x: width - ribbonW - pad,
-      y: pad + ribbonH - 3,
-      width: ribbonW,
-      height: 2,
-      color: rgb(0.30, 0.85, 0.95), // cyan
-      opacity: 0.6,
-    });
-
-    // “DigitalMeve” en filigrane très léger sur le coin
-    const wm = "DigitalMeve";
-    page.drawText(wm, {
-      x: width - ribbonW - pad + 10,
-      y: pad + ribbonH + 6,
-      size: 12,
-      color: rgb(0.8, 0.95, 0.95),
-      opacity: 0.14,
-      rotate: degrees(0),
+    page.drawText(text, {
+      x,
+      y,
+      size,
+      font,
+      color: rgb(color.r, color.g, color.b),
+      opacity,
+      rotate: rotate ? degrees(rotate) : undefined,
     });
   }
 
-  const bytes = await pdfDoc.save();
-  // Important: utiliser bytes.buffer pour satisfaire le typage BlobPart en Node/Edge
-  return new Blob([bytes.buffer], { type: "application/pdf" });
+  const bytes = await pdfDoc.save(); // Uint8Array
+
+  // ✅ évite les erreurs de typage BlobPart sous Node/Edge
+  const blob = await new Response(bytes, {
+    headers: { "Content-Type": "application/pdf" },
+  }).blob();
+
+  return blob;
 }
