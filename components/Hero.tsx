@@ -23,9 +23,21 @@ export function Hero() {
           <span className="text-slate-100">Standard</span>
         </h1>
 
-        {/* Sous-titre simplifié (sans jargon) */}
+        {/* Sous-titre revisité */}
         <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-          A simple, universal and free digital proof for your documents.
+          DigitalMeve provides a{" "}
+          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent font-semibold">
+            simple
+          </span>
+          ,{" "}
+          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent font-semibold">
+            universal
+          </span>{" "}
+          and{" "}
+          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent font-semibold">
+            free
+          </span>{" "}
+          digital proof for everyone.
         </p>
 
         {/* CTA row */}
@@ -41,7 +53,7 @@ export function Hero() {
           </Link>
         </div>
 
-        {/* Pills (révisés, ton plus chaleureux) */}
+        {/* Pills */}
         <div className="mt-10 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center">
           {[
             "Free · Simple · Instant",
