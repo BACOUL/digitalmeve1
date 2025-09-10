@@ -36,17 +36,17 @@ export default function MobileMenu({ open, onClose }: Props) {
   // Close on ESC
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Simple focus trap: focus first interactive element when opening
+  // Focus first item when opening
   useEffect(() => {
     if (!open || !panelRef.current) return;
-    const first = panelRef.current.querySelector<HTMLElement>("button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])");
+    const first = panelRef.current.querySelector<HTMLElement>(
+      "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
+    );
     first?.focus();
   }, [open]);
 
@@ -62,22 +62,23 @@ export default function MobileMenu({ open, onClose }: Props) {
         onClick={onClose}
       />
 
-      {/* Panel */}
+      {/* FULLSCREEN PANEL */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
         className={[
-          "fixed right-0 top-0 z-[61] h-dvh w-[88%] max-w-[420px]",
-          "bg-slate-950/95 border-l border-white/10",
-          "shadow-[0_0_50px_rgba(34,211,238,0.18)]",
+          "fixed inset-0 z-[61] flex flex-col",
+          "bg-slate-950/95",
+          // petite animation slide-from-top (sans latéral)
           "transition-transform duration-200",
-          open ? "translate-x-0" : "translate-x-full",
+          open ? "translate-y-0" : "-translate-y-2",
+          open ? "pointer-events-auto" : "pointer-events-none",
         ].join(" ")}
       >
-        {/* Close */}
-        <div className="flex items-center justify-between px-4 py-4">
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
             <span className="text-lg font-semibold">
               <span className="text-emerald-300">Digital</span>
@@ -93,7 +94,8 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        <nav className="px-2 pb-8">
+        {/* Scrollable content */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2">
           {/* Individuals */}
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
             Individuals
@@ -131,7 +133,6 @@ export default function MobileMenu({ open, onClose }: Props) {
             </li>
           </ul>
 
-          {/* Divider */}
           <div className="my-4 h-px bg-white/10" />
 
           {/* Professionals */}
