@@ -1,53 +1,36 @@
 // lib/watermark-pdf.ts
-// Ajoute un filigrane “DigitalMeve” sur chaque page PDF (client-side) avec pdf-lib.
-// À importer uniquement depuis des composants client.
+// Filigrane client-side pour PDF via pdf-lib
 
-export async function addPdfWatermark(input: Blob, text = "DigitalMeve") {
-  const { PDFDocument, rgb, degrees, StandardFonts } = await import("pdf-lib");
+export async function addPdfWatermark(input: Blob, text = "DigitalMeve"): Promise<Blob> {
+  // Chargement dynamique pour éviter de gonfler le bundle serveur
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
 
-  // Charge le PDF source
-  const buf = await input.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(buf);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const srcAb = await input.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(srcAb, {
+    ignoreEncryption: true,
+    updateMetadata: false,
+  });
 
-  // Style du filigrane
-  const color = rgb(0.6, 0.9, 0.8);
-  const size = 18;
-  const opacity = 0.22;
+  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontSize = 11;
+  const color = rgb(0.70, 0.93, 0.83); // vert doux
+  const opacity = 0.45;
+  const margin = 14;
 
-  // Applique le filigrane sur chaque page + un petit label en bas à droite
   for (const page of pdfDoc.getPages()) {
     const { width, height } = page.getSize();
+    const label = text;
+    const tw = font.widthOfTextAtSize(label, fontSize);
+    const th = font.heightAtSize(fontSize);
 
-    page.drawText(text, {
-      x: width * 0.08,
-      y: height * 0.08,
-      rotate: degrees(315),
-      size,
-      font,
-      color,
-      opacity,
-    });
+    const x = Math.max(margin, width - tw - margin);
+    const y = Math.max(margin, margin + th * 0.2);
 
-    const label = "· meve";
-    const w2 = font.widthOfTextAtSize(label, 12);
-    page.drawText(label, {
-      x: width - w2 - 16,
-      y: 12,
-      size: 12,
-      font,
-      color,
-      opacity: 0.35,
-    });
+    page.drawText(label, { x, y, size: fontSize, font, color, opacity });
   }
 
-  // Sauvegarde → Uint8Array
   const bytes = await pdfDoc.save(); // Uint8Array
-
-  // ✅ Construit un Blob sans erreur de typage :
-  //    on copie dans un nouveau Uint8Array (ArrayBufferView accepté par BlobPart)
-  const out = new Uint8Array(bytes.length);
-  out.set(bytes);
-
-  return new Blob([out], { type: "application/pdf" });
+  // Conversion sûre -> ArrayBuffer pour satisfaire TS/navigateur/Edge
+  const ab = (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  return new Blob([ab], { type: "application/pdf" });
 }
