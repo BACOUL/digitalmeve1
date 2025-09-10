@@ -4,20 +4,26 @@ import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
-import { buildProofObject } from "@/lib/proof";
+import { buildProofObject, stringifyCanonical } from "@/lib/proof";
 import { buildProofHtml } from "@/lib/proof-html";
 import { FileDown, FileText, ShieldCheck } from "lucide-react";
+import { addPdfWatermark } from "@/lib/watermark-pdf";
 
 // util: nom depuis Content-Disposition
 function filenameFromCD(cd: string | null, fallback: string) {
   const m = cd?.match(/filename="?([^"]+)"?/i);
   return m?.[1] ?? fallback;
 }
+function splitName(name?: string) {
+  if (!name) return { base: "file", ext: "bin" };
+  const m = name.match(/^(.+)\.([^.]+)$/);
+  return m ? { base: m[1], ext: m[2] } : { base: name, ext: "bin" };
+}
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("");
-  const [withProof, setWithProof] = useState(true);
+  const [alsoJson, setAlsoJson] = useState(false);
 
   const [uploadPct, setUploadPct] = useState<number | undefined>(undefined);
   const [processing, setProcessing] = useState(false);
@@ -40,72 +46,77 @@ export default function GeneratePage() {
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
+    if (alsoJson) form.append("also_json", "1");
 
     try {
-      // ---- Upload avec barre de progression (XHR) ----
+      // ---- Upload avec barre de progression (XMLHttpRequest) ----
       const xhr = new XMLHttpRequest();
-      const promise = new Promise<{ blob: Blob; headers: Headers }>(
-        (resolve, reject) => {
-          xhr.open("POST", "/api/proxy/generate", true);
-          xhr.responseType = "blob";
+      const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
+        xhr.open("POST", "/api/proxy/generate", true);
+        xhr.responseType = "blob";
 
-          xhr.upload.onprogress = (ev) => {
-            if (ev.lengthComputable) {
-              const pct = Math.round((ev.loaded / ev.total) * 100);
-              setUploadPct(pct);
+        // progression d'upload
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) {
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            setUploadPct(pct);
+          }
+        };
+
+        xhr.onloadstart = () => {
+          setUploadPct(0);
+          setProcessing(false);
+        };
+
+        xhr.onreadystatechange = () => {
+          // quand l’upload est fini et que le serveur envoie la réponse
+          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+            setProcessing(true);
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.ontimeout = () => reject(new Error("Request timeout"));
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // reconstruire les headers
+            const h = new Headers();
+            const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
+            for (const line of raw) {
+              const parts = line.split(": ");
+              const key = parts.shift();
+              const value = parts.join(": ");
+              if (key) h.append(key, value);
             }
-          };
+            resolve({ blob: xhr.response, headers: h });
+          } else {
+            const reader = new FileReader();
+            reader.onload = () => reject(new Error(String(reader.result || "Generation failed.")));
+            reader.onerror = () => reject(new Error("Generation failed."));
+            reader.readAsText(xhr.response ?? new Blob());
+          }
+        };
 
-          xhr.onloadstart = () => {
-            setUploadPct(0);
-            setProcessing(false);
-          };
+        xhr.send(form);
+      });
 
-          xhr.onreadystatechange = () => {
-            if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-              setProcessing(true);
-            }
-          };
+      let { blob, headers } = await promise;
 
-          xhr.onerror = () => reject(new Error("Network error"));
-          xhr.ontimeout = () => reject(new Error("Request timeout"));
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const h = new Headers();
-              const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
-              for (const line of raw) {
-                const parts = line.split(": ");
-                const key = parts.shift();
-                const value = parts.join(": ");
-                if (key) h.append(key, value);
-              }
-              resolve({ blob: xhr.response, headers: h });
-            } else {
-              const reader = new FileReader();
-              reader.onload = () =>
-                reject(
-                  new Error(
-                    String(reader.result || "Generation failed.")
-                  )
-                );
-              reader.onerror = () => reject(new Error("Generation failed."));
-              reader.readAsText(xhr.response ?? new Blob());
-            }
-          };
-
-          xhr.send(form);
-        }
-      );
-
-      const { blob, headers } = await promise;
-
-      // ---- Téléchargement du document MEVE ----
       const cd = headers.get("Content-Disposition");
       const ct = headers.get("Content-Type") || "";
-      const ext = file.name.split(".").pop() || "bin";
-      const base = file.name.replace(new RegExp(`\\.${ext}$`, "i"), "");
+      const { base, ext } = splitName(file.name);
       const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
 
+      // ✅ Appliquer le filigrane si c’est un PDF
+      if (ct.includes("application/pdf")) {
+        try {
+          blob = await addPdfWatermark(blob, "DigitalMeve");
+        } catch {
+          // En cas d’échec du filigrane, on ne bloque pas le téléchargement
+        }
+      }
+
+      // ---- Téléchargement du document (toujours en priorité) ----
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -115,28 +126,28 @@ export default function GeneratePage() {
       a.remove();
       URL.revokeObjectURL(url);
 
-      // ---- Génération et téléchargement de la preuve HTML ----
-      if (withProof) {
-        const proof = await buildProofObject(file, issuer);
-        const html = buildProofHtml(proof);
-        const proofBlob = new Blob([html], {
-          type: "text/html;charset=utf-8",
-        });
-        const proofUrl = URL.createObjectURL(proofBlob);
-        const proofA = document.createElement("a");
-        proofA.href = proofUrl;
-        proofA.download = `${base}.meve-proof.html`;
-        document.body.appendChild(proofA);
-        proofA.click();
-        proofA.remove();
-        URL.revokeObjectURL(proofUrl);
-      }
-
-      setMsg(`Downloaded ${primaryName}${withProof ? " + proof" : ""}`);
+      setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
 
-      if (ct.includes("application/json")) {
-        // cas transitoire
+      // ---- Si on a demandé aussi la “preuve HTML”, on la propose ensuite (pas en priorité) ----
+      if (alsoJson) {
+        try {
+          const proof = await buildProofObject(file, issuer.trim());
+          const canonical = stringifyCanonical(proof);
+          const html = buildProofHtml(proof, canonical);
+          const proofBlob = new Blob([html], { type: "text/html;charset=utf-8" });
+
+          const proofUrl = URL.createObjectURL(proofBlob);
+          const proofA = document.createElement("a");
+          proofA.href = proofUrl;
+          proofA.download = `${base}.meve.html`;
+          document.body.appendChild(proofA);
+          proofA.click();
+          proofA.remove();
+          URL.revokeObjectURL(proofUrl);
+        } catch {
+          // si la génération HTML échoue, on ignore silencieusement
+        }
       }
     } catch (e: any) {
       setErr(e?.message ?? "Generation failed.");
@@ -148,9 +159,8 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Upload any file. You’ll get <code className="text-slate-300">name.meve.ext</code>{" "}
-        (proof embedded in metadata). Optionally, also download a separate{" "}
-        <code className="text-slate-300">.meve-proof.html</code>.
+        Upload any file. You’ll get <code className="text-slate-300">name.meve.ext</code> (proof embedded in metadata).
+        Optionally, also download a formatted <code className="text-slate-300">name.meve.html</code> proof.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -158,12 +168,7 @@ export default function GeneratePage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              htmlFor="issuer"
-              className="text-sm text-slate-300"
-            >
-              Issuer (optional)
-            </label>
+            <label htmlFor="issuer" className="text-sm text-slate-300">Issuer (optional)</label>
             <input
               id="issuer"
               value={issuer}
@@ -177,24 +182,21 @@ export default function GeneratePage() {
             <label className="flex items-center gap-3 text-sm text-slate-300">
               <input
                 type="checkbox"
-                checked={withProof}
-                onChange={(e) => setWithProof(e.target.checked)}
+                checked={alsoJson}
+                onChange={(e) => setAlsoJson(e.target.checked)}
                 className="h-4 w-4 rounded border-white/20 bg-slate-900"
               />
-              Also download <code>.meve-proof.html</code>
+              Also download formatted <code>.meve.html</code>
             </label>
           </div>
         </div>
 
-        {/* CTA + ProgressBar */}
         <div className="w-full sm:w-auto">
           <CTAButton type="submit" aria-label="Generate proof">
             Generate Proof
           </CTAButton>
           {(uploadPct !== undefined || processing) && (
-            <div className="mt-3">
-              <ProgressBar value={processing ? undefined : uploadPct} />
-            </div>
+            <ProgressBar value={processing ? undefined : uploadPct} />
           )}
         </div>
 
@@ -205,6 +207,22 @@ export default function GeneratePage() {
           DigitalMeve does not store your documents. Files are processed in memory only.
         </p>
       </form>
+
+      {/* mini-légende des actions */}
+      <div className="mt-8 grid gap-3 sm:grid-cols-3 text-sm text-slate-400">
+        <div className="flex items-center gap-2">
+          <FileDown className="h-5 w-5" />
+          <span>Download meve document</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5" />
+          <span>Embedded proof</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          <span>Optional HTML proof</span>
+        </div>
+      </div>
     </section>
   );
-        }
+    }
