@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
-import { CTAButton } from "@/components/CTAButton";
 import { MobileMenu } from "@/components/MobileMenu";
+import { Menu, Users, Briefcase } from "lucide-react";
 
 export function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
@@ -15,47 +15,56 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <BrandLogo />
-          <span className="font-medium text-slate-100">DigitalMeve</span>
+          <span className="sr-only">DigitalMeve</span>
         </Link>
 
         {/* Desktop navigation */}
-        <nav className="hidden items-center space-x-8 md:flex">
-          <Link href="/personal" className="hover:text-emerald-400 transition">
-            Individuals
-          </Link>
-          <Link href="/pro" className="hover:text-emerald-400 transition">
-            Professionals
-          </Link>
-          <Link href="/verify" className="hover:text-emerald-400 transition">
-            Verify
-          </Link>
-          <Link href="/generate" className="inline-flex">
-            <CTAButton aria-label="Start Free">Start Free</CTAButton>
+        <nav className="hidden items-center gap-6 md:flex">
+          {/* Individuals group */}
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-emerald-300" aria-hidden />
+            <Link href="/personal" className="hover:text-emerald-400 transition">Individuals</Link>
+            <span className="text-slate-600">/</span>
+            <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
+            <span className="text-slate-600">/</span>
+            <Link href="/verify" className="hover:text-emerald-400 transition">Verify</Link>
+          </div>
+
+          {/* Professionals group */}
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-sky-300" aria-hidden />
+            <Link href="/pro" className="hover:text-emerald-400 transition">Professionals</Link>
+            <span className="text-slate-600">/</span>
+            <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
+            <span className="text-slate-600">/</span>
+            <Link href="/contact" className="hover:text-emerald-400 transition">Contact</Link>
+          </div>
+
+          {/* Docs */}
+          <Link href="/docs" className="hover:text-emerald-400 transition">Docs</Link>
+
+          {/* CTA */}
+          <Link
+            href="/generate"
+            className="rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-2 font-semibold text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.35)] hover:brightness-110 transition"
+            aria-label="Get started free"
+          >
+            Get Started Free
           </Link>
         </nav>
 
-        {/* Mobile menu */}
-        <div className="md:hidden">
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="rounded-lg p-2 hover:bg-white/10 transition"
-            aria-label="Open menu"
-          >
-            {/* Icône burger */}
-            <svg
-              className="h-6 w-6 text-slate-100"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-
-          <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-        </div>
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setOpen(true)}
+          className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 hover:bg-white/10 md:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
       </div>
+
+      {/* Drawer menu */}
+      <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
-}
+      }
