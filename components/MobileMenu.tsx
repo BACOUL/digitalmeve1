@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import Portal from "@/components/Portal";
 import { Users, FilePlus2, ShieldCheck, BookOpen, Briefcase, Mail, Info, X } from "lucide-react";
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  // ⛔️ IMPORTANT: si fermé, on ne rend rien → plus de X fantôme
+  // si fermé, ne rend rien
   if (!open) return null;
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -35,21 +36,21 @@ export default function MobileMenu({ open, onClose }: Props) {
   }, []);
 
   return (
-    <>
+    <Portal>
       {/* overlay */}
       <div
         aria-hidden={false}
-        className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm opacity-100"
+        className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* panneau plein-écran */}
+      {/* panneau plein-écran via Portal (plus aucun clipping) */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
-        className="fixed inset-0 z-[61] flex flex-col bg-slate-950/95 translate-y-0"
+        className="fixed inset-0 z-[1000] flex flex-col bg-slate-950/95"
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
@@ -132,6 +133,6 @@ export default function MobileMenu({ open, onClose }: Props) {
           </div>
         </nav>
       </div>
-    </>
+    </Portal>
   );
-}
+      }
