@@ -1,28 +1,18 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import {
-  Users,
-  FilePlus2,
-  ShieldCheck,
-  BookOpen,
-  Briefcase,
-  Mail,
-  Info,
-  X,
-} from "lucide-react";
+import { Users, FilePlus2, ShieldCheck, BookOpen, Briefcase, Mail, Info, X } from "lucide-react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
+export default function MobileMenu({ open, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Si pour une raison quelconque on appelle le composant avec open=false,
-  // on ne rend rien (sécurité supplémentaire).
+  // Monte/démonte pour éviter tout chevauchement/surcouche
   if (!open) return null;
 
   // Bloquer le scroll du body
@@ -34,14 +24,14 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
     };
   }, []);
 
-  // Fermer via ESC
+  // ESC pour fermer
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus premier élément
+  // Focus 1er élément
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -51,20 +41,20 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay noir */}
       <div
-        className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm"
         onClick={onClose}
-        aria-hidden
+        className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
+        aria-hidden="true"
       />
 
-      {/* Panneau plein écran — AUCUNE animation/translation */}
+      {/* Panneau plein écran (z > header/hero) */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
-        className="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 overflow-y-auto"
+        className="fixed inset-0 z-[90] flex flex-col bg-slate-950/95"
       >
         {/* Barre du haut */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
@@ -84,39 +74,30 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
         </div>
 
         {/* Contenu */}
-        <nav className="flex-1 px-2 pb-8 pt-2">
-          {/* Individuals */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2">
+          {/* INDIVIDUALS */}
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
             Individuals
           </p>
           <ul className="space-y-2 px-1">
             <li>
-              <Link
-                href="/generate"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <FilePlus2 className="h-5 w-5 text-emerald-300" />
+              <Link href="/generate" onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
+                <FilePlus2 className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
                 <span>Generate</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/verify"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <ShieldCheck className="h-5 w-5 text-emerald-300" />
+              <Link href="/verify" onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
+                <ShieldCheck className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
                 <span>Verify</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/docs"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <BookOpen className="h-5 w-5 text-emerald-300" />
+              <Link href="/docs" onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
+                <BookOpen className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
                 <span>Docs</span>
               </Link>
             </li>
@@ -124,44 +105,35 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
 
           <div className="my-4 h-px bg-white/10" />
 
-          {/* Professionals */}
+          {/* PROFESSIONALS */}
           <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-sky-300/90">
             Professionals
           </p>
           <ul className="space-y-2 px-1">
             <li>
-              <Link
-                href="/pro"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <Briefcase className="h-5 w-5 text-sky-300" />
+              <Link href="/pro" onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
+                <Briefcase className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
                 <span>For Professionals</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/contact"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <Mail className="h-5 w-5 text-sky-300" />
+              <Link href="/contact" onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
+                <Mail className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
                 <span>Contact</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/about"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <Info className="h-5 w-5 text-sky-300" />
+              <Link href="/about" onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
+                <Info className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
                 <span>About</span>
               </Link>
             </li>
           </ul>
 
-          {/* Badge */}
+          {/* Petit badge */}
           <div className="mt-6 px-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-emerald-300">
               <Users className="h-4 w-4" />
@@ -172,6 +144,4 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
       </div>
     </>
   );
-};
-
-export default MobileMenu;
+                }
