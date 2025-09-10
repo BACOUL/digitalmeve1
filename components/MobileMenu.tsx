@@ -1,50 +1,34 @@
-// components/MobileMenu.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import {
-  Users,
-  FilePlus2,
-  ShieldCheck,
-  BookOpen,
-  Briefcase,
-  Mail,
-  Info,
-  X,
-} from "lucide-react";
+import { Users, FilePlus2, ShieldCheck, BookOpen, Briefcase, Mail, Info, X } from "lucide-react";
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-};
+type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  // Si fermé, on ne rend rien (évite toute fuite visuelle)
+  // ⛔️ IMPORTANT: si fermé, on ne rend rien → plus de X fantôme
   if (!open) return null;
 
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Bloque le scroll quand le menu est ouvert
+  // lock scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Fermer avec ESC
+  // ESC pour fermer
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus premier élément
+  // focus premier élément
   useEffect(() => {
-    if (!panelRef.current) return;
-    const first = panelRef.current.querySelector<HTMLElement>(
+    const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
     );
     first?.focus();
@@ -52,22 +36,21 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   return (
     <>
-      {/* Overlay */}
+      {/* overlay */}
       <div
         aria-hidden={false}
-        className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-200 opacity-100"
+        className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm opacity-100"
         onClick={onClose}
       />
 
-      {/* Panneau plein écran */}
+      {/* panneau plein-écran */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
-        className="fixed inset-0 z-[61] flex flex-col bg-slate-950/95 transition-transform duration-200 translate-y-0"
+        className="fixed inset-0 z-[61] flex flex-col bg-slate-950/95 translate-y-0"
       >
-        {/* Barre du haut */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
             <span className="text-lg font-semibold">
@@ -84,7 +67,6 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Contenu */}
         <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2">
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
             Individuals
