@@ -25,26 +25,17 @@ export function MobileMenu({ open, onClose }: Props) {
     <div className="fixed inset-0 z-[60] md:hidden">
       {/* Backdrop */}
       <button
-        aria-label="Close"
+        aria-label="Close menu"
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
       />
 
-      {/* Panel */}
+      {/* Drawer */}
       <div
-        className="
-          absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto
-          border-l border-white/10
-          bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)]
-          shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl
-          animate-[slidein_.22s_ease] will-change-transform
-        "
-        style={{
-          // petite anim CSS si Tailwind n’a pas la keyframe
-          animation: "slidein .22s ease",
-        }}
+        className="absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto border-l border-white/10 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)] shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl animate-[slidein_.22s_ease] will-change-transform"
+        style={{ animation: "slidein .22s ease" }}
       >
-        {/* Header du drawer */}
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
             <BrandLogo />
@@ -52,16 +43,16 @@ export function MobileMenu({ open, onClose }: Props) {
           </Link>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Close menu"
             className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-200 hover:bg-white/10"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Sections */}
+        {/* Nav */}
         <nav className="px-3 py-4">
-          {/* Particuliers */}
+          {/* Individuals */}
           <div className="px-2 py-3">
             <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wide text-emerald-300/80">
               <Users className="h-4 w-4" /> For Individuals
@@ -143,7 +134,7 @@ export function MobileMenu({ open, onClose }: Props) {
         </nav>
       </div>
 
-      {/* petite keyframe inline au cas où */}
+      {/* Keyframes */}
       <style jsx>{`
         @keyframes slidein {
           from {
@@ -158,4 +149,4 @@ export function MobileMenu({ open, onClose }: Props) {
       `}</style>
     </div>
   );
-      }
+}
