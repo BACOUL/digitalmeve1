@@ -12,17 +12,15 @@ type Props = {
 export default function MobileMenu({ open, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Monte/démonte pour éviter tout chevauchement/surcouche
-  if (!open) return null;
-
-  // Bloquer le scroll du body
+  // Bloquer le scroll du body quand open = true
   useEffect(() => {
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (open) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = prev;
     return () => {
       document.body.style.overflow = prev;
     };
-  }, []);
+  }, [open]);
 
   // ESC pour fermer
   useEffect(() => {
@@ -31,30 +29,38 @@ export default function MobileMenu({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus 1er élément
+  // Focus premier élément
   useEffect(() => {
-    const first = panelRef.current?.querySelector<HTMLElement>(
-      "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
-    );
-    first?.focus();
-  }, []);
+    if (open && panelRef.current) {
+      const first = panelRef.current.querySelector<HTMLElement>(
+        "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
+      );
+      first?.focus();
+    }
+  }, [open]);
 
   return (
     <>
-      {/* Overlay noir */}
+      {/* Overlay */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
-        aria-hidden="true"
+        aria-hidden={!open}
+        className={[
+          "fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm transition-opacity duration-200",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        ].join(" ")}
       />
 
-      {/* Panneau plein écran (z > header/hero) */}
+      {/* Panel */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
-        className="fixed inset-0 z-[90] flex flex-col bg-slate-950/95"
+        className={[
+          "fixed inset-0 z-[90] flex flex-col bg-slate-950/95 transition-transform duration-200",
+          open ? "translate-y-0" : "-translate-y-full pointer-events-none",
+        ].join(" ")}
       >
         {/* Barre du haut */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
@@ -73,7 +79,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Contenu */}
+        {/* Contenu scrollable */}
         <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2">
           {/* INDIVIDUALS */}
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
@@ -133,7 +139,7 @@ export default function MobileMenu({ open, onClose }: Props) {
             </li>
           </ul>
 
-          {/* Petit badge */}
+          {/* Badge bas */}
           <div className="mt-6 px-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-emerald-300">
               <Users className="h-4 w-4" />
@@ -144,4 +150,4 @@ export default function MobileMenu({ open, onClose }: Props) {
       </div>
     </>
   );
-                }
+}
