@@ -11,15 +11,15 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md overflow-visible">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Logo */}
+        {/* Logo (uniquement le marqueur visuel) */}
         <Link href="/" className="flex items-center gap-2">
           <BrandLogo />
           <span className="sr-only">DigitalMeve</span>
         </Link>
 
-        {/* Desktop nav */}
+        {/* Desktop navigation */}
         <nav className="hidden items-center space-x-6 md:flex">
           <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
           <Link href="/verify" className="hover:text-emerald-400 transition">Verify</Link>
@@ -42,7 +42,7 @@ export function Header() {
         </button>
       </div>
 
-      {/* Drawer mobile */}
+      {/* Menu mobile plein écran */}
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </header>
   );
