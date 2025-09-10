@@ -1,7 +1,7 @@
+// components/MobileMenu.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -11,6 +11,7 @@ import {
   Briefcase,
   Mail,
   Info,
+  Globe,
   X,
 } from "lucide-react";
 
@@ -20,31 +21,27 @@ type Props = {
 };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // s'assurer que le DOM est prêt pour le portal
-  useEffect(() => setMounted(true), []);
-
-  // Bloquer le scroll du body quand open
+  // Bloquer le scroll
   useEffect(() => {
-    if (!mounted) return;
+    if (!open) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = open ? "hidden" : prev;
+    document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [open, mounted]);
+  }, [open]);
 
-  // ESC pour fermer
+  // Fermer avec ESC
   useEffect(() => {
-    if (!mounted) return;
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, mounted]);
+  }, [open, onClose]);
 
-  // Focus au premier élément à l'ouverture
+  // Focus premier élément
   useEffect(() => {
     if (!open || !panelRef.current) return;
     const first = panelRef.current.querySelector<HTMLElement>(
@@ -53,29 +50,29 @@ export default function MobileMenu({ open, onClose }: Props) {
     first?.focus();
   }, [open]);
 
-  if (!mounted) return null;
-
-  const ui = (
+  return (
     <>
       {/* Overlay */}
       <div
-        onClick={onClose}
         aria-hidden={!open}
         className={[
-          "fixed inset-0 z-[98] bg-black/60 backdrop-blur-sm transition-opacity duration-200",
+          "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-200",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         ].join(" ")}
+        onClick={onClose}
       />
 
-      {/* Panel plein écran au-dessus de tout */}
+      {/* Panel */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
         className={[
-          "fixed inset-0 z-[99] flex flex-col bg-slate-950/95 transition-transform duration-200",
-          open ? "translate-y-0" : "-translate-y-full pointer-events-none",
+          "fixed inset-0 z-[61] flex flex-col bg-slate-950/95",
+          "transition-transform duration-200",
+          open ? "translate-y-0" : "-translate-y-2",
+          open ? "pointer-events-auto" : "pointer-events-none",
         ].join(" ")}
       >
         {/* Barre du haut */}
@@ -96,95 +93,117 @@ export default function MobileMenu({ open, onClose }: Props) {
         </div>
 
         {/* Contenu */}
-        <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2">
-          {/* INDIVIDUALS */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
-            Individuals
-          </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/generate"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <FilePlus2 className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
-                <span>Generate</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/verify"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <ShieldCheck className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
-                <span>Verify</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/docs"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <BookOpen className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
-                <span>Docs</span>
-              </Link>
-            </li>
-          </ul>
+        <nav className="flex-1 overflow-y-auto px-3 pb-8 pt-4 space-y-6">
+          {/* CTA principal */}
+          <Link
+            href="/generate"
+            onClick={onClose}
+            className="block w-full rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-3 text-center font-semibold text-slate-950 hover:opacity-90 transition"
+          >
+            Commencer gratuitement
+          </Link>
 
-          <div className="my-4 h-px bg-white/10" />
+          {/* Particuliers */}
+          <div>
+            <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
+              Particuliers
+            </p>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/generate"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <FilePlus2 className="h-5 w-5 text-emerald-300" />
+                  Générer une preuve
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/verify"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                  Vérifier un document
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/docs"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <BookOpen className="h-5 w-5 text-emerald-300" />
+                  Documentation
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/faq"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <Info className="h-5 w-5 text-emerald-300" />
+                  FAQ
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-          {/* PROFESSIONALS */}
-          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-sky-300/90">
-            Professionals
-          </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/pro"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <Briefcase className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
-                <span>For Professionals</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/contact"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <Mail className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
-                <span>Contact</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/about"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
-              >
-                <Info className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
-                <span>About</span>
-              </Link>
-            </li>
-          </ul>
-
-          {/* Badge bas */}
-          <div className="mt-6 px-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-emerald-300">
-              <Users className="h-4 w-4" />
-              Private by design · No signup
-            </div>
+          {/* Pro */}
+          <div>
+            <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-sky-300/90">
+              Professionnels
+            </p>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/pro"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <Briefcase className="h-5 w-5 text-sky-300" />
+                  Vue d’ensemble Pro
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/pricing"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <Users className="h-5 w-5 text-sky-300" />
+                  Tarifs
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  onClick={onClose}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/5"
+                >
+                  <Mail className="h-5 w-5 text-sky-300" />
+                  Contact
+                </Link>
+              </li>
+            </ul>
           </div>
         </nav>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+          <span>Simple • Universelle • Gratuite</span>
+          <button
+            className="flex items-center gap-1 hover:text-white transition"
+            aria-label="Changer de langue"
+          >
+            <Globe className="h-4 w-4" />
+            FR/EN
+          </button>
+        </div>
       </div>
     </>
   );
-
-  // Rendu au niveau du <body>
-  return createPortal(ui, document.body);
-        }
+}
