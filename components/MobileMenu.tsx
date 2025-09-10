@@ -21,55 +21,50 @@ type Props = {
 const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Bloquer le scroll quand ouvert
+  // Si pour une raison quelconque on appelle le composant avec open=false,
+  // on ne rend rien (sécurité supplémentaire).
+  if (!open) return null;
+
+  // Bloquer le scroll du body
   useEffect(() => {
-    if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, [open]);
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
-  // Fermer avec ESC
+  // Fermer via ESC
   useEffect(() => {
-    if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [onClose]);
 
   // Focus premier élément
   useEffect(() => {
-    if (!open || !panelRef.current) return;
-    const first = panelRef.current.querySelector<HTMLElement>(
+    const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
     );
     first?.focus();
-  }, [open]);
+  }, []);
 
   return (
     <>
       {/* Overlay */}
       <div
-        aria-hidden={!open}
-        className={[
-          "fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm transition-opacity duration-200",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
-        ].join(" ")}
+        className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden
       />
 
-      {/* Panneau plein écran */}
+      {/* Panneau plein écran — AUCUNE animation/translation */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
-        className={[
-          "fixed inset-0 z-[100] flex flex-col bg-slate-950/95",
-          "transition-transform duration-200",
-          open ? "translate-y-0" : "-translate-y-2",
-          open ? "pointer-events-auto" : "pointer-events-none",
-        ].join(" ")}
+        className="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 overflow-y-auto"
       >
         {/* Barre du haut */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
@@ -89,30 +84,39 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
         </div>
 
         {/* Contenu */}
-        <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2">
+        <nav className="flex-1 px-2 pb-8 pt-2">
           {/* Individuals */}
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
             Individuals
           </p>
           <ul className="space-y-2 px-1">
             <li>
-              <Link href="/generate" onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
-                <FilePlus2 className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
+              <Link
+                href="/generate"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
+              >
+                <FilePlus2 className="h-5 w-5 text-emerald-300" />
                 <span>Generate</span>
               </Link>
             </li>
             <li>
-              <Link href="/verify" onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
-                <ShieldCheck className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
+              <Link
+                href="/verify"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
+              >
+                <ShieldCheck className="h-5 w-5 text-emerald-300" />
                 <span>Verify</span>
               </Link>
             </li>
             <li>
-              <Link href="/docs" onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
-                <BookOpen className="h-5 w-5 text-emerald-300 group-hover:scale-110 transition-transform" />
+              <Link
+                href="/docs"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
+              >
+                <BookOpen className="h-5 w-5 text-emerald-300" />
                 <span>Docs</span>
               </Link>
             </li>
@@ -126,29 +130,38 @@ const MobileMenu: React.FC<Props> = ({ open, onClose }) => {
           </p>
           <ul className="space-y-2 px-1">
             <li>
-              <Link href="/pro" onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
-                <Briefcase className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
+              <Link
+                href="/pro"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
+              >
+                <Briefcase className="h-5 w-5 text-sky-300" />
                 <span>For Professionals</span>
               </Link>
             </li>
             <li>
-              <Link href="/contact" onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
-                <Mail className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
+              <Link
+                href="/contact"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
+              >
+                <Mail className="h-5 w-5 text-sky-300" />
                 <span>Contact</span>
               </Link>
             </li>
             <li>
-              <Link href="/about" onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5">
-                <Info className="h-5 w-5 text-sky-300 group-hover:scale-110 transition-transform" />
+              <Link
+                href="/about"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-white/5"
+              >
+                <Info className="h-5 w-5 text-sky-300" />
                 <span>About</span>
               </Link>
             </li>
           </ul>
 
-          {/* Badge bas */}
+          {/* Badge */}
           <div className="mt-6 px-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-emerald-300">
               <Users className="h-4 w-4" />
