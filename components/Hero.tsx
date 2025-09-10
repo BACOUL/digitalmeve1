@@ -1,3 +1,4 @@
+// components/Hero.tsx
 "use client";
 
 import Link from "next/link";
@@ -6,44 +7,34 @@ import { CTAButton } from "@/components/CTAButton";
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* halo doux derrière les CTA */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center"
-      >
+      {/* halo doux */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center">
         <div className="mt-16 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:py-20">
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          <span className="text-slate-100">The </span>
+          <span className="text-slate-100">DigitalMeve — </span>
           <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-            .MEVE
-          </span>{" "}
-          <span className="text-slate-100">Standard</span>
+            The reference for your documents’ authenticity
+          </span>
         </h1>
 
-        {/* Sous-titre revisité */}
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-          DigitalMeve provides a{" "}
-          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent font-semibold">
-            simple
-          </span>
-          ,{" "}
-          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent font-semibold">
-            universal
-          </span>{" "}
-          and{" "}
-          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent font-semibold">
-            free
-          </span>{" "}
-          digital proof for everyone.
+        {/* Sous-titre demandé */}
+        <p className="mx-auto mt-3 max-w-2xl text-base text-slate-300">
+          <span className="font-semibold text-slate-100">Simple</span> •{" "}
+          <span className="font-semibold text-slate-100">Universelle</span> •{" "}
+          <span className="font-semibold text-slate-100">Gratuite</span>
         </p>
 
-        {/* CTA row */}
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
+          DigitalMeve delivers a simple, universal digital proof — free for everyone.
+        </p>
+
+        {/* CTA ligne classique (on garde celui-ci) */}
         <div className="mt-8 flex items-center justify-center gap-4">
           <Link href="/generate" className="inline-flex">
-            <CTAButton aria-label="Start Free">Start Free</CTAButton>
+            <CTAButton aria-label="Generate a proof">Get Started Free</CTAButton>
           </Link>
           <Link
             href="/verify"
@@ -51,23 +42,6 @@ export function Hero() {
           >
             Verify a proof
           </Link>
-        </div>
-
-        {/* Pills */}
-        <div className="mt-10 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center">
-          {[
-            "Free · Simple · Instant",
-            "Works with PDF & images",
-            "Open standard",
-            "API & CLI",
-          ].map((label) => (
-            <span
-              key={label}
-              className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 text-sm text-slate-300 backdrop-blur-md"
-            >
-              {label}
-            </span>
-          ))}
         </div>
       </div>
     </section>
