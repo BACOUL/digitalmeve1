@@ -9,7 +9,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-[80] w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
@@ -28,7 +28,7 @@ export default function Header() {
           <Link href="/contact" className="hover:text-emerald-400 transition">Contact</Link>
         </nav>
 
-        {/* Hamburger (mobile) */}
+        {/* Mobile trigger */}
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
@@ -38,8 +38,8 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Afficher le menu SEULEMENT quand open = true */}
-      {open && <MobileMenu open={open} onClose={() => setOpen(false)} />}
+      {/* Mobile full-screen menu (au-dessus de tout) */}
+      <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
 }
