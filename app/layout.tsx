@@ -1,12 +1,52 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header"; // ✅ import par défaut
+import Header from "@/components/Header";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "DigitalMeve — The .MEVE Standard",
   description:
     "DigitalMeve delivers a simple, universal digital proof — free for individuals.",
-  icons: { icon: "/favicon.ico" },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "DigitalMeve",
+    title: "DigitalMeve — The .MEVE Standard",
+    description:
+      "DigitalMeve delivers a simple, universal digital proof — free for individuals.",
+    images: [
+      {
+        url: "/og/og-image.png", // ajoute ce fichier (1200x630) dans /public/og/
+        width: 1200,
+        height: 630,
+        alt: "DigitalMeve — The .MEVE Standard",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DigitalMeve — The .MEVE Standard",
+    description:
+      "DigitalMeve delivers a simple, universal digital proof — free for individuals.",
+    images: ["/og/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png", // optionnel si tu l’ajoutes
+  },
+  applicationName: "DigitalMeve",
+  referrer: "strict-origin-when-cross-origin",
+  other: {
+    "theme-color": "#0B1220",
+  },
 };
 
 export default function RootLayout({
