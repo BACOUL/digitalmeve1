@@ -3,9 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  X, ArrowRight, Users, ShieldCheck, FilePlus2, HelpCircle, Briefcase
-} from "lucide-react";
+import { X, ArrowRight, Users, ShieldCheck, FilePlus2, HelpCircle, Briefcase } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 
 type Props = { open: boolean; onClose: () => void };
@@ -30,11 +28,7 @@ export function MobileMenu({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  // 🔹 Menu ESSENTIEL, différencié Particuliers / Pros, sans 404
-  const groups: {
-    title: string;
-    items: { href: string; label: string; icon: JSX.Element }[];
-  }[] = [
+  const groups: { title: string; items: { href: string; label: string; icon: JSX.Element }[] }[] = [
     {
       title: "Individuals",
       items: [
@@ -65,12 +59,8 @@ export function MobileMenu({ open, onClose }: Props) {
         onClick={onClose}
       />
 
-      {/* Panel glass + glow */}
-      <div
-        className="absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto border-l border-white/10
-        bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)]
-        shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl animate-[slidein_.22s_ease] will-change-transform"
-      >
+      {/* Panel glass + glow (⚠️ classe sur UNE SEULE LIGNE) */}
+      <div className="absolute right-0 top-0 h-full w-80 max-w-[86%] overflow-y-auto border-l border-white/10 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(16,185,129,0.14),rgba(56,189,248,0.10)_45%,rgba(2,6,23,0.92)_70%)] shadow-[0_0_50px_rgba(34,211,238,0.18)] backdrop-blur-xl animate-[slidein_.22s_ease] will-change-transform">
         {/* Brand + Close */}
         <div className="flex items-center justify-between px-4 py-4">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
@@ -90,22 +80,19 @@ export function MobileMenu({ open, onClose }: Props) {
         <nav className="mt-2 px-2 pb-6">
           {groups.map((group) => (
             <div key={group.title} className="mb-5">
-              <div className="px-3 pb-2 text-xs uppercase tracking-wide text-slate-400/80">
-                {group.title}
-              </div>
+              <div className="px-3 pb-2 text-xs uppercase tracking-wide text-slate-400/80">{group.title}</div>
               <ul className="space-y-1">
                 {group.items.map((item, i) => {
-                  const active =
-                    pathname === item.href ||
-                    (item.href.includes("#") && pathname === item.href.split("#")[0]);
+                  const active = pathname === item.href || (item.href.includes("#") && pathname === item.href.split("#")[0]);
                   return (
                     <li key={item.href}>
                       <Link
                         ref={i === 0 ? firstLinkRef : undefined}
                         href={item.href}
                         onClick={onClose}
-                        className={`group flex items-center justify-between rounded-xl px-3 py-3 text-base outline-none transition
-                          ${active ? "bg-white/10 text-slate-100" : "text-slate-200 hover:bg-white/5 focus:bg-white/10"}`}
+                        className={`group flex items-center justify-between rounded-xl px-3 py-3 text-base outline-none transition ${
+                          active ? "bg-white/10 text-slate-100" : "text-slate-200 hover:bg-white/5 focus:bg-white/10"
+                        }`}
                       >
                         <span className="flex items-center gap-3">
                           {item.icon}
@@ -121,12 +108,11 @@ export function MobileMenu({ open, onClose }: Props) {
           ))}
 
           {/* CTA en bas — Individuals d’abord */}
-          <div className="mt-6 px-1">
+          <div className="mt-6 px-1 pb-6">
             <Link
               href="/generate"
               onClick={onClose}
-              className="block rounded-2xl px-4 py-3 text-center text-slate-900 font-medium
-              bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_36px_rgba(34,211,238,0.28)] hover:brightness-110 transition"
+              className="block rounded-2xl px-4 py-3 text-center text-slate-900 font-medium bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_36px_rgba(34,211,238,0.28)] hover:brightness-110 transition"
             >
               Start now — it’s free
             </Link>
@@ -137,10 +123,16 @@ export function MobileMenu({ open, onClose }: Props) {
 
       <style jsx>{`
         @keyframes slidein {
-          from { transform: translateX(22%); opacity: 0.6; }
-          to { transform: translateX(0); opacity: 1; }
+          from {
+            transform: translateX(22%);
+            opacity: 0.6;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
       `}</style>
     </div>
   );
-    }
+}
