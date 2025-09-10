@@ -47,7 +47,7 @@ export default function GeneratePage() {
         xhr.responseType = "blob";
 
         // progression d'upload
-        xhr.upload.onprogress = (ev) => {
+        xhr.upload.onprogress = (ev: ProgressEvent<EventTarget>) => {
           if (ev.lengthComputable) {
             const pct = Math.round((ev.loaded / ev.total) * 100);
             setUploadPct(pct);
@@ -89,7 +89,8 @@ export default function GeneratePage() {
           }
         };
 
-        xhr.send(new FormData(form));
+        // ❗️FIX: on envoie directement `form` (qui est déjà un FormData)
+        xhr.send(form);
       });
 
       const { blob, headers } = await promise;
@@ -99,15 +100,7 @@ export default function GeneratePage() {
       const ct = headers.get("Content-Type") || "";
       const ext = file.name.split(".").pop() || "bin";
       const base = file.name.replace(new RegExp(`\\.${ext}$`, "i"), "");
-
-      // si le proxy n'a pas fixé le nom, fallback propre :
-      // - binaire intégré => name.meve.ext
-      // - json => name.ext.meve.json (le proxy peut aussi le donner en CD)
-      const defaultName = ct.includes("application/json")
-        ? `${base}.${ext}.meve.json`
-        : `${base}.meve.${ext}`;
-
-      const primaryName = filenameFromCD(cd, defaultName);
+      const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -120,6 +113,12 @@ export default function GeneratePage() {
 
       setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
+
+      // Si le backend renvoie (temporairement) du JSON au lieu d'un binaire,
+      // le nom fallback devient `${base}.${ext}.meve.json` via le header du proxy.
+      if (ct.includes("application/json")) {
+        // rien à faire de plus
+      }
     } catch (e: any) {
       setErr(e?.message ?? "Generation failed.");
       setProcessing(false);
@@ -130,29 +129,13 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Upload any document. You’ll get <code className="text-slate-300">name.meve.ext</code> (proof embedded).
-        Optionally, download a separate <code className="text-slate-300">name.ext.meve.json</code>.
+        Upload any file. You’ll get <code className="text-slate-300">name.meve.ext</code> (proof embedded in metadata).
+        Optionally, also download a separate <code className="text-slate-300">name.ext.meve.json</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
-        {/* Dropzone */}
         <FileDropzone onSelected={setFile} />
 
-        {/* NOM DU FICHIER SÉLECTIONNÉ */}
-        <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3 text-sm text-slate-300">
-          {file ? (
-            <div className="flex items-center justify-between gap-3">
-              <span className="truncate">Selected: <strong className="text-slate-100">{file.name}</strong></span>
-              <span className="shrink-0 text-slate-400">
-                {(file.size / 1024 / 1024).toFixed(2)} MB
-              </span>
-            </div>
-          ) : (
-            <span className="text-slate-400">No file selected yet.</span>
-          )}
-        </div>
-
-        {/* Options */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="issuer" className="text-sm text-slate-300">Issuer (optional)</label>
@@ -178,21 +161,13 @@ export default function GeneratePage() {
           </div>
         </div>
 
-        {/* CTA + barre de progression */}
+        {/* CTA + barre fine collée dessous */}
         <div className="w-full sm:w-auto">
-          <CTAButton
-            type="submit"
-            aria-label="Generate proof"
-            disabled={!file || processing || (uploadPct !== undefined && uploadPct < 100)}
-            className={!file ? "opacity-60 cursor-not-allowed" : ""}
-          >
-            {processing ? "Processing…" : uploadPct !== undefined && uploadPct < 100 ? `Uploading ${uploadPct}%` : "Generate Proof"}
+          <CTAButton type="submit" aria-label="Generate proof">
+            Generate Proof
           </CTAButton>
-
           {(uploadPct !== undefined || processing) && (
-            <div className="mt-2">
-              <ProgressBar value={processing ? undefined : uploadPct} />
-            </div>
+            <ProgressBar value={processing ? undefined : uploadPct} />
           )}
         </div>
 
@@ -200,9 +175,9 @@ export default function GeneratePage() {
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
         <p className="mt-6 text-xs text-slate-500">
-          Your document remains readable. Proof is embedded in metadata or saved as a portable <code>.meve.json</code>.
+          DigitalMeve does not store your documents. Files are processed in memory only.
         </p>
       </form>
     </section>
   );
-          }
+              }
