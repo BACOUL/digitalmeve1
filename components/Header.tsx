@@ -19,7 +19,7 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Nav desktop */}
+        {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
           <Link href="/generate" className="hover:text-emerald-400 transition">Generate</Link>
           <Link href="/verify" className="hover:text-emerald-400 transition">Verify</Link>
@@ -28,7 +28,7 @@ export default function Header() {
           <Link href="/contact" className="hover:text-emerald-400 transition">Contact</Link>
         </nav>
 
-        {/* Bouton hamburger (mobile seulement) */}
+        {/* Hamburger (mobile) */}
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
@@ -38,8 +38,8 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Menu plein écran mobile */}
-      <MobileMenu open={open} onClose={() => setOpen(false)} />
+      {/* Afficher le menu SEULEMENT quand open = true */}
+      {open && <MobileMenu open={open} onClose={() => setOpen(false)} />}
     </header>
   );
 }
