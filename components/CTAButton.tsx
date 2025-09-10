@@ -1,47 +1,28 @@
 "use client";
 
-import Link from "next/link";
-import { BrandLogo } from "@/components/BrandLogo";
-import { CTAButton } from "@/components/CTAButton";
-import { MobileMenu } from "@/components/MobileMenu";
+import { cn } from "@/lib/utils";
 
-export function Header() {
+export interface CTAButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+
+export function CTAButton({ children, className, ...props }: CTAButtonProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/70 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <BrandLogo />
-          <span className="font-medium text-slate-100">DigitalMeve</span>
-        </Link>
-
-        {/* Desktop navigation */}
-        <nav className="hidden items-center space-x-8 md:flex">
-          <Link href="/generate" className="hover:text-emerald-400 transition">
-            Generate
-          </Link>
-          <Link href="/verify" className="hover:text-emerald-400 transition">
-            Verify
-          </Link>
-          <Link href="/docs" className="hover:text-emerald-400 transition">
-            Docs
-          </Link>
-          <Link href="/pro" className="hover:text-emerald-400 transition">
-            Pro
-          </Link>
-          <Link href="/contact" className="hover:text-emerald-400 transition">
-            Contact
-          </Link>
-          <Link href="/generate" className="inline-flex">
-            <CTAButton aria-label="Start Free">Start Free</CTAButton>
-          </Link>
-        </nav>
-
-        {/* Mobile menu */}
-        <div className="md:hidden">
-          <MobileMenu />
-        </div>
-      </div>
-    </header>
+    <button
+      {...props}
+      className={cn(
+        "relative inline-flex items-center justify-center px-5 py-2.5 rounded-2xl font-semibold text-slate-900",
+        "bg-gradient-to-r from-emerald-400 to-sky-400",
+        "shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:brightness-110",
+        "transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2",
+        className
+      )}
+    >
+      {children}
+    </button>
   );
 }
+
+// ✅ On exporte aussi par défaut (si certains fichiers utilisent import CTAButton from …)
+export default CTAButton;
