@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
+import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
-import ProofPreview from "@/components/ProofPreview";
-import { generateProofForFile, downloadBlob, downloadJson, stringifyCanonical } from "@/lib/meve";
-import { watermarkImage } from "@/lib/watermark";
-import { watermarkPdf } from "@/lib/watermark-pdf";
 
-// Utilitaire nom à partir des headers
+// Utilitaire pour extraire le nom de fichier depuis Content-Disposition
 function filenameFromCD(cd: string | null, fallback: string) {
   const m = cd?.match(/filename="?([^"]+)"?/i);
   return m?.[1] ?? fallback;
 }
+
+// Petit helper local pour découper "name.ext"
 function splitName(name?: string) {
   if (!name) return { base: "file", ext: "bin" };
   const m = name.match(/^(.+)\.([^.]+)$/);
@@ -22,8 +21,7 @@ function splitName(name?: string) {
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("");
-  const [alsoJson, setAlsoJson] = useState(true);
-  const [addMark, setAddMark] = useState(true);
+  const [alsoJson, setAlsoJson] = useState(false);
 
   const [uploadPct, setUploadPct] = useState<number | undefined>(undefined);
   const [processing, setProcessing] = useState(false);
@@ -31,10 +29,7 @@ export default function GeneratePage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
-  const [lastProof, setLastProof] = useState<any | null>(null);
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setErr(null);
@@ -46,54 +41,43 @@ export default function GeneratePage() {
       return;
     }
 
-    // 1) Toujours fabriquer la preuve côté client (sidecar)
-    const proof = await generateProofForFile(file, issuer.trim() || undefined);
-    setLastProof(proof);
+    const form = new FormData();
+    form.append("file", file);
+    if (issuer.trim()) form.append("issuer", issuer.trim());
+    if (alsoJson) form.append("also_json", "1");
 
-    // 2) Option : filigraner le fichier côté client si c’est une image/PDF
-    let preparedFile: File | Blob = file;
     try {
-      if (addMark) {
-        if (file.type.startsWith("image/")) {
-          preparedFile = await watermarkImage(file);
-        } else if (file.type === "application/pdf") {
-          preparedFile = await watermarkPdf(file);
-        }
-        // sinon : on laisse tel quel (autres formats)
-      }
-    } catch {
-      // filigrane non bloquant
-    }
-
-    // 3) Appel API proxy pour obtenir le binaire “.meve.ext” (si dispo)
-    //    On envoie le fichier préparé (filigrané si applicable)
-    try {
-      const form = new FormData();
-      const inputName = file.name;
-      const { base, ext } = splitName(inputName);
-      const uploadName = addMark
-        ? `${base}-marked.${ext}`
-        : inputName;
-
-      form.append("file", preparedFile, uploadName);
-      if (issuer.trim()) form.append("issuer", issuer.trim());
-
+      // ---- Upload avec barre de progression (XMLHttpRequest) ----
       const xhr = new XMLHttpRequest();
       const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
         xhr.open("POST", "/api/proxy/generate", true);
         xhr.responseType = "blob";
 
+        // progression d'upload
         xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 100));
+          if (ev.lengthComputable) {
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            setUploadPct(pct);
+          }
         };
-        xhr.onloadstart = () => { setUploadPct(0); setProcessing(false); };
+
+        xhr.onloadstart = () => {
+          setUploadPct(0);
+          setProcessing(false);
+        };
+
         xhr.onreadystatechange = () => {
-          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) setProcessing(true);
+          // une fois l'upload fini et la réponse en cours -> état "processing"
+          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+            setProcessing(true);
+          }
         };
+
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.ontimeout = () => reject(new Error("Request timeout"));
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
+            // reconstruire les headers
             const h = new Headers();
             const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
             for (const line of raw) {
@@ -104,51 +88,54 @@ export default function GeneratePage() {
             }
             resolve({ blob: xhr.response, headers: h });
           } else {
-            // si backend pas prêt → on ne bloque pas, on tombera sur la preuve sidecar
-            resolve({ blob: new Blob([], { type: "application/octet-stream" }), headers: new Headers() });
+            // lire l'erreur texte si possible
+            const reader = new FileReader();
+            reader.onload = () => reject(new Error(String(reader.result || "Generation failed.")));
+            reader.onerror = () => reject(new Error("Generation failed."));
+            reader.readAsText(xhr.response ?? new Blob());
           }
         };
+
         xhr.send(form);
       });
 
       const { blob, headers } = await promise;
 
+      // ---- Téléchargement du résultat ----
       const cd = headers.get("Content-Disposition");
       const ct = headers.get("Content-Type") || "";
-      const { base, ext } = splitName(file.name);
-      // nom cible quand binaire renvoyé
-      const primaryName = cd?.match(/filename="?([^"]+)"?/i)?.[1] ?? `${base}.meve.${ext}`;
+      const { base: baseName, ext: extName } = splitName(file.name); // ✅ évite le conflit
+      const primaryName =
+        cd?.match(/filename="?([^"]+)"?/i)?.[1] ?? `${baseName}.meve.${extName}`;
 
-      if (blob.size > 0 && !ct.includes("application/json")) {
-        downloadBlob(blob, primaryName);
-        setMsg(`Downloaded ${primaryName}`);
-      } else {
-        // Fallback si l’API n’a pas renvoyé le binaire
-        setMsg("Server binary not available — using local proof only.");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = primaryName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      setMsg(`Downloaded ${primaryName}`);
+      setProcessing(false);
+
+      // Si le backend renvoie du JSON (cas temporaire), on garde le fallback .meve.json
+      if (ct.includes("application/json")) {
+        // aucun traitement supplémentaire requis ici
       }
     } catch (e: any) {
-      // On ne bloque pas la suite : la preuve sidecar reste dispo
-      setErr(e?.message ?? "Generation error (binary). Proof sidecar still available.");
-    } finally {
+      setErr(e?.message ?? "Generation failed.");
       setProcessing(false);
     }
-
-    // 4) Télécharger la preuve .meve.json si coché
-    if (alsoJson) {
-      const { base, ext } = splitName(file.name);
-      downloadJson(proof, `${base}.${ext}.meve.json`, true /* pretty */);
-    }
-
-    // 5) Ouvrir la prévisualisation
-    setProofPreviewOpen(true);
   }
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Your document stays readable. Get a <code className="text-slate-300">name.meve.ext</code> (metadata-embedded) and optionally a portable
-        <code className="text-slate-300"> .meve.json</code> certificate.
+        Upload any file. You’ll get <code className="text-slate-300">name.meve.ext</code> (proof embedded in metadata).
+        Optionally, also download a separate <code className="text-slate-300">name.ext.meve.json</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -166,7 +153,7 @@ export default function GeneratePage() {
             />
           </div>
 
-          <div className="flex flex-col justify-end gap-2">
+          <div className="flex items-end">
             <label className="flex items-center gap-3 text-sm text-slate-300">
               <input
                 type="checkbox"
@@ -174,28 +161,16 @@ export default function GeneratePage() {
                 onChange={(e) => setAlsoJson(e.target.checked)}
                 className="h-4 w-4 rounded border-white/20 bg-slate-900"
               />
-              Also download <code>.meve.json</code> certificate
-            </label>
-
-            <label className="flex items-center gap-3 text-sm text-slate-300">
-              <input
-                type="checkbox"
-                checked={addMark}
-                onChange={(e) => setAddMark(e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-slate-900"
-              />
-              Add a discreet corner mark
+              Also download a separate <code>.meve.json</code>
             </label>
           </div>
         </div>
 
+        {/* CTA + barre fine collée dessous */}
         <div className="w-full sm:w-auto">
-          <button
-            type="submit"
-            className="rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-5 py-2.5 font-semibold text-slate-950 shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:brightness-110 transition"
-          >
+          <CTAButton type="submit" aria-label="Generate proof">
             Generate Proof
-          </button>
+          </CTAButton>
           {(uploadPct !== undefined || processing) && (
             <ProgressBar value={processing ? undefined : uploadPct} />
           )}
@@ -208,18 +183,6 @@ export default function GeneratePage() {
           DigitalMeve does not store your documents. Files are processed in memory only.
         </p>
       </form>
-
-      {/* Modal de prévisualisation */}
-      <ProofPreview
-        open={proofPreviewOpen}
-        onClose={() => setProofPreviewOpen(false)}
-        json={lastProof}
-        onDownload={() => {
-          if (!file || !lastProof) return;
-          const { base, ext } = splitName(file.name);
-          downloadJson(lastProof, `${base}.${ext}.meve.json`, true);
-        }}
-      />
     </section>
   );
-                                }
+        }
