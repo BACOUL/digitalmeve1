@@ -9,7 +9,7 @@ import { buildProofHtml } from "@/lib/proof-html";
 import { FileDown, FileText, ShieldCheck } from "lucide-react";
 import { addPdfWatermark } from "@/lib/watermark-pdf";
 
-// util: nom depuis Content-Disposition
+// --- Helpers ---
 function filenameFromCD(cd: string | null, fallback: string) {
   const m = cd?.match(/filename="?([^"]+)"?/i);
   return m?.[1] ?? fallback;
@@ -23,7 +23,7 @@ function splitName(name?: string) {
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("");
-  const [alsoJson, setAlsoJson] = useState(false);
+  const [alsoHtml, setAlsoHtml] = useState(false);
 
   const [uploadPct, setUploadPct] = useState<number | undefined>(undefined);
   const [processing, setProcessing] = useState(false);
@@ -46,40 +46,35 @@ export default function GeneratePage() {
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (alsoJson) form.append("also_json", "1");
+    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce champ côté API mais on sert un .html côté front
 
     try {
-      // ---- Upload avec barre de progression (XMLHttpRequest) ----
+      // ---- Upload + progression (XHR) ----
       const xhr = new XMLHttpRequest();
       const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
         xhr.open("POST", "/api/proxy/generate", true);
         xhr.responseType = "blob";
 
-        // progression d'upload
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) {
             const pct = Math.round((ev.loaded / ev.total) * 100);
             setUploadPct(pct);
           }
         };
-
         xhr.onloadstart = () => {
           setUploadPct(0);
           setProcessing(false);
         };
-
         xhr.onreadystatechange = () => {
-          // quand l’upload est fini et que le serveur envoie la réponse
+          // Quand l’upload est terminé et que les headers de la réponse arrivent
           if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
             setProcessing(true);
           }
         };
-
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.ontimeout = () => reject(new Error("Request timeout"));
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            // reconstruire les headers
             const h = new Headers();
             const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
             for (const line of raw) {
@@ -102,35 +97,39 @@ export default function GeneratePage() {
 
       let { blob, headers } = await promise;
 
+      // ---- Nom & type retournés par l’API ----
       const cd = headers.get("Content-Disposition");
       const ct = headers.get("Content-Type") || "";
       const { base, ext } = splitName(file.name);
       const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
 
-      // ✅ Appliquer le filigrane si c’est un PDF
-      if (ct.includes("application/pdf")) {
+      // ✅ Filigrane pour PDF (détection robuste : Content-Type OU extension)
+      const isPdf = ct.includes("application/pdf") || ext.toLowerCase() === "pdf";
+      if (isPdf) {
         try {
           blob = await addPdfWatermark(blob, "DigitalMeve");
-        } catch {
-          // En cas d’échec du filigrane, on ne bloque pas le téléchargement
+        } catch (e) {
+          console.warn("Watermark failed, using original file:", e);
         }
       }
 
-      // ---- Téléchargement du document (toujours en priorité) ----
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = primaryName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // ---- Téléchargement prioritaire du document .meve.EXT ----
+      {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = primaryName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
 
       setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
 
-      // ---- Si on a demandé aussi la “preuve HTML”, on la propose ensuite (pas en priorité) ----
-      if (alsoJson) {
+      // ---- Option : proposer ensuite la preuve HTML formatée (jamais en premier) ----
+      if (alsoHtml) {
         try {
           const proof = await buildProofObject(file, issuer.trim());
           const canonical = stringifyCanonical(proof);
@@ -146,7 +145,7 @@ export default function GeneratePage() {
           proofA.remove();
           URL.revokeObjectURL(proofUrl);
         } catch {
-          // si la génération HTML échoue, on ignore silencieusement
+          // On ignore si la génération de la preuve HTML échoue
         }
       }
     } catch (e: any) {
@@ -182,8 +181,8 @@ export default function GeneratePage() {
             <label className="flex items-center gap-3 text-sm text-slate-300">
               <input
                 type="checkbox"
-                checked={alsoJson}
-                onChange={(e) => setAlsoJson(e.target.checked)}
+                checked={alsoHtml}
+                onChange={(e) => setAlsoHtml(e.target.checked)}
                 className="h-4 w-4 rounded border-white/20 bg-slate-900"
               />
               Also download formatted <code>.meve.html</code>
@@ -196,7 +195,9 @@ export default function GeneratePage() {
             Generate Proof
           </CTAButton>
           {(uploadPct !== undefined || processing) && (
-            <ProgressBar value={processing ? undefined : uploadPct} />
+            <div className="mt-3">
+              <ProgressBar value={processing ? undefined : uploadPct} />
+            </div>
           )}
         </div>
 
@@ -208,7 +209,7 @@ export default function GeneratePage() {
         </p>
       </form>
 
-      {/* mini-légende des actions */}
+      {/* Légende des actions */}
       <div className="mt-8 grid gap-3 sm:grid-cols-3 text-sm text-slate-400">
         <div className="flex items-center gap-2">
           <FileDown className="h-5 w-5" />
@@ -225,4 +226,5 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-    }
+}
+```0
