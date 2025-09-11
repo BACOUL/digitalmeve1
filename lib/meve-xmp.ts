@@ -7,24 +7,27 @@ export async function sha256Hex(blob: Blob | ArrayBuffer): Promise<string> {
   const buf = blob instanceof Blob ? await blob.arrayBuffer() : blob;
   const hash = await crypto.subtle.digest("SHA-256", buf);
   const bytes = new Uint8Array(hash);
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function escapeXml(s: string) {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
 
 // XMP minimal + notre espace de noms "meve"
 function buildXmpPacket(fields: {
-  createdAtISO: string;
+  createdAtISO: string;       // ex: 2025-03-01T12:34:56.789Z
   issuer?: string;
   issuerType?: "personal" | "pro" | "official";
   issuerWebsite?: string;
-  docSha256: string; // hash de l'original
+  docSha256: string;          // hash de l'original (pré-filigrane)
 }) {
-  const {
-    createdAtISO,
-    issuer = "",
-    issuerType = "personal",
-    issuerWebsite = "",
-    docSha256,
-  } = fields;
+  const { createdAtISO, issuer = "", issuerType = "personal", issuerWebsite = "", docSha256 } = fields;
 
   return `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
@@ -49,27 +52,12 @@ function buildXmpPacket(fields: {
 <?xpacket end="w"?>`;
 }
 
-function escapeXml(s: string) {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
-
 // --- Écriture ----------------------------------------------
 
-/**
- * Ajoute (ou remplace) les métadonnées XMP MEVE dans un PDF.
- * @param inputPDF Blob/ArrayBuffer du PDF (déjà filigrané si tu veux)
- * @param fields { docSha256, createdAtISO, issuer? ... }
- * @returns Blob PDF avec XMP MEVE
- */
 export async function embedMeveXmp(
   inputPDF: Blob | ArrayBuffer,
   fields: {
-    docSha256: string;      // SHA-256 de l'original AVANT transformation
+    docSha256: string;      // SHA-256 de l'original AVANT watermark
     createdAtISO: string;   // new Date().toISOString()
     issuer?: string;
     issuerType?: "personal" | "pro" | "official";
@@ -80,22 +68,17 @@ export async function embedMeveXmp(
   const pdfDoc = await PDFDocument.load(ab);
 
   const xmp = buildXmpPacket(fields);
-  // @ts-ignore (typages incomplets selon pdf-lib)
+  // @ts-ignore: méthode supportée par pdf-lib mais pas typée
   pdfDoc.setXmpMetadata?.(xmp);
 
-  // Redondance (utile pour debug)
+  // Redondance utile pour debug
   pdfDoc.setSubject("DigitalMeve");
   pdfDoc.setKeywords(["MEVE", "DigitalMeve", "proof"]);
   pdfDoc.setProducer("DigitalMeve");
 
-  const bytes = await pdfDoc.save(); // Uint8Array
-
-  // ✅ Conversion robuste en Blob (typage Next/Vercel)
-  const baseBuffer = bytes.buffer as ArrayBuffer;
-  const cleanAB = baseBuffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength
-  );
+  const bytes = await pdfDoc.save();
+  const base = bytes.buffer as ArrayBuffer;
+  const cleanAB = base.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   return new Blob([cleanAB], { type: "application/pdf" });
 }
 
@@ -110,9 +93,7 @@ export type MeveXmpInfo = {
   doc_sha256?: string;
 };
 
-export async function readMeveXmp(
-  inputPDF: Blob | ArrayBuffer
-): Promise<{ xmp?: string; meve?: MeveXmpInfo }> {
+export async function readMeveXmp(inputPDF: Blob | ArrayBuffer): Promise<{ xmp?: string; meve?: MeveXmpInfo }> {
   const ab = inputPDF instanceof Blob ? await inputPDF.arrayBuffer() : inputPDF;
   const pdfDoc = await PDFDocument.load(ab);
   // @ts-ignore
@@ -120,30 +101,22 @@ export async function readMeveXmp(
 
   if (!xmp) return { xmp: undefined, meve: {} };
 
+  const pick = (tag: string) =>
+    (xmp.match(new RegExp(`${tag}="([^"]*)"`, "i")) ||
+      xmp.match(new RegExp(`<${tag}>([^<]+)</${tag}>`, "i")))?.[1];
+
   const meve: MeveXmpInfo = {
-    version: pickTag(xmp, "meve:version"),
-    created_at: pickTag(xmp, "meve:created_at"),
-    issuer_identity: pickTag(xmp, "meve:issuer_identity"),
-    issuer_type: pickTag(xmp, "meve:issuer_type"),
-    issuer_website: pickTag(xmp, "meve:issuer_website"),
-    doc_sha256: pickTag(xmp, "meve:doc_sha256"),
+    version: pick("meve:version"),
+    created_at: pick("meve:created_at"),
+    issuer_identity: pick("meve:issuer_identity"),
+    issuer_type: pick("meve:issuer_type"),
+    issuer_website: pick("meve:issuer_website"),
+    doc_sha256: pick("meve:doc_sha256"),
   };
 
   return { xmp, meve };
 }
 
-function pickTag(xmp: string, tag: string): string | undefined {
-  const m =
-    xmp.match(new RegExp(`${tag}="([^"]*)"`, "i")) || // attribut
-    xmp.match(new RegExp(`<${tag}>([^<]+)</${tag}>`, "i")); // ou élément
-  return m?.[1];
-}
-
-/**
- * Vérifie un PDF MEVE :
- *  - si original fourni, compare son SHA-256 à meve:doc_sha256 ➜ valid/invalid
- *  - sinon, preuve trouvée mais document manquant ➜ valid_document_missing
- */
 export async function verifyMevePdf(
   pdfWithMeve: Blob,
   original?: Blob
@@ -154,13 +127,13 @@ export async function verifyMevePdf(
 }> {
   const { meve } = await readMeveXmp(pdfWithMeve);
   if (!meve?.doc_sha256) {
-    return { status: "invalid", reason: "Aucun marqueur MEVE dans le XMP." };
+    return { status: "invalid", reason: "Aucun marqueur MEVE (XMP) trouvé." };
   }
 
   if (!original) {
     return {
       status: "valid_document_missing",
-      reason: "Preuve présente. Fournissez le document original pour valider l’intégrité.",
+      reason: "Preuve présente. Ajoutez le document original pour valider l’intégrité.",
       meve,
     };
   }
@@ -171,7 +144,7 @@ export async function verifyMevePdf(
   }
   return {
     status: "invalid",
-    reason: "Le SHA-256 de l’original ne correspond pas à doc_sha256 du XMP.",
+    reason: "Le SHA-256 de l’original ne correspond pas au doc_sha256 du XMP.",
     meve,
   };
 }
