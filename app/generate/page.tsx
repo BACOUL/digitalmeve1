@@ -8,6 +8,7 @@ import ProgressBar from "@/components/ProgressBar";
 import { FileDown, ShieldCheck, FileText } from "lucide-react";
 import { watermarkPdfFile } from "@/lib/watermark-pdf";
 import { embedMeveXmp, sha256Hex } from "@/lib/meve-xmp";
+import { buildMeveCertificateHtml } from "@/lib/certificate-html";
 
 function splitName(name?: string) {
   if (!name) return { base: "file", ext: "pdf" };
@@ -24,9 +25,11 @@ export default function GeneratePage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // Aperçu de la preuve
+  // Proof summary (shown after generation)
   const [proofHash, setProofHash] = useState<string | null>(null);
   const [proofWhen, setProofWhen] = useState<string | null>(null);
+  const [outputName, setOutputName] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,13 +39,15 @@ export default function GeneratePage() {
     setProcessing(false);
     setProofHash(null);
     setProofWhen(null);
+    setOutputName(null);
+    setPdfBlob(null);
 
     if (!file) {
-      setErr("Sélectionne un fichier PDF.");
+      setErr("Please choose a PDF file.");
       return;
     }
     if (file.type !== "application/pdf") {
-      setErr("Pour l’instant, seul le PDF est supporté.");
+      setErr("PDF only for now.");
       return;
     }
 
@@ -50,15 +55,15 @@ export default function GeneratePage() {
       setProcessing(true);
       setUploadPct(10);
 
-      // 1) Hash de l’original (preuve d’intégrité)
+      // 1) Hash of the original file (for integrity)
       const originalHash = await sha256Hex(file);
       setProofHash(originalHash);
 
-      // 2) Filigrane discret coloré
+      // 2) Add a subtle DigitalMeve watermark
       const watermarked = await watermarkPdfFile(file, "DigitalMeve");
       setUploadPct(55);
 
-      // 3) XMP MEVE : hash + date/heure + issuer
+      // 3) Embed .MEVE data (XMP): hash + date/time + issuer
       const createdAtISO = new Date().toISOString();
       const pdfWithMeve = await embedMeveXmp(watermarked, {
         docSha256: originalHash,
@@ -70,69 +75,46 @@ export default function GeneratePage() {
       setProofWhen(createdAtISO);
       setUploadPct(85);
 
-      // 4) Téléchargement + OUVERTURE AUTOMATIQUE (pas d’option)
+      // 4) Download the .meve.pdf (no auto-open tab)
       const { base, ext } = splitName(file.name);
       const outName = `${base}.meve.${ext}`;
-      const url = URL.createObjectURL(pdfWithMeve);
+      setOutputName(outName);
+      setPdfBlob(pdfWithMeve);
 
-      // téléchargement
+      const url = URL.createObjectURL(pdfWithMeve);
       const a = document.createElement("a");
       a.href = url;
       a.download = outName;
       document.body.appendChild(a);
       a.click();
       a.remove();
+      URL.revokeObjectURL(url);
 
-      // ouverture dans un onglet pour visualiser immédiatement
-      window.open(url, "_blank", "noopener,noreferrer");
-      setTimeout(() => URL.revokeObjectURL(url), 15000);
-
-      setMsg(`Téléchargé : ${outName}`);
+      setMsg(`Downloaded: ${outName}`);
       setProcessing(false);
       setUploadPct(100);
     } catch (e: any) {
-      setErr(e?.message ?? "Échec de génération.");
+      setErr(e?.message ?? "Generation failed.");
       setProcessing(false);
     }
   }
 
-  // Export certificat HTML (mise en page propre)
-  function exportHtmlCertificate() {
-    if (!file || !proofHash || !proofWhen) return;
-    const { base } = splitName(file.name);
-    const issuerShown = issuer.trim() || "—";
-    const html = `<!doctype html>
-<html lang="fr"><meta charset="utf-8">
-<title>Certificat .MEVE — ${base}</title>
-<style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;color:#e2e8f0;background:#0b1220;margin:0}
-  .wrap{max-width:880px;margin:0 auto;padding:28px}
-  .card{background:#0f172a;border:1px solid #243045;border-radius:16px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
-  h1{margin:0 0 10px;font-size:22px}
-  .ok{display:inline-block;margin-left:8px;padding:.25rem .6rem;border:1px solid #34d39955;border-radius:999px;color:#34d399;font-size:12px}
-  .row{display:grid;grid-template-columns:160px 1fr;gap:12px;margin:10px 0}
-  .k{color:#cbd5e1}
-  code{color:#94a3b8;word-break:break-all}
-</style>
-<div class="wrap">
-  <div class="card">
-    <h1>Certificat .MEVE <span class="ok">VALIDE</span></h1>
-    <div class="row"><div class="k">Fichier</div><div>${base}.meve.pdf</div></div>
-    <div class="row"><div class="k">Date</div><div>${new Date(proofWhen).toLocaleDateString()}</div></div>
-    <div class="row"><div class="k">Heure</div><div>${new Date(proofWhen).toLocaleTimeString()}</div></div>
-    <div class="row"><div class="k">Émetteur</div><div>${issuerShown}</div></div>
-    <div class="row"><div class="k">SHA-256</div><div><code>${proofHash}</code></div></div>
-    <p style="color:#94a3b8;font-size:14px;margin-top:14px">
-      Ce certificat reprend les informations inscrites dans les métadonnées XMP du PDF.
-    </p>
-  </div>
-</div>
-</html>`;
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  // Download the professional HTML certificate (English)
+  function downloadCertificate() {
+    if (!outputName || !proofHash || !proofWhen) return;
+    const certHtml = buildMeveCertificateHtml({
+      fileName: outputName,
+      createdAtISO: proofWhen,
+      issuer: issuer.trim(),
+      sha256: proofHash,
+      brandName: "DigitalMeve",
+      brandTagline: "Trusted Integrity Worldwide",
+    });
+    const blob = new Blob([certHtml], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${base}.meve.html`;
+    a.download = `Certificate - ${outputName.replace(/\.pdf$/i, "")}.html`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -142,9 +124,13 @@ export default function GeneratePage() {
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
+
+      {/* Simple, non-technical explanation */}
       <p className="mt-2 text-slate-400">
-        On calcule le <b>SHA-256</b> de ton PDF, on applique un filigrane discret (couleurs DigitalMeve) puis on inscrit une marque
-        <b> MEVE (XMP)</b> avec le hash et la date/heure. Tu récupères <code className="text-slate-300">name.meve.pdf</code>.
+        Upload your PDF. We’ll add a light DigitalMeve watermark and store a tamper-evident
+        marker inside the file (date, time and a unique fingerprint). You’ll get{" "}
+        <code className="text-slate-300">name.meve.pdf</code>. You can also download a
+        human-readable certificate.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -152,7 +138,7 @@ export default function GeneratePage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="issuer" className="text-sm text-slate-300">Issuer (optionnel)</label>
+            <label htmlFor="issuer" className="text-sm text-slate-300">Issuer (optional)</label>
             <input
               id="issuer"
               value={issuer}
@@ -166,49 +152,86 @@ export default function GeneratePage() {
         <div className="w-full sm:w-auto">
           <CTAButton type="submit" aria-label="Generate proof">Generate Proof</CTAButton>
           {(uploadPct !== undefined || processing) && (
-            <div className="mt-3"><ProgressBar value={processing ? undefined : uploadPct} /></div>
+            <div className="mt-3">
+              <ProgressBar value={processing ? undefined : uploadPct} />
+            </div>
           )}
         </div>
 
         {msg && <p className="text-sm text-emerald-300">{msg}</p>}
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
-        {(proofHash || proofWhen) && (
+        {/* Clear “Downloads” section for mobile discoverability */}
+        {(outputName || proofHash || proofWhen) && (
           <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-            <h3 className="text-slate-100 font-semibold">Aperçu de la preuve</h3>
-            <ul className="mt-2 text-sm text-slate-400 space-y-1">
-              {file && (
-                <li><span className="text-slate-300">Fichier :</span> {splitName(file.name).base}.meve.pdf</li>
-              )}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h3 className="text-slate-100 font-semibold">Your proof is ready</h3>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border bg-emerald-400/10 text-emerald-300 border-emerald-400/30">
+                  Watermarked
+                </span>
+                <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border bg-blue-400/10 text-blue-300 border-blue-400/30">
+                  .MEVE embedded
+                </span>
+              </div>
+            </div>
+
+            <ul className="mt-3 text-sm text-slate-400 space-y-1">
+              {outputName && <li><span className="text-slate-300">File:</span> {outputName}</li>}
               {proofWhen && (
                 <li>
-                  <span className="text-slate-300">Date :</span> {new Date(proofWhen).toLocaleDateString()} —{" "}
-                  <span className="text-slate-300">Heure :</span> {new Date(proofWhen).toLocaleTimeString()}
+                  <span className="text-slate-300">Date:</span>{" "}
+                  {new Date(proofWhen).toLocaleDateString("en-GB")}{" "}
+                  — <span className="text-slate-300">Time:</span>{" "}
+                  {new Date(proofWhen).toLocaleTimeString("en-GB")}
                 </li>
               )}
-              <li><span className="text-slate-300">Émetteur :</span> {issuer.trim() || "—"}</li>
+              <li><span className="text-slate-300">Issuer:</span> {issuer.trim() || "—"}</li>
               {proofHash && (
                 <li className="break-all">
-                  <span className="text-slate-300">SHA-256 :</span> {proofHash}
+                  <span className="text-slate-300">SHA-256:</span> {proofHash}
                 </li>
               )}
             </ul>
 
-            <button
-              type="button"
-              onClick={exportHtmlCertificate}
-              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-100 hover:bg-white/10"
-            >
-              <FileText className="h-4 w-4" /> Exporter le certificat (.html)
-            </button>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Re-download button in case the mobile browser hid the toast */}
+              {pdfBlob && outputName && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = outputName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 hover:bg-white/10"
+                >
+                  <FileDown className="h-4 w-4" /> Download .meve.pdf
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={downloadCertificate}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 hover:bg-white/10"
+              >
+                <FileText className="h-4 w-4" /> Download certificate (.html)
+              </button>
+            </div>
           </div>
         )}
       </form>
 
+      {/* Small legend, English + concise */}
       <div className="mt-8 grid gap-3 sm:grid-cols-2 text-sm text-slate-400">
-        <div className="flex items-center gap-2"><FileDown className="h-5 w-5" /><span>Télécharger le document meve</span></div>
-        <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /><span>Preuve intégrée (XMP)</span></div>
+        <div className="flex items-center gap-2"><FileDown className="h-5 w-5" /><span>Download .meve.pdf</span></div>
+        <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /><span>Embedded proof (XMP)</span></div>
       </div>
     </section>
   );
-                                                        }
+}
