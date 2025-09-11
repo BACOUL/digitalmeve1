@@ -32,7 +32,7 @@ export default function GeneratePage() {
     setProcessing(false);
 
     if (!file) {
-      setErr("Please select a file first.");
+      setErr("Sélectionne un fichier PDF.");
       return;
     }
     if (file.type !== "application/pdf") {
@@ -43,13 +43,13 @@ export default function GeneratePage() {
     try {
       setProcessing(true);
 
-      // 1) Calculer le SHA-256 de l'ORIGINAL (avant filigrane)
+      // 1) Empreinte de l’original (avant filigrane)
       const originalHash = await sha256Hex(file);
 
-      // 2) Filigraner localement
+      // 2) Filigrane local
       const watermarked = await watermarkPdfFile(file, "DigitalMeve");
 
-      // 3) Insérer XMP MEVE (doc_sha256 + date + issuer)
+      // 3) XMP MEVE: on inscrit doc_sha256 + date+heure + issuer
       const createdAtISO = new Date().toISOString();
       const pdfWithMeveBlob = await embedMeveXmp(watermarked, {
         docSha256: originalHash,
@@ -59,7 +59,7 @@ export default function GeneratePage() {
         issuerWebsite: "https://digitalmeve.com",
       });
 
-      // 4) Télécharger le fichier final
+      // 4) Téléchargement
       const { base, ext } = splitName(file.name);
       const outName = `${base}.meve.${ext}`;
       const url = URL.createObjectURL(pdfWithMeveBlob);
@@ -71,11 +71,11 @@ export default function GeneratePage() {
       a.remove();
       URL.revokeObjectURL(url);
 
-      setMsg(`Downloaded ${outName}`);
+      setMsg(`Téléchargé : ${outName}`);
       setProcessing(false);
       setUploadPct(100);
     } catch (e: any) {
-      setErr(e?.message ?? "Generation failed.");
+      setErr(e?.message ?? "Échec de génération.");
       setProcessing(false);
     }
   }
@@ -84,8 +84,8 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        We watermark your PDF, embed a MEVE marker (XMP) with integrity data, then download{" "}
-        <code className="text-slate-300">name.meve.pdf</code>.
+        On filigrane ton PDF, on inscrit un marqueur MEVE (XMP) avec les données d’intégrité, puis on
+        télécharge <code className="text-slate-300">name.meve.pdf</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -93,7 +93,7 @@ export default function GeneratePage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="issuer" className="text-sm text-slate-300">Issuer (optional)</label>
+            <label htmlFor="issuer" className="text-sm text-slate-300">Issuer (optionnel)</label>
             <input
               id="issuer"
               value={issuer}
@@ -117,13 +117,13 @@ export default function GeneratePage() {
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
         <p className="mt-6 text-xs text-slate-500">
-          100% local: nothing is uploaded. Files are processed in your browser.
+          100% local : rien n’est envoyé. Les fichiers sont traités dans ton navigateur.
         </p>
       </form>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 text-sm text-slate-400">
-        <div className="flex items-center gap-2"><FileDown className="h-5 w-5" /><span>Download meve document</span></div>
-        <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /><span>Embedded proof (XMP)</span></div>
+        <div className="flex items-center gap-2"><FileDown className="h-5 w-5" /><span>Télécharger le document meve</span></div>
+        <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /><span>Preuve intégrée (XMP)</span></div>
       </div>
     </section>
   );
