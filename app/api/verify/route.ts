@@ -1,28 +1,41 @@
 // app/api/verify/route.ts
-// Runtime Node (on a besoin de 'crypto')
-export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
+import { sha256HexFromBlob } from "@/lib/sha256";
 
-// util SHA-256 hex
-function sha256Hex(buf: Buffer) {
-  return crypto.createHash("sha256").update(buf).digest("hex");
-}
+/**
+ * Vérif locale (sans backend externe) :
+ * - accepte un certificat .meve.html (généré par la page Generate) dans le champ "file"
+ * - accepte en option le fichier "original" pour contrôle d’intégrité
+ * - renvoie {status, reason, doc, issuer, created_at}
+ *
+ * Status possibles :
+ *  - "valid" : la preuve est cohérente et, si original fourni, son sha256 correspond
+ *  - "valid_document_missing" : preuve OK mais pas d'original pour valider l’intégrité binaire
+ *  - "invalid" : preuve illisible / incohérente / hash ne correspond pas
+ */
 
-// essaie d'extraire un JSON de preuve depuis XMP (PDF) : <meve:proof>{...}</meve:proof>
-function extractProofFromPdfXmp(buf: Buffer) {
-  // on lit en latin1 pour conserver les octets ASCII tels quels
-  const txt = buf.toString("latin1");
-  const start = txt.indexOf("<x:xmpmeta");
-  const end = txt.indexOf("</x:xmpmeta>");
-  if (start === -1 || end === -1) return null;
+type Proof = {
+  version: string;
+  created_at?: string;
+  doc?: { name?: string; mime?: string; size?: number; sha256?: string };
+  issuer?: {
+    name?: string;
+    identity?: string;
+    type?: "personal" | "pro" | "official";
+    website?: string;
+    verified_domain?: boolean;
+  };
+};
 
-  const xmp = txt.slice(start, end + "</x:xmpmeta>".length);
-  const m = xmp.match(/<meve:proof>([\s\S]*?)<\/meve:proof>/i);
+function extractJsonFromHtml(html: string): any | null {
+  // On cherche <script id="meve-data" type="application/json"> ... </script>
+  const m = html.match(
+    /<script[^>]*id=["']meve-data["'][^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/i
+  );
   if (!m) return null;
-
+  const jsonText = m[1].trim();
   try {
-    return JSON.parse(m[1]);
+    return JSON.parse(jsonText);
   } catch {
     return null;
   }
@@ -31,66 +44,70 @@ function extractProofFromPdfXmp(buf: Buffer) {
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
-    const anyFile = form.get("file");
-    if (!(anyFile instanceof File)) {
-      return NextResponse.json({ error: true, reason: "No file" }, { status: 400 });
+    const file = form.get("file");
+    const original = form.get("original"); // optionnel
+
+    if (!(file instanceof Blob)) {
+      return NextResponse.json(
+        { error: true, reason: "Aucun fichier n’a été fourni." },
+        { status: 400 }
+      );
     }
 
-    // charge le binaire
-    const ab = await anyFile.arrayBuffer();
-    const buf = Buffer.from(ab);
-
-    const filename = anyFile.name || "file";
-    const mime = anyFile.type || "application/octet-stream";
-
-    // 1) PDF : tenter de lire la preuve depuis XMP
-    let proof: any = null;
-    if (mime.includes("pdf") || filename.toLowerCase().endsWith(".pdf")) {
-      proof = extractProofFromPdfXmp(buf);
+    // 1) Lire le HTML du certificat et extraire la charge JSON
+    const html = await file.text();
+    const proof = extractJsonFromHtml(html) as Proof | null;
+    if (!proof || proof.version !== "meve/1") {
+      return NextResponse.json(
+        { status: "invalid", reason: "Certificat HTML invalide ou non reconnu." },
+        { status: 200 }
+      );
     }
 
-    if (!proof) {
-      // pas de preuve intégrée trouvée
-      return NextResponse.json({
-        status: "invalid",
-        reason: "Proof not found in file (no <meve:proof> in PDF XMP).",
-      });
+    // 2) Si l’utilisateur a fourni l’original, calculer son SHA-256 et comparer
+    if (original instanceof Blob && proof.doc?.sha256) {
+      const sha = await sha256HexFromBlob(original);
+      if (sha.toLowerCase() !== proof.doc.sha256.toLowerCase()) {
+        return NextResponse.json(
+          {
+            status: "invalid",
+            reason: "Le hash de l’original ne correspond pas à la preuve.",
+            doc: proof.doc,
+            issuer: proof.issuer,
+            created_at: proof.created_at,
+          },
+          { status: 200 }
+        );
+      }
+      // ok
+      return NextResponse.json(
+        {
+          status: "valid",
+          reason: "Preuve et intégrité du document confirmées.",
+          doc: proof.doc,
+          issuer: proof.issuer,
+          created_at: proof.created_at,
+        },
+        { status: 200 }
+      );
     }
 
-    // 2) comparer l’empreinte
-    const expected = proof?.doc?.sha256;
-    if (!expected) {
-      return NextResponse.json({
-        status: "invalid",
-        reason: "Missing doc.sha256 in proof.",
-      });
-    }
-
-    // convention simple V1 : on compare à l’empreinte du fichier tel qu’uploadé
-    const actual = sha256Hex(buf);
-    const status = actual === expected ? "valid" : "invalid";
-    const reason = status === "valid" ? "OK" : "SHA-256 mismatch";
-
-    // badge "ambre" si l’issuer n’est pas de domaine vérifié
-    const ambre =
-      status === "valid" && proof?.issuer && proof.issuer.verified_domain === false;
-
-    return NextResponse.json({
-      status: ambre ? "valid_document_missing" : status, // on réutilise ce statut pour l'ambre
-      reason,
-      created_at: proof.created_at,
-      doc: {
-        name: filename,
-        mime,
-        size: buf.length,
-        sha256: expected,
+    // 3) Pas d’original → on valide la présence/forme de la preuve uniquement
+    return NextResponse.json(
+      {
+        status: "valid_document_missing",
+        reason:
+          "Certificat valide. Pour valider l’intégrité binaire, ajoute le fichier original.",
+        doc: proof.doc,
+        issuer: proof.issuer,
+        created_at: proof.created_at,
       },
-      issuer: proof.issuer || undefined,
-    });
+      { status: 200 }
+    );
   } catch (e: any) {
     return NextResponse.json(
-      { error: true, reason: e?.message ?? "Verify error" },
+      { error: true, reason: e?.message ?? "Erreur de vérification" },
       { status: 500 }
     );
   }
-      }
+}
