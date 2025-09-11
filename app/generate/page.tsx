@@ -46,7 +46,7 @@ export default function GeneratePage() {
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce flag côté proxy
+    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce flag
 
     try {
       // ---- Upload avec barre de progression (XMLHttpRequest) ----
@@ -55,7 +55,6 @@ export default function GeneratePage() {
         xhr.open("POST", "/api/proxy/generate", true);
         xhr.responseType = "blob";
 
-        // progression d'upload
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) {
             const pct = Math.round((ev.loaded / ev.total) * 100);
@@ -69,7 +68,6 @@ export default function GeneratePage() {
         };
 
         xhr.onreadystatechange = () => {
-          // upload terminé, headers reçus => phase "processing"
           if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
             setProcessing(true);
           }
@@ -79,7 +77,6 @@ export default function GeneratePage() {
         xhr.ontimeout = () => reject(new Error("Request timeout"));
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            // reconstruire les headers
             const h = new Headers();
             const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
             for (const line of raw) {
@@ -91,8 +88,7 @@ export default function GeneratePage() {
             resolve({ blob: xhr.response, headers: h });
           } else {
             const reader = new FileReader();
-            reader.onload = () =>
-              reject(new Error(String(reader.result || "Generation failed.")));
+            reader.onload = () => reject(new Error(String(reader.result || "Generation failed.")));
             reader.onerror = () => reject(new Error("Generation failed."));
             reader.readAsText(xhr.response ?? new Blob());
           }
@@ -104,24 +100,26 @@ export default function GeneratePage() {
       let { blob, headers } = await promise;
 
       const cd = headers.get("Content-Disposition");
-      const ct = headers.get("Content-Type") || "";
       const { base, ext } = splitName(file.name);
       const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
+      const primaryLower = primaryName.toLowerCase();
 
-      // ✅ Filigrane si PDF (ne bloque pas si ça échoue)
-      if (ct.includes("application/pdf")) {
+      // ✅ Filigrane si le fichier final est un PDF (pas seulement via Content-Type)
+      if (primaryLower.endsWith(".pdf")) {
         try {
           blob = await addPdfWatermark(blob, "DigitalMeve");
         } catch {
-          /* ignore */
+          // ne bloque pas le download si échec du watermark
         }
       }
 
-      // ---- Télécharger le document (toujours en priorité) ----
+      // ---- Téléchargement du document (toujours en priorité) ----
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = primaryName;
+      a.download = primaryName; // force download
+      a.rel = "noopener";
+      a.target = "_self";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -130,21 +128,28 @@ export default function GeneratePage() {
       setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
 
-      // ---- Si demandé, proposer ensuite la preuve HTML (deuxième download) ----
+      // ---- Ensuite (optionnel) proposer la preuve HTML, en FORÇANT le téléchargement ----
       if (alsoHtml) {
         try {
           const proof = await buildProofObject(file, issuer.trim());
-          const html = buildProofHtml(proof); // <- un seul argument
-          const proofBlob = new Blob([html], { type: "text/html;charset=utf-8" });
+          const html = buildProofHtml(proof);
 
-          const proofUrl = URL.createObjectURL(proofBlob);
-          const proofA = document.createElement("a");
-          proofA.href = proofUrl;
-          proofA.download = `${base}.meve.html`;
-          document.body.appendChild(proofA);
-          proofA.click();
-          proofA.remove();
-          URL.revokeObjectURL(proofUrl);
+          // ❗️Type du blob en "application/octet-stream" pour éviter l'ouverture dans l'onglet
+          const proofBlob = new Blob([html], { type: "application/octet-stream" });
+
+          // Légère attente pour que le premier download soit bien traité
+          setTimeout(() => {
+            const proofUrl = URL.createObjectURL(proofBlob);
+            const proofA = document.createElement("a");
+            proofA.href = proofUrl;
+            proofA.download = `${base}.meve.html`; // download obligatoire
+            proofA.rel = "noopener";
+            proofA.target = "_self";
+            document.body.appendChild(proofA);
+            proofA.click();
+            proofA.remove();
+            URL.revokeObjectURL(proofUrl);
+          }, 250);
         } catch {
           /* ignore */
         }
@@ -225,4 +230,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-        }
+}
