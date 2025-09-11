@@ -80,22 +80,22 @@ export async function embedMeveXmp(
   const pdfDoc = await PDFDocument.load(ab);
 
   const xmp = buildXmpPacket(fields);
-  // Méthode existante mais parfois non typée selon la version de pdf-lib
-  // @ts-ignore
+  // @ts-ignore (typages incomplets selon pdf-lib)
   pdfDoc.setXmpMetadata?.(xmp);
 
-  // Redondance utile dans le Info dict (optionnel)
+  // Redondance (utile pour debug)
   pdfDoc.setSubject("DigitalMeve");
   pdfDoc.setKeywords(["MEVE", "DigitalMeve", "proof"]);
   pdfDoc.setProducer("DigitalMeve");
 
-  // pdf-lib renvoie un Uint8Array
   const bytes = await pdfDoc.save();
 
-  // ✅ Convertir en ArrayBuffer propre (évite erreurs de typage BlobPart)
-  const cleanAB = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  // ✅ Conversion robuste en Blob via Response
+  const blob = await new Response(bytes, {
+    headers: { "Content-Type": "application/pdf" },
+  }).blob();
 
-  return new Blob([cleanAB], { type: "application/pdf" });
+  return blob;
 }
 
 // --- Lecture / Vérif --------------------------------------
@@ -173,4 +173,4 @@ export async function verifyMevePdf(
     reason: "Le SHA-256 de l’original ne correspond pas à doc_sha256 du XMP.",
     meve,
   };
-  }
+    }
