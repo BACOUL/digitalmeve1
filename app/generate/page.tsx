@@ -10,7 +10,7 @@ import { buildProofHtml } from "@/lib/proof-html";
 import { FileDown, FileText, ShieldCheck } from "lucide-react";
 import { addPdfWatermark } from "@/lib/watermark-pdf";
 
-// --- utils ---
+// ---------------- utils ----------------
 function filenameFromCD(cd: string | null, fallback: string) {
   const m = cd?.match(/filename="?([^"]+)"?/i);
   return m?.[1] ?? fallback;
@@ -29,6 +29,20 @@ async function looksLikePdfBlob(b: Blob): Promise<boolean> {
     return false;
   }
 }
+function isPdfName(name: string) {
+  return name.toLowerCase().endsWith(".pdf");
+}
+function safeDownload(name: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+// ---------------------------------------
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -53,22 +67,21 @@ export default function GeneratePage() {
       return;
     }
 
+    // Prépare le POST vers le proxy (⚠️ on n’envoie PLUS de flag also_json au backend)
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce flag pour signaler "aussi la preuve" (HTML)
 
     try {
-      // ---- Upload + progression ----
+      // ---- Upload avec progression (XHR pour onprogress) ----
       const xhr = new XMLHttpRequest();
-      const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
+      const result = await new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
         xhr.open("POST", "/api/proxy/generate", true);
         xhr.responseType = "blob";
 
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) {
-            const pct = Math.round((ev.loaded / ev.total) * 100);
-            setUploadPct(pct);
+            setUploadPct(Math.round((ev.loaded / ev.total) * 100));
           }
         };
         xhr.onloadstart = () => {
@@ -93,7 +106,8 @@ export default function GeneratePage() {
             resolve({ blob: xhr.response, headers: h });
           } else {
             const reader = new FileReader();
-            reader.onload = () => reject(new Error(String(reader.result || "Generation failed.")));
+            reader.onload = () =>
+              reject(new Error(String(reader.result || "Generation failed.")));
             reader.onerror = () => reject(new Error("Generation failed."));
             reader.readAsText(xhr.response ?? new Blob());
           }
@@ -102,57 +116,63 @@ export default function GeneratePage() {
         xhr.send(form);
       });
 
-      // ---- Réponse serveur ----
-      let { blob, headers } = await promise;
-
+      // ---- Analyse de la réponse ----
+      let { blob, headers } = result;
+      const contentType = (headers.get("Content-Type") || "").toLowerCase();
       const cd = headers.get("Content-Disposition");
       const { base, ext } = splitName(file.name);
-      const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
-      const primaryLower = primaryName.toLowerCase();
 
-      // ---- Filigrane PDF (safe, non bloquant) ----
+      // 1) CAS API renvoie JSON (sidecar) -> on NE télécharge PAS le JSON brut.
+      //    On fabrique une preuve HTML élégante, et c’est tout (évite le doublon).
+      if (contentType.includes("application/json")) {
+        try {
+          const text = await blob.text();
+          const proofObj = JSON.parse(text);
+          const html = buildProofHtml(proofObj); // rendu HTML propre
+          const htmlBlob = new Blob([html], { type: "text/html;charset=utf-8" });
+          safeDownload(`${base}.meve.html`, htmlBlob);
+          setMsg(`Downloaded ${base}.meve.html`);
+        } catch {
+          // fallback ultra-safe : on retombe sur la version "fichier meve" annoncée
+          const fallbackName = filenameFromCD(cd, `${base}.${ext}.meve.json`);
+          safeDownload(fallbackName, blob);
+          setMsg(`Downloaded ${fallbackName}`);
+        } finally {
+          setProcessing(false);
+        }
+        return;
+      }
+
+      // 2) CAS API renvoie un binaire (PDF/PNG/...) -> document prioritaire
+      let primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
+
+      // Filigrane uniquement si PDF (nom OU sniff)
       try {
-        const nameSaysPdf = primaryLower.endsWith(".pdf");
-        const blobIsPdf = await looksLikePdfBlob(blob);
-        if (nameSaysPdf || blobIsPdf) {
+        if (isPdfName(primaryName) || (await looksLikePdfBlob(blob))) {
           blob = await addPdfWatermark(blob, "DigitalMeve");
         }
       } catch {
-        /* en cas d’échec du filigrane, on continue avec le blob original */
+        /* si le filigrane échoue, on continue quand même */
       }
 
-      // ---- Téléchargement DU DOCUMENT (prioritaire, toujours) ----
-      {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = primaryName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
-
+      // Télécharge le document en premier (toujours)
+      safeDownload(primaryName, blob);
       setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
 
-      // ---- Ensuite seulement, la preuve HTML si cochée ----
+      // Ensuite, éventuellement la preuve HTML (OPTIONNELLE)
       if (alsoHtml) {
         try {
           const proof = await buildProofObject(file, issuer.trim());
-          const html = buildProofHtml(proof); // signature = (proof)
+          const html = buildProofHtml(proof);
           const proofBlob = new Blob([html], { type: "text/html;charset=utf-8" });
 
-          const proofUrl = URL.createObjectURL(proofBlob);
-          const a2 = document.createElement("a");
-          a2.href = proofUrl;
-          a2.download = `${base}.meve.html`;
-          document.body.appendChild(a2);
-          a2.click();
-          a2.remove();
-          URL.revokeObjectURL(proofUrl);
+          // petite pause pour éviter d’enchaîner 2 downloads sur le même tick
+          setTimeout(() => {
+            safeDownload(`${base}.meve.html`, proofBlob);
+          }, 50);
         } catch {
-          /* si la génération HTML échoue, on n'interrompt pas le flux */
+          /* ne bloque pas */
         }
       }
     } catch (e: any) {
@@ -170,7 +190,11 @@ export default function GeneratePage() {
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
-        <FileDropzone onSelected={setFile} />
+        <FileDropzone
+          onSelected={setFile}
+          accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+          maxSizeMB={100}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -231,4 +255,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-        }
+    }
