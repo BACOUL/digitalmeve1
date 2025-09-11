@@ -26,7 +26,6 @@ function buildXmpPacket(fields: {
     docSha256,
   } = fields;
 
-  // ⚠️ XMP doit être bien formé et entouré de <?xpacket ... ?>
   return `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -70,8 +69,8 @@ function escapeXml(s: string) {
 export async function embedMeveXmp(
   inputPDF: Blob | ArrayBuffer,
   fields: {
-    docSha256: string; // SHA-256 de l'original AVANT transformation
-    createdAtISO: string; // new Date().toISOString()
+    docSha256: string;      // SHA-256 de l'original AVANT transformation
+    createdAtISO: string;   // new Date().toISOString()
     issuer?: string;
     issuerType?: "personal" | "pro" | "official";
     issuerWebsite?: string;
@@ -81,13 +80,11 @@ export async function embedMeveXmp(
   const pdfDoc = await PDFDocument.load(ab);
 
   const xmp = buildXmpPacket(fields);
-
-  // pdf-lib sait définir un XMP complet :
-  // (la méthode existe mais peut ne pas être typée selon la version)
+  // Méthode existante mais parfois non typée selon la version de pdf-lib
   // @ts-ignore
   pdfDoc.setXmpMetadata?.(xmp);
 
-  // Redondance utile (non normative) dans le Info dict — pour debug rapide
+  // Redondance utile dans le Info dict (optionnel)
   pdfDoc.setSubject("DigitalMeve");
   pdfDoc.setKeywords(["MEVE", "DigitalMeve", "proof"]);
   pdfDoc.setProducer("DigitalMeve");
@@ -95,7 +92,7 @@ export async function embedMeveXmp(
   // pdf-lib renvoie un Uint8Array
   const bytes = await pdfDoc.save();
 
-  // ✅ IMPORTANT : convertir en ArrayBuffer “propre” (évite les erreurs de typage BlobPart sous Node/Edge)
+  // ✅ Convertir en ArrayBuffer propre (évite erreurs de typage BlobPart)
   const cleanAB = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 
   return new Blob([cleanAB], { type: "application/pdf" });
@@ -157,13 +154,12 @@ export async function verifyMevePdf(
   const { meve } = await readMeveXmp(pdfWithMeve);
   if (!meve?.doc_sha256) {
     return { status: "invalid", reason: "Aucun marqueur MEVE dans le XMP." };
-    }
+  }
 
   if (!original) {
     return {
       status: "valid_document_missing",
-      reason:
-        "Preuve présente. Fournissez le document original pour valider l’intégrité.",
+      reason: "Preuve présente. Fournissez le document original pour valider l’intégrité.",
       meve,
     };
   }
@@ -174,9 +170,7 @@ export async function verifyMevePdf(
   }
   return {
     status: "invalid",
-    reason:
-      "Le SHA-256 de l’original ne correspond pas à doc_sha256 du XMP.",
+    reason: "Le SHA-256 de l’original ne correspond pas à doc_sha256 du XMP.",
     meve,
   };
-}
-```0
+  }
