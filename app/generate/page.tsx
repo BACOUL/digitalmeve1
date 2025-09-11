@@ -1,3 +1,4 @@
+// app/generate/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,15 +10,24 @@ import { buildProofHtml } from "@/lib/proof-html";
 import { FileDown, FileText, ShieldCheck } from "lucide-react";
 import { addPdfWatermark } from "@/lib/watermark-pdf";
 
-// util: nom depuis Content-Disposition
+// --- utils ---
 function filenameFromCD(cd: string | null, fallback: string) {
   const m = cd?.match(/filename="?([^"]+)"?/i);
   return m?.[1] ?? fallback;
 }
 function splitName(name?: string) {
   if (!name) return { base: "file", ext: "bin" };
-  const m = name.match(/^(.+)\.([^.]+)$/);
-  return m ? { base: m[1], ext: m[2] } : { base: name, ext: "bin" };
+  const m = name?.match(/^(.+)\.([^.]+)$/);
+  return m ? { base: m[1], ext: m[2] } : { base: name!, ext: "bin" };
+}
+async function looksLikePdfBlob(b: Blob): Promise<boolean> {
+  if (!b || b.size < 5) return false;
+  try {
+    const head = await b.slice(0, 5).text(); // "%PDF-"
+    return head.startsWith("%PDF-");
+  } catch {
+    return false;
+  }
 }
 
 export default function GeneratePage() {
@@ -46,10 +56,10 @@ export default function GeneratePage() {
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce flag
+    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce flag pour signaler "aussi la preuve" (HTML)
 
     try {
-      // ---- Upload avec barre de progression (XMLHttpRequest) ----
+      // ---- Upload + progression ----
       const xhr = new XMLHttpRequest();
       const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
         xhr.open("POST", "/api/proxy/generate", true);
@@ -61,18 +71,13 @@ export default function GeneratePage() {
             setUploadPct(pct);
           }
         };
-
         xhr.onloadstart = () => {
           setUploadPct(0);
           setProcessing(false);
         };
-
         xhr.onreadystatechange = () => {
-          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-            setProcessing(true);
-          }
+          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) setProcessing(true);
         };
-
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.ontimeout = () => reject(new Error("Request timeout"));
         xhr.onload = () => {
@@ -97,6 +102,7 @@ export default function GeneratePage() {
         xhr.send(form);
       });
 
+      // ---- Réponse serveur ----
       let { blob, headers } = await promise;
 
       const cd = headers.get("Content-Disposition");
@@ -104,54 +110,49 @@ export default function GeneratePage() {
       const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
       const primaryLower = primaryName.toLowerCase();
 
-      // ✅ Filigrane si le fichier final est un PDF (pas seulement via Content-Type)
-      if (primaryLower.endsWith(".pdf")) {
-        try {
+      // ---- Filigrane PDF (safe, non bloquant) ----
+      try {
+        const nameSaysPdf = primaryLower.endsWith(".pdf");
+        const blobIsPdf = await looksLikePdfBlob(blob);
+        if (nameSaysPdf || blobIsPdf) {
           blob = await addPdfWatermark(blob, "DigitalMeve");
-        } catch {
-          // ne bloque pas le download si échec du watermark
         }
+      } catch {
+        /* en cas d’échec du filigrane, on continue avec le blob original */
       }
 
-      // ---- Téléchargement du document (toujours en priorité) ----
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = primaryName; // force download
-      a.rel = "noopener";
-      a.target = "_self";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // ---- Téléchargement DU DOCUMENT (prioritaire, toujours) ----
+      {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = primaryName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
 
       setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
 
-      // ---- Ensuite (optionnel) proposer la preuve HTML, en FORÇANT le téléchargement ----
+      // ---- Ensuite seulement, la preuve HTML si cochée ----
       if (alsoHtml) {
         try {
           const proof = await buildProofObject(file, issuer.trim());
-          const html = buildProofHtml(proof);
+          const html = buildProofHtml(proof); // signature = (proof)
+          const proofBlob = new Blob([html], { type: "text/html;charset=utf-8" });
 
-          // ❗️Type du blob en "application/octet-stream" pour éviter l'ouverture dans l'onglet
-          const proofBlob = new Blob([html], { type: "application/octet-stream" });
-
-          // Légère attente pour que le premier download soit bien traité
-          setTimeout(() => {
-            const proofUrl = URL.createObjectURL(proofBlob);
-            const proofA = document.createElement("a");
-            proofA.href = proofUrl;
-            proofA.download = `${base}.meve.html`; // download obligatoire
-            proofA.rel = "noopener";
-            proofA.target = "_self";
-            document.body.appendChild(proofA);
-            proofA.click();
-            proofA.remove();
-            URL.revokeObjectURL(proofUrl);
-          }, 250);
+          const proofUrl = URL.createObjectURL(proofBlob);
+          const a2 = document.createElement("a");
+          a2.href = proofUrl;
+          a2.download = `${base}.meve.html`;
+          document.body.appendChild(a2);
+          a2.click();
+          a2.remove();
+          URL.revokeObjectURL(proofUrl);
         } catch {
-          /* ignore */
+          /* si la génération HTML échoue, on n'interrompt pas le flux */
         }
       }
     } catch (e: any) {
@@ -213,7 +214,7 @@ export default function GeneratePage() {
         </p>
       </form>
 
-      {/* mini-légende des actions */}
+      {/* Légende des actions */}
       <div className="mt-8 grid gap-3 sm:grid-cols-3 text-sm text-slate-400">
         <div className="flex items-center gap-2">
           <FileDown className="h-5 w-5" />
@@ -230,4 +231,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-}
+        }
