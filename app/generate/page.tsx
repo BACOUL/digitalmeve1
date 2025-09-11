@@ -6,7 +6,7 @@ import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
 import { FileDown, ShieldCheck, FileText } from "lucide-react";
-import { addWatermarkPdf } from "@/lib/watermark-pdf"; // ⬅️ patch: nouveau nom
+import { addWatermarkPdf } from "@/lib/watermark-pdf";
 import { embedMeveXmp, sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 
@@ -25,11 +25,9 @@ export default function GeneratePage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // Proof metadata (preview card)
   const [proofHash, setProofHash] = useState<string | null>(null);
   const [proofWhen, setProofWhen] = useState<string | null>(null);
 
-  // Scroll to preview when ready (good for mobile)
   const proofRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (proofHash && proofWhen && proofRef.current) {
@@ -59,15 +57,12 @@ export default function GeneratePage() {
       setProcessing(true);
       setUploadPct(10);
 
-      // 1) Compute the original hash (tamper-evident anchor)
       const originalHash = await sha256Hex(file);
       setProofHash(originalHash);
 
-      // 2) Apply a subtle DigitalMeve watermark (stub V1: retourne le PDF identique)
-      const watermarked = await addWatermarkPdf(file); // ⬅️ patch: nouveau nom
+      const watermarked = await addWatermarkPdf(file);
       setUploadPct(55);
 
-      // 3) Embed MEVE (XMP): hash + timestamp + optional issuer
       const createdAtISO = new Date().toISOString();
       const pdfWithMeve = await embedMeveXmp(watermarked, {
         docSha256: originalHash,
@@ -79,12 +74,10 @@ export default function GeneratePage() {
       setProofWhen(createdAtISO);
       setUploadPct(85);
 
-      // 4) Download + also open in a new tab
       const { base, ext } = splitName(file.name);
       const outName = `${base}.meve.${ext}`;
       const url = URL.createObjectURL(pdfWithMeve);
 
-      // trigger a download
       const a = document.createElement("a");
       a.href = url;
       a.download = outName;
@@ -92,7 +85,6 @@ export default function GeneratePage() {
       a.click();
       a.remove();
 
-      // open dans un nouvel onglet
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 15000);
 
@@ -205,5 +197,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-}
-```0
+        }
