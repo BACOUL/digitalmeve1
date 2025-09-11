@@ -4,10 +4,6 @@
 import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
-import {
-  verifyFromHtmlCertificate,
-  VerifyOutcome,
-} from "@/lib/verify-local";
 
 type RemoteVerifyResult = {
   status: "valid" | "valid_document_missing" | "invalid";
@@ -17,48 +13,36 @@ type RemoteVerifyResult = {
   issuer?: { name?: string; identity?: string; type?: string; website?: string; verified_domain?: boolean };
 };
 
-function looksLikeHtmlCert(file: File) {
-  const name = file.name.toLowerCase();
-  return name.endsWith(".meve.html") || file.type.includes("html");
-}
-
 export default function VerifyPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [original, setOriginal] = useState<File | null>(null); // utile si on vérifie un .meve.html
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [localResult, setLocalResult] = useState<VerifyOutcome | null>(null);
-  const [remoteResult, setRemoteResult] = useState<RemoteVerifyResult | null>(null);
+  const [resu, setResu] = useState<RemoteVerifyResult | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    setLocalResult(null);
-    setRemoteResult(null);
+    setResu(null);
 
     if (!file) {
-      setErr("Choisissez un fichier à vérifier.");
+      setErr("Choisissez un fichier à vérifier (.meve.pdf / .meve.png).");
       return;
     }
 
-    setLoading(true);
     try {
-      if (looksLikeHtmlCert(file)) {
-        // ✅ Vérification locale du certificat HTML
-        const outcome = await verifyFromHtmlCertificate(file, original);
-        setLocalResult(outcome);
-      } else {
-        // ✅ Vérification via backend pour un .meve.pdf/.png avec preuve intégrée
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch("/api/proxy/verify", { method: "POST", body: form });
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error(t || `Erreur API (${res.status})`);
-        }
-        const data = (await res.json()) as RemoteVerifyResult;
-        setRemoteResult(data);
+      setLoading(true);
+
+      const form = new FormData();
+      form.append("file", file);
+
+      const res = await fetch("/api/proxy/verify", { method: "POST", body: form });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || `Erreur API (${res.status})`);
       }
+
+      const data = (await res.json()) as RemoteVerifyResult;
+      setResu(data);
     } catch (e: any) {
       setErr(e?.message ?? "Échec de la vérification.");
     } finally {
@@ -66,89 +50,51 @@ export default function VerifyPage() {
     }
   }
 
-  const renderBadge = (status: "valid" | "valid_document_missing" | "invalid") => {
+  const badge = (s: RemoteVerifyResult["status"]) => {
     const map = {
-      valid: { text: "VALIDE", cls: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30" },
-      valid_document_missing: { text: "VALIDE (document manquant)", cls: "bg-amber-400/10 text-amber-300 border-amber-400/30" },
-      invalid: { text: "INVALIDE", cls: "bg-rose-400/10 text-rose-300 border-rose-400/30" },
+      valid: { txt: "VALIDE", cls: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30" },
+      valid_document_missing: { txt: "VALIDE (document manquant)", cls: "bg-amber-400/10 text-amber-300 border-amber-400/30" },
+      invalid: { txt: "INVALIDE", cls: "bg-rose-400/10 text-rose-300 border-rose-400/30" },
     } as const;
-    const cfg = map[status];
-    return (
-      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${cfg.cls}`}>
-        {cfg.text}
-      </span>
-    );
+    const m = map[s];
+    return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${m.cls}`}>{m.txt}</span>;
   };
-
-  const statusLocal = localResult?.status;
-  const statusRemote = remoteResult?.status;
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Vérifier une preuve .MEVE</h1>
       <p className="mt-2 text-slate-400">
-        Déposez un fichier vérifié (<code className="text-slate-300">name.meve.pdf/png</code>) ou un certificat HTML
-        (<code className="text-slate-300">name.meve.html</code>). Pour un certificat HTML, vous pouvez joindre le
-        document original pour une vérification d’intégrité complète.
+        Déposez un fichier vérifié (<code className="text-slate-300">name.meve.pdf/png</code>).
+        Nous contrôlons les marqueurs MEVE (XMP) et l’intégrité.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm text-slate-300">Fichier ou certificat HTML</label>
-            <FileDropzone onSelected={setFile} accept=".pdf,.png,.html" />
-          </div>
-
-          {file && looksLikeHtmlCert(file) && (
-            <div>
-              <label className="text-sm text-slate-300">Document original (optionnel mais recommandé)</label>
-              <FileDropzone onSelected={setOriginal} />
-              <p className="mt-1 text-xs text-slate-500">
-                Ajoutez le document pour vérifier que son empreinte correspond bien au certificat.
-              </p>
-            </div>
-          )}
+        <div>
+          <label className="text-sm text-slate-300">Fichier</label>
+          <FileDropzone onSelected={setFile} accept=".pdf,.png" />
         </div>
 
-        <div>
+        <div className="flex items-center gap-3">
           <CTAButton type="submit" disabled={loading} aria-label="Verify proof">
             {loading ? "Vérification…" : "Vérifier"}
           </CTAButton>
+          {loading && (
+            <span className="text-xs text-slate-400 animate-pulse">Analyse en cours…</span>
+          )}
         </div>
 
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
-        {/* Résultat LOCAL (HTML) */}
-        {localResult && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-100">Résultat (certificat HTML)</h2>
-              {renderBadge(localResult.status)}
-            </div>
-            {localResult.reason && (
-              <p className="mt-2 text-sm text-slate-400">
-                <span className="text-slate-300">Détails :</span> {localResult.reason}
-              </p>
-            )}
-            {"proof" in localResult && localResult.proof?.doc?.sha256 && (
-              <p className="mt-3 text-xs text-slate-500 break-all">
-                SHA-256 attendu : {localResult.proof.doc.sha256}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Résultat API (PDF/PNG) */}
-        {remoteResult && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+        {resu && (
+          <div className="mt-8 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-100">Résultat (fichier intégré)</h2>
-              {renderBadge(remoteResult.status)}
+              {badge(resu.status)}
             </div>
 
-            {remoteResult.reason && (
+            {resu.reason && (
               <p className="mt-2 text-sm text-slate-400">
-                <span className="text-slate-300">Détails :</span> {remoteResult.reason}
+                <span className="text-slate-300">Détails :</span> {resu.reason}
               </p>
             )}
 
@@ -156,61 +102,35 @@ export default function VerifyPage() {
               <div className="rounded-xl border border-white/10 p-4">
                 <h3 className="text-sm font-medium text-slate-200">Document</h3>
                 <ul className="mt-2 text-sm text-slate-400 space-y-1">
-                  {remoteResult.doc?.name && <li><span className="text-slate-300">Nom :</span> {remoteResult.doc.name}</li>}
-                  {remoteResult.doc?.mime && <li><span className="text-slate-300">MIME :</span> {remoteResult.doc.mime}</li>}
-                  {typeof remoteResult.doc?.size === "number" && (
-                    <li><span className="text-slate-300">Taille :</span> {remoteResult.doc.size} bytes</li>
-                  )}
-                  {remoteResult.doc?.sha256 && (
-                    <li className="break-all"><span className="text-slate-300">SHA-256 :</span> {remoteResult.doc.sha256}</li>
-                  )}
+                  {resu.doc?.name && <li><span className="text-slate-300">Nom :</span> {resu.doc.name}</li>}
+                  {resu.doc?.mime && <li><span className="text-slate-300">MIME :</span> {resu.doc.mime}</li>}
+                  {typeof resu.doc?.size === "number" && <li><span className="text-slate-300">Taille :</span> {resu.doc.size} bytes</li>}
+                  {resu.doc?.sha256 && <li className="break-all"><span className="text-slate-300">SHA-256 :</span> {resu.doc.sha256}</li>}
                 </ul>
               </div>
 
               <div className="rounded-xl border border-white/10 p-4">
                 <h3 className="text-sm font-medium text-slate-200">Émetteur</h3>
                 <ul className="mt-2 text-sm text-slate-400 space-y-1">
-                  {remoteResult.issuer?.name && <li><span className="text-slate-300">Nom :</span> {remoteResult.issuer.name}</li>}
-                  {remoteResult.issuer?.identity && <li className="break-all"><span className="text-slate-300">Identité :</span> {remoteResult.issuer.identity}</li>}
-                  {remoteResult.issuer?.type && <li><span className="text-slate-300">Type :</span> {remoteResult.issuer.type}</li>}
-                  {remoteResult.issuer?.website && <li className="break-all"><span className="text-slate-300">Site :</span> {remoteResult.issuer.website}</li>}
+                  {resu.issuer?.name && <li><span className="text-slate-300">Nom :</span> {resu.issuer.name}</li>}
+                  {resu.issuer?.identity && <li className="break-all"><span className="text-slate-300">Identité :</span> {resu.issuer.identity}</li>}
+                  {resu.issuer?.type && <li><span className="text-slate-300">Type :</span> {resu.issuer.type}</li>}
+                  {resu.issuer?.website && <li className="break-all"><span className="text-slate-300">Site :</span> {resu.issuer.website}</li>}
                 </ul>
               </div>
             </div>
 
-            {/* Date & Heure séparées */}
-            {remoteResult.created_at && (() => {
-              const d = new Date(remoteResult.created_at);
-              const date = d.toLocaleDateString("fr-FR", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              });
-              const time = d.toLocaleTimeString("fr-FR", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              });
-              return (
-                <div className="mt-4 text-xs text-slate-500">
-                  <p><span className="text-slate-300">Date :</span> {date}</p>
-                  <p><span className="text-slate-300">Heure :</span> {time} (UTC)</p>
-                </div>
-              );
-            })()}
+            {resu.created_at && (
+              <p className="mt-4 text-xs text-slate-500">
+                Créé le : {new Date(resu.created_at).toUTCString()}
+              </p>
+            )}
           </div>
         )}
 
-        {/* Aide visuelle */}
-        {(statusLocal || statusRemote) && (
-          <p className="mt-4 text-xs text-slate-500">
-            • <span className="text-emerald-300">Vert</span> : preuve valide. •{" "}
-            <span className="text-amber-300">Ambre</span> : certificat lisible mais document manquant. •{" "}
-            <span className="text-rose-300">Rouge</span> : fichier falsifié ou certificat invalide.
-          </p>
-        )}
+        {/* marge pour éviter que ça soit coupé en bas sur mobile */}
+        <div className="h-16" />
       </form>
     </section>
   );
 }
-```0
