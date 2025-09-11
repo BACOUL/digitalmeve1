@@ -88,14 +88,15 @@ export async function embedMeveXmp(
   pdfDoc.setKeywords(["MEVE", "DigitalMeve", "proof"]);
   pdfDoc.setProducer("DigitalMeve");
 
-  const bytes = await pdfDoc.save();
+  const bytes = await pdfDoc.save(); // Uint8Array
 
-  // ✅ Conversion robuste en Blob via Response
-  const blob = await new Response(bytes, {
-    headers: { "Content-Type": "application/pdf" },
-  }).blob();
-
-  return blob;
+  // ✅ Conversion robuste en Blob (typage Next/Vercel)
+  const baseBuffer = bytes.buffer as ArrayBuffer;
+  const cleanAB = baseBuffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  );
+  return new Blob([cleanAB], { type: "application/pdf" });
 }
 
 // --- Lecture / Vérif --------------------------------------
@@ -173,4 +174,5 @@ export async function verifyMevePdf(
     reason: "Le SHA-256 de l’original ne correspond pas à doc_sha256 du XMP.",
     meve,
   };
-    }
+}
+```0
