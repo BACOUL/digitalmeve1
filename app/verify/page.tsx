@@ -4,135 +4,172 @@
 import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
-import { readMeveXmp, sha256Hex } from "@/lib/meve-xmp";
-
-type Result =
-  | { status: "valid"; reason?: string; created_at?: string }
-  | { status: "valid_document_missing"; reason: string; created_at?: string }
-  | { status: "invalid"; reason: string; created_at?: string };
+import ProgressBar from "@/components/ProgressBar";
+import { CheckCircle2, XCircle, Info, ShieldCheck } from "lucide-react";
+import { verifyMevePdf, readMeveXmp, type MeveXmpInfo } from "@/lib/meve-xmp";
 
 export default function VerifyPage() {
   const [mevePdf, setMevePdf] = useState<File | null>(null);
-  const [original, setOriginal] = useState<File | null>(null); // pour comparer le hash
-  const [loading, setLoading] = useState(false);
-  const [res, setRes] = useState<Result | null>(null);
+  const [original, setOriginal] = useState<File | null>(null);
+
+  const [verifying, setVerifying] = useState(false);
+  const [progress, setProgress] = useState<number | undefined>(undefined);
+
+  const [status, setStatus] =
+    useState<"idle" | "valid" | "valid_document_missing" | "invalid">("idle");
+  const [reason, setReason] = useState<string | undefined>(undefined);
+  const [meve, setMeve] = useState<MeveXmpInfo | undefined>(undefined);
   const [err, setErr] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onVerify(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    setRes(null);
+    setStatus("idle");
+    setReason(undefined);
+    setMeve(undefined);
+    setVerifying(true);
+    setProgress(10);
 
-    if (!mevePdf) {
-      setErr("Ajoute le PDF à vérifier (name.meve.pdf).");
-      return;
-    }
-    if (mevePdf.type !== "application/pdf") {
-      setErr("Seuls les PDF sont supportés.");
-      return;
-    }
-
-    setLoading(true);
     try {
-      // 1) lire le XMP
-      const info = await readMeveXmp(mevePdf);
-      const docHash = info.meve?.doc_sha256;
-      const created = info.meve?.created_at;
-
-      if (!docHash) {
-        setRes({ status: "invalid", reason: "Aucun marqueur MEVE (XMP) trouvé." });
+      if (!mevePdf) {
+        setErr("Please choose a .meve.pdf file to verify.");
+        setVerifying(false);
+        setProgress(undefined);
         return;
       }
 
-      // 2) si pas d’original => preuve trouvée mais pas d’intégrité
-      if (!original) {
-        setRes({
-          status: "valid_document_missing",
-          reason: "Preuve trouvée. Ajoute l’original pour valider l’intégrité (SHA-256).",
-          created_at: created,
-        });
-        return;
-      }
+      // lecture MEVE rapide (infos à afficher même si original absent)
+      const { meve: meta } = await readMeveXmp(mevePdf);
+      setMeve(meta);
+      setProgress(40);
 
-      // 3) comparer SHA-256 de l’original
-      const actual = (await sha256Hex(original)).toLowerCase();
-      if (actual === docHash.toLowerCase()) {
-        setRes({ status: "valid", created_at: created });
-      } else {
-        setRes({
-          status: "invalid",
-          reason: "Le SHA-256 de l’original ne correspond pas au doc_sha256 enregistré.",
-          created_at: created,
-        });
-      }
+      // vérification complète
+      const res = await verifyMevePdf(mevePdf, original ?? undefined);
+      setProgress(90);
+
+      setStatus(res.status);
+      setReason(res.reason);
+      setMeve(res.meve ?? meta);
     } catch (e: any) {
-      setErr(e?.message ?? "Échec de la vérification.");
+      setErr(e?.message ?? "Verification failed.");
     } finally {
-      setLoading(false);
+      setVerifying(false);
+      setProgress(100);
+      setTimeout(() => setProgress(undefined), 400);
     }
   }
 
-  const badge = (s: Result["status"]) => {
-    const cls =
-      s === "valid"
-        ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/30"
-        : s === "valid_document_missing"
-        ? "bg-amber-400/10 text-amber-300 border-amber-400/30"
-        : "bg-rose-400/10 text-rose-300 border-rose-400/30";
-    return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold border ${cls}`}>{s.toUpperCase()}</span>;
-  };
-
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12 pb-24">
-      <h1 className="text-3xl font-bold text-slate-100">Vérifier une preuve .MEVE</h1>
-      <p className="mt-2 text-slate-400">
-        Dépose ton <code className="text-slate-300">name.meve.pdf</code>. Optionnel : ajoute le document
-        original pour valider l’intégrité (comparaison SHA-256).
+    <section className="mx-auto max-w-3xl px-4 py-10 text-slate-100">
+      {/* Titre + sous-titre très lisibles */}
+      <h1 className="text-3xl font-bold">Verify a .MEVE proof</h1>
+      <p className="mt-2 text-slate-300">
+        Drop your <span className="font-semibold">name.meve.pdf</span>. Optional: add the
+        original file to confirm integrity (SHA-256 comparison).
       </p>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-6">
+      <form onSubmit={onVerify} className="mt-8 space-y-6">
+        {/* Cartes contrastées */}
         <div>
-          <label className="text-sm text-slate-300">PDF à vérifier</label>
-          <FileDropzone onSelected={setMevePdf} accept=".pdf,application/pdf" />
+          <label className="mb-2 block text-sm text-slate-200">
+            PDF to verify
+          </label>
+          <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3">
+            <FileDropzone
+              onSelected={setMevePdf}
+              accept=".pdf,application/pdf"
+            />
+          </div>
         </div>
 
         <div>
-          <label className="text-sm text-slate-300">Original (optionnel mais recommandé)</label>
-          <FileDropzone onSelected={setOriginal} />
+          <label className="mb-2 block text-sm text-slate-200">
+            Original (optional but recommended)
+          </label>
+          <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3">
+            <FileDropzone onSelected={setOriginal} />
+          </div>
         </div>
 
-        <div>
-          <CTAButton type="submit" disabled={loading || !mevePdf}>
-            {loading ? "Vérification…" : "Vérifier"}
+        <div className="w-full sm:w-auto">
+          <CTAButton type="submit" aria-label="Verify .MEVE">
+            Verify
           </CTAButton>
+          {(progress !== undefined || verifying) && (
+            <div className="mt-3">
+              <ProgressBar value={verifying ? undefined : progress} />
+            </div>
+          )}
         </div>
 
-        {err && <p className="text-sm text-rose-400">{err}</p>}
+        {err && (
+          <p className="text-sm text-rose-400">
+            {err}
+          </p>
+        )}
 
-        {res && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-100">Résultat</h2>
-              {badge(res.status)}
+        {/* Résultat */}
+        {status !== "idle" && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/70 p-5">
+            <div className="mb-3 flex items-center gap-2">
+              {status === "valid" && (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300">
+                    VALID
+                  </span>
+                </>
+              )}
+              {status === "valid_document_missing" && (
+                <>
+                  <ShieldCheck className="h-5 w-5 text-sky-300" />
+                  <span className="inline-flex items-center rounded-full border border-sky-400/40 bg-sky-400/10 px-2.5 py-0.5 text-xs text-sky-300">
+                    PROOF FOUND — ORIGINAL MISSING
+                  </span>
+                </>
+              )}
+              {status === "invalid" && (
+                <>
+                  <XCircle className="h-5 w-5 text-rose-400" />
+                  <span className="inline-flex items-center rounded-full border border-rose-400/40 bg-rose-400/10 px-2.5 py-0.5 text-xs text-rose-300">
+                    INVALID
+                  </span>
+                </>
+              )}
             </div>
 
-            {res.created_at && (
-              <p className="mt-2 text-sm text-slate-400">
-                <span className="text-slate-300">Date :</span>{" "}
-                {new Date(res.created_at).toLocaleDateString()} —{" "}
-                <span className="text-slate-300">Heure :</span>{" "}
-                {new Date(res.created_at).toLocaleTimeString()}
-              </p>
+            {reason && (
+              <p className="text-sm text-slate-300">{reason}</p>
             )}
 
-            {"reason" in res && res.reason && (
-              <p className="mt-2 text-sm text-slate-400">
-                <span className="text-slate-300">Détails :</span> {res.reason}
-              </p>
-            )}
+            {/* Détails MEVE */}
+            <div className="mt-4 grid gap-2 text-sm text-slate-300">
+              <div className="flex gap-2">
+                <span className="w-36 text-slate-400">Version</span>
+                <span>{meve?.version || "—"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="w-36 text-slate-400">Created</span>
+                <span>{meve?.created_at || "—"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="w-36 text-slate-400">Issuer</span>
+                <span>{meve?.issuer_identity || "—"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="w-36 text-slate-400">SHA-256</span>
+                <span className="break-all">{meve?.doc_sha256 || "—"}</span>
+              </div>
+            </div>
+
+            <p className="mt-4 flex items-start gap-2 text-xs text-slate-500">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              The proof is stored in the PDF’s XMP metadata. Any change to the
+              original document will break the integrity check.
+            </p>
           </div>
         )}
       </form>
     </section>
   );
-          }
+}
