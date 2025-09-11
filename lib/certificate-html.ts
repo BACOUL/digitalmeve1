@@ -1,4 +1,6 @@
 // lib/certificate-html.ts
+// Clean, English-only .MEVE certificate (no extra sentence), strong VALID badge,
+// correct spacing for Issuer, fully responsive, no overflow on mobile.
 
 export function buildMeveCertificateHtml(opts: {
   fileName: string;
@@ -17,9 +19,10 @@ export function buildMeveCertificateHtml(opts: {
     brandTagline = "Trusted Integrity Worldwide",
   } = opts;
 
+  // English formats (24h)
   const d = new Date(createdAtISO);
-  const date = d.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
-  const time = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const date = d.toLocaleDateString("en-GB", { year: "numeric", month: "2-digit", day: "2-digit" });
+  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 
   return `<!doctype html>
 <html lang="en">
@@ -36,7 +39,8 @@ export function buildMeveCertificateHtml(opts: {
     --text:#e2e8f0;
     --muted:#94a3b8;
     --border:rgba(255,255,255,.08);
-    --emerald:#34d399;
+    --green:#10b981; /* brighter for VALID */
+    --green-soft:rgba(16,185,129,.12);
     --blue:#60a5fa;
     --ring:rgba(96,165,250,.35);
   }
@@ -46,7 +50,7 @@ export function buildMeveCertificateHtml(opts: {
   body{
     background:
       radial-gradient(1200px 600px at 10% -10%, rgba(96,165,250,.14), transparent 50%),
-      radial-gradient(1000px 500px at 110% 20%, rgba(52,211,153,.12), transparent 40%),
+      radial-gradient(1000px 500px at 110% 20%, rgba(16,185,129,.10), transparent 40%),
       var(--bg);
     color:var(--text);
     font:400 16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
@@ -55,10 +59,8 @@ export function buildMeveCertificateHtml(opts: {
   }
 
   .wrap{
-    min-height:100svh; /* tient compte de la barre d’URL mobile */
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    min-height:100svh;
+    display:flex;align-items:center;justify-content:center;
     padding:clamp(12px, 3.5vw, 32px);
     padding-bottom:calc(env(safe-area-inset-bottom,0) + 24px);
   }
@@ -77,35 +79,45 @@ export function buildMeveCertificateHtml(opts: {
     padding:18px 20px;
     border-bottom:1px solid var(--border);
     background:
-      linear-gradient(90deg, rgba(96,165,250,.15), rgba(52,211,153,.12) 50%, transparent);
+      linear-gradient(90deg, rgba(96,165,250,.15), rgba(16,185,129,.12) 50%, transparent);
   }
   .brand .name{
     font-weight:800; letter-spacing:.2px;
-    background:linear-gradient(90deg,var(--blue),var(--emerald));
+    background:linear-gradient(90deg,var(--blue),var(--green));
     -webkit-background-clip:text; background-clip:text; color:transparent;
     font-size:18px;
   }
   .brand .tag{ color:var(--muted); font-size:12px }
 
   .header{
-    display:flex;align-items:center;gap:10px;
+    display:flex;align-items:center;gap:12px;
     padding:16px 20px 0;
   }
   .title{ font-weight:800; font-size:20px; margin:0 }
   .badge{
-    font-weight:700;font-size:12px;padding:4px 10px;border-radius:9999px;
-    border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);color:var(--emerald);
+    display:inline-flex;align-items:center;gap:8px;
+    font-weight:800;font-size:12px;letter-spacing:.3px;
+    padding:6px 12px;border-radius:9999px;
+    border:1px solid rgba(16,185,129,.65);
+    background:linear-gradient(180deg,var(--green-soft), rgba(16,185,129,.18));
+    color:var(--green);
+    text-transform:uppercase;
+    box-shadow:0 0 0 3px rgba(16,185,129,.08) inset;
   }
 
   .card{ padding:20px }
   .grid{ display:grid; gap:12px; }
   @media(min-width:560px){ .grid{ grid-template-columns:160px 1fr } }
 
-  .label{ color:var(--muted) }
+  .label{ color:var(--muted); white-space:nowrap }
   .value{ overflow-wrap:anywhere; word-break:break-word }
 
   .hashRow{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
-  code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:rgba(255,255,255,.04); padding:6px 8px; border-radius:8px; border:1px solid var(--border) }
+  code{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    background:rgba(255,255,255,.04);
+    padding:6px 8px; border-radius:8px; border:1px solid var(--border)
+  }
 
   button.copy{
     border:1px solid var(--border); background:transparent; color:var(--text);
@@ -146,7 +158,11 @@ export function buildMeveCertificateHtml(opts: {
           <div class="label" role="rowheader">Time</div>
           <div class="value" role="cell">${time}</div>
 
-          ${issuer ? `<div class="label" role="rowheader">Issuer</div><div class="value" role="cell">${escapeHtml(issuer)}</div>` : ""}
+          ${
+            issuer
+              ? `<div class="label" role="rowheader">Issuer</div><div class="value" role="cell">${escapeHtml(issuer)}</div>`
+              : ""
+          }
 
           <div class="label" role="rowheader">SHA-256</div>
           <div class="value hashRow" role="cell">
@@ -157,7 +173,7 @@ export function buildMeveCertificateHtml(opts: {
       </div>
 
       <footer class="footer">
-        <div>Certificate generated automatically</div>
+        <div>Automatically generated certificate</div>
         <div class="right">${escapeHtml(brandName)} • .MEVE</div>
       </footer>
     </section>
@@ -168,7 +184,7 @@ function copyHash(){
   const el = document.getElementById('hash');
   const txt = el ? (el.textContent || "") : "";
   if (!txt) return;
-  navigator.clipboard.writeText(txt).then(()=>{ /* no toast to keep it clean */ });
+  navigator.clipboard.writeText(txt);
 }
 </script>
 </body>
