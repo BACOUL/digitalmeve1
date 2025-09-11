@@ -7,6 +7,7 @@ import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
 import { FileDown, ShieldCheck } from "lucide-react";
 import { watermarkPdfFile } from "@/lib/watermark-pdf";
+import { embedMeveXmp, sha256Hex } from "@/lib/meve-xmp";
 
 // util: nom depuis Content-Disposition
 function filenameFromCD(cd: string | null, fallback: string) {
@@ -41,26 +42,43 @@ export default function GeneratePage() {
     }
 
     try {
-      // 1) Filigraner AVANT l’envoi si c’est un PDF
-      const toSend =
-        file.type === "application/pdf" ? await watermarkPdfFile(file, "DigitalMeve") : file;
+      // ---------- 1) Prépare le fichier à envoyer ----------
+      let toSend: Blob | File = file;
 
-      // 2) Préparer form
+      if (file.type === "application/pdf") {
+        // a) hash de l'original (avant toute modif)
+        const originalSha = await sha256Hex(file);
+
+        // b) filigrane
+        const watermarked = await watermarkPdfFile(file, "DigitalMeve");
+
+        // c) XMP MEVE (doc_sha256 + meta)
+        toSend = await embedMeveXmp(watermarked, {
+          docSha256: originalSha,
+          createdAtISO: new Date().toISOString(),
+          issuer: issuer.trim(),
+          issuerType: "personal",
+          issuerWebsite: "https://digitalmeve.com",
+        });
+      }
+
+      // ---------- 2) Préparer form ----------
       const form = new FormData();
-      form.append("file", toSend);
+      // IMPORTANT: FormData attend un File. Convertir Blob → File si besoin
+      const toSendFile =
+        toSend instanceof File ? toSend : new File([toSend], file.name, { type: file.type || "application/octet-stream" });
+
+      form.append("file", toSendFile);
       if (issuer.trim()) form.append("issuer", issuer.trim());
 
-      // 3) Upload avec vraie progression (XHR)
+      // ---------- 3) Upload avec vraie progression (XHR) ----------
       const xhr = new XMLHttpRequest();
       const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
         xhr.open("POST", "/api/proxy/generate", true);
         xhr.responseType = "blob";
 
         xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable) {
-            const pct = Math.round((ev.loaded / ev.total) * 100);
-            setUploadPct(pct);
-          }
+          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 100));
         };
         xhr.onloadstart = () => { setUploadPct(0); setProcessing(false); };
         xhr.onreadystatechange = () => {
@@ -93,7 +111,7 @@ export default function GeneratePage() {
 
       const { blob, headers } = await promise;
 
-      // 4) Télécharger le .meve.ext renvoyé par l’API (intègre la preuve DU PDF FILIGRANÉ)
+      // ---------- 4) Télécharger le .meve.ext retourné ----------
       const cd = headers.get("Content-Disposition");
       const { base, ext } = splitName(file.name);
       const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
@@ -119,8 +137,8 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Upload any file. For PDFs, we’ll watermark it then embed a .MEVE proof. You’ll download{" "}
-        <code className="text-slate-300">name.meve.ext</code>.
+        Upload any file. For PDFs, we’ll watermark it and embed a MEVE marker (XMP) with integrity data,
+        then return <code className="text-slate-300">name.meve.ext</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -156,8 +174,8 @@ export default function GeneratePage() {
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 text-sm text-slate-400">
         <div className="flex items-center gap-2"><FileDown className="h-5 w-5" /><span>Download meve document</span></div>
-        <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /><span>Embedded proof</span></div>
+        <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /><span>Embedded proof (XMP)</span></div>
       </div>
     </section>
   );
-              }
+                 }
