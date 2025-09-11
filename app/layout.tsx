@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer"; // ⬅️ nouveau
+import Footer from "@/components/Footer";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
       "DigitalMeve delivers a simple, universal digital proof — free for individuals.",
     images: [
       {
-        url: "/og/og-image.png", // 1200x630 dans /public/og/
+        url: "/og/og-image.png", // 1200x630 in /public/og/
         width: 1200,
         height: 630,
         alt: "DigitalMeve — The .MEVE Standard",
@@ -41,12 +41,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png", // optionnel si présent
+    apple: "/apple-touch-icon.png",
   },
   applicationName: "DigitalMeve",
   referrer: "strict-origin-when-cross-origin",
   other: {
-    "theme-color": "#0B1220",
+    // Light theme color for mobile address bar, etc.
+    "theme-color": "#ffffff",
   },
 };
 
@@ -56,11 +57,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="bg-slate-950 text-slate-100 antialiased">
-      <body className="min-h-screen flex flex-col">
+    <html lang="en" className="antialiased">
+      <body className="min-h-screen flex flex-col bg-white text-slate-900">
         <Header />
         <main className="flex-1">{children}</main>
-        <Footer /> {/* ⬅️ ajouté */}
+        <Footer />
       </body>
     </html>
   );
