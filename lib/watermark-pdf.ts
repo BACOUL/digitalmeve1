@@ -1,46 +1,53 @@
 // lib/watermark-pdf.ts
-import { PDFDocument, rgb, degrees } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, degrees } from "pdf-lib";
 
 /**
- * Ajoute un filigrane diagonal visible "DigitalMeve" sur chaque page.
- * Retourne un File PDF (même nom, type application/pdf).
+ * Applique un filigrane discret “DigitalMeve” en diagonale,
+ * légèrement coloré (couleurs DigitalMeve) avec faible opacité.
+ * Retourne un Blob PDF (même contenu, juste filigrané).
  */
-export async function watermarkPdfFile(input: File, text = "DigitalMeve"): Promise<File> {
-  if (input.type !== "application/pdf") return input;
-
+export async function watermarkPdfFile(
+  input: Blob,
+  text = "DigitalMeve"
+): Promise<Blob> {
   const ab = await input.arrayBuffer();
   const pdfDoc = await PDFDocument.load(ab);
+  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  const pages = pdfDoc.getPages();
-  for (const p of pages) {
-    const { width, height } = p.getSize();
+  // Couleurs DM : émeraude & bleu (on alterne légèrement)
+  const emerald = rgb(52 / 255, 211 / 255, 153 / 255); // #34d399
+  const blue    = rgb(96 / 255, 165 / 255, 250 / 255); // #60a5fa
+  const opacity = 0.12; // “très léger”
 
-    // Bande transparente au centre pour assurer la lisibilité
-    const bandH = Math.max(80, height * 0.18);
-    p.drawRectangle({
-      x: 0,
-      y: height / 2 - bandH / 2,
-      width,
-      height: bandH,
-      color: rgb(0, 0, 0),
-      opacity: 0.12,
-    });
+  for (const page of pdfDoc.getPages()) {
+    const { width, height } = page.getSize();
 
-    // Texte en grand, en diagonale
-    const fontSize = Math.max(36, Math.min(96, Math.round(width * 0.09)));
-    p.drawText(text, {
-      x: width * 0.08,
-      y: height * 0.42,
-      size: fontSize,
-      color: rgb(1, 1, 1),
-      opacity: 0.85,
-      rotate: degrees(-20),
-    });
+    // Taille texte en fonction de la largeur de page
+    const size = Math.max(36, Math.min(64, width * 0.06));
+    const textWidth = font.widthOfTextAtSize(text, size);
+    const stepX = textWidth * 1.6;
+    const stepY = size * 3;
+
+    // Grille diagonale
+    for (let y = -height; y < height * 1.5; y += stepY) {
+      let toggle = 0;
+      for (let x = -width; x < width * 1.5; x += stepX) {
+        page.drawText(text, {
+          x,
+          y,
+          size,
+          font,
+          rotate: degrees(-30),
+          color: toggle % 2 === 0 ? emerald : blue,
+          opacity,
+        });
+        toggle++;
+      }
+    }
   }
 
   const bytes = await pdfDoc.save(); // Uint8Array
-  // Fournir un ArrayBuffer "propre" au constructeur de File
-  const base = bytes.buffer as ArrayBuffer;
-  const cleanAB = base.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-  return new File([cleanAB], input.name, { type: "application/pdf" });
+  // conversion propre en ArrayBuffer pour satisfaire les typages lors du build
+  const cleanAB = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  return new Blob([cleanAB], { type: "application/pdf" });
 }
