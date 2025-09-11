@@ -1,8 +1,8 @@
 // lib/watermark-pdf.ts
-import { PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, rgb, degrees } from "pdf-lib";
 
 /**
- * Ajoute un filigrane discret en bas à gauche de chaque page.
+ * Ajoute un filigrane diagonal visible "DigitalMeve" sur chaque page.
  * Retourne un File PDF (même nom, type application/pdf).
  */
 export async function watermarkPdfFile(input: File, text = "DigitalMeve"): Promise<File> {
@@ -13,31 +13,33 @@ export async function watermarkPdfFile(input: File, text = "DigitalMeve"): Promi
 
   const pages = pdfDoc.getPages();
   for (const p of pages) {
-    const { width } = p.getSize();
-    const fontSize = Math.max(10, Math.min(14, Math.round(width * 0.018)));
-    const margin = Math.max(8, Math.round(width * 0.015));
+    const { width, height } = p.getSize();
 
-    const bandHeight = fontSize + margin;
+    // Bande transparente au centre pour assurer la lisibilité
+    const bandH = Math.max(80, height * 0.18);
     p.drawRectangle({
-      x: margin,
-      y: margin,
-      width: Math.min(260, width * 0.5),
-      height: bandHeight,
+      x: 0,
+      y: height / 2 - bandH / 2,
+      width,
+      height: bandH,
       color: rgb(0, 0, 0),
-      opacity: 0.25,
+      opacity: 0.12,
     });
 
+    // Texte en grand, en diagonale
+    const fontSize = Math.max(36, Math.min(96, Math.round(width * 0.09)));
     p.drawText(text, {
-      x: margin + 8,
-      y: margin + bandHeight / 2 - fontSize / 2,
+      x: width * 0.08,
+      y: height * 0.42,
       size: fontSize,
       color: rgb(1, 1, 1),
       opacity: 0.85,
+      rotate: degrees(-20),
     });
   }
 
   const bytes = await pdfDoc.save(); // Uint8Array
-  // ✅ fournir un ArrayBuffer "propre" au constructeur de File
+  // Fournir un ArrayBuffer "propre" au constructeur de File
   const base = bytes.buffer as ArrayBuffer;
   const cleanAB = base.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   return new File([cleanAB], input.name, { type: "application/pdf" });
