@@ -9,7 +9,7 @@ import { buildProofHtml } from "@/lib/proof-html";
 import { FileDown, FileText, ShieldCheck } from "lucide-react";
 import { addPdfWatermark } from "@/lib/watermark-pdf";
 
-// --- Helpers ---
+// util: nom depuis Content-Disposition
 function filenameFromCD(cd: string | null, fallback: string) {
   const m = cd?.match(/filename="?([^"]+)"?/i);
   return m?.[1] ?? fallback;
@@ -46,35 +46,40 @@ export default function GeneratePage() {
     const form = new FormData();
     form.append("file", file);
     if (issuer.trim()) form.append("issuer", issuer.trim());
-    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce champ côté API mais on sert un .html côté front
+    if (alsoHtml) form.append("also_json", "1"); // on réutilise ce flag côté proxy
 
     try {
-      // ---- Upload + progression (XHR) ----
+      // ---- Upload avec barre de progression (XMLHttpRequest) ----
       const xhr = new XMLHttpRequest();
       const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
         xhr.open("POST", "/api/proxy/generate", true);
         xhr.responseType = "blob";
 
+        // progression d'upload
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) {
             const pct = Math.round((ev.loaded / ev.total) * 100);
             setUploadPct(pct);
           }
         };
+
         xhr.onloadstart = () => {
           setUploadPct(0);
           setProcessing(false);
         };
+
         xhr.onreadystatechange = () => {
-          // Quand l’upload est terminé et que les headers de la réponse arrivent
+          // upload terminé, headers reçus => phase "processing"
           if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
             setProcessing(true);
           }
         };
+
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.ontimeout = () => reject(new Error("Request timeout"));
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
+            // reconstruire les headers
             const h = new Headers();
             const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
             for (const line of raw) {
@@ -97,38 +102,34 @@ export default function GeneratePage() {
 
       let { blob, headers } = await promise;
 
-      // ---- Nom & type retournés par l’API ----
       const cd = headers.get("Content-Disposition");
       const ct = headers.get("Content-Type") || "";
       const { base, ext } = splitName(file.name);
       const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
 
-      // ✅ Filigrane pour PDF (détection robuste : Content-Type OU extension)
-      const isPdf = ct.includes("application/pdf") || ext.toLowerCase() === "pdf";
-      if (isPdf) {
+      // ✅ Filigrane si PDF (ne bloque pas si ça échoue)
+      if (ct.includes("application/pdf")) {
         try {
           blob = await addPdfWatermark(blob, "DigitalMeve");
-        } catch (e) {
-          console.warn("Watermark failed, using original file:", e);
+        } catch {
+          /* ignore */
         }
       }
 
-      // ---- Téléchargement prioritaire du document .meve.EXT ----
-      {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = primaryName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
+      // ---- Télécharger le document (toujours en priorité) ----
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = primaryName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
 
       setMsg(`Downloaded ${primaryName}`);
       setProcessing(false);
 
-      // ---- Option : proposer ensuite la preuve HTML formatée (jamais en premier) ----
+      // ---- Si demandé, proposer ensuite la preuve HTML (deuxième download) ----
       if (alsoHtml) {
         try {
           const proof = await buildProofObject(file, issuer.trim());
@@ -145,7 +146,7 @@ export default function GeneratePage() {
           proofA.remove();
           URL.revokeObjectURL(proofUrl);
         } catch {
-          // On ignore si la génération de la preuve HTML échoue
+          /* ignore */
         }
       }
     } catch (e: any) {
@@ -195,9 +196,7 @@ export default function GeneratePage() {
             Generate Proof
           </CTAButton>
           {(uploadPct !== undefined || processing) && (
-            <div className="mt-3">
-              <ProgressBar value={processing ? undefined : uploadPct} />
-            </div>
+            <ProgressBar value={processing ? undefined : uploadPct} />
           )}
         </div>
 
@@ -209,7 +208,7 @@ export default function GeneratePage() {
         </p>
       </form>
 
-      {/* Légende des actions */}
+      {/* mini-légende des actions */}
       <div className="mt-8 grid gap-3 sm:grid-cols-3 text-sm text-slate-400">
         <div className="flex items-center gap-2">
           <FileDown className="h-5 w-5" />
@@ -227,4 +226,3 @@ export default function GeneratePage() {
     </section>
   );
 }
-```0
