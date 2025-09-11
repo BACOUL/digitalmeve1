@@ -1,3 +1,5 @@
+
+// app/page.tsx
 import {
   Upload,
   BadgeCheck,
@@ -8,124 +10,129 @@ import {
   Briefcase,
   CheckCircle2,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className="min-h-screen bg-white text-gray-800">
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -left-40 h-80 w-80 rounded-full blur-3xl opacity-30 bg-emerald-400/30" />
-          <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full blur-3xl opacity-30 bg-sky-400/30" />
-        </div>
-
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:py-24">
-          {/* Titre */}
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+      <section className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+          {/* Title */}
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl text-gray-900">
             DigitalMeve —{" "}
-            <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-              The reference for your documents’ authenticity
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
+              Simple proof for your documents
             </span>
           </h1>
 
-          {/* Sous-titre (version validée) */}
-          <p className="mt-4 max-w-2xl text-lg text-slate-300">
-            DigitalMeve provides a{" "}
-            <strong className="text-slate-100">simple</strong>,{" "}
-            <strong className="text-slate-100">universal</strong>, and{" "}
-            <strong className="text-slate-100">free</strong> digital proof for everyone.
+          {/* Subtitle (plain, non-jargon) */}
+          <p className="mt-4 max-w-2xl text-lg text-gray-600">
+            Upload your file. We add a lightweight DigitalMeve mark inside
+            (date, time, and unique fingerprint) — your document stays fully
+            readable and verifiable anywhere.
           </p>
 
-          {/* CTA */}
+          {/* CTAs */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
+            <Link
               href="/generate"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-medium text-slate-900 bg-gradient-to-r from-emerald-400 to-sky-400 shadow-[0_0_40px_rgba(34,211,238,0.35)] hover:brightness-110 transition"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white bg-emerald-500 hover:bg-emerald-600 transition"
             >
-              Get Started
+              Get started
               <ArrowRight className="h-5 w-5" aria-hidden />
-            </a>
-            <a
+            </Link>
+            <Link
               href="/pro"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-medium border border-white/10 bg-white/5 hover:bg-white/10 transition"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-sky-600 ring-1 ring-sky-200 hover:bg-sky-50 transition"
             >
               <Briefcase className="h-5 w-5" aria-hidden />
-              For Professionals
-            </a>
+              For professionals
+            </Link>
           </div>
 
-          {/* Lien rapides */}
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+          {/* Quick links */}
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-5 w-5 text-emerald-300" aria-hidden /> Embedded for PDF & PNG
+              <BadgeCheck className="h-5 w-5 text-emerald-500" aria-hidden />
+              Built-in for PDF & PNG
             </span>
             <span className="hidden sm:inline">•</span>
-            <a
+            <Link
               href="/verify"
-              className="inline-flex items-center gap-2 underline decoration-sky-400/60 hover:text-slate-200"
+              className="inline-flex items-center gap-2 underline decoration-sky-400 hover:text-gray-700"
             >
-              <ShieldCheck className="h-5 w-5" aria-hidden />
-              Verify a proof
-            </a>
+              <ShieldCheck className="h-5 w-5 text-sky-500" aria-hidden />
+              Verify a document
+            </Link>
             <span className="hidden sm:inline">•</span>
-            <a
+            <Link
               href="/personal"
-              className="inline-flex items-center gap-2 underline decoration-sky-400/60 hover:text-slate-200"
+              className="inline-flex items-center gap-2 underline decoration-emerald-400 hover:text-gray-700"
             >
-              <Users className="h-5 w-5" aria-hidden />
-              For Individuals
-            </a>
+              <Users className="h-5 w-5 text-emerald-500" aria-hidden />
+              For individuals
+            </Link>
           </div>
         </div>
       </section>
 
       {/* 3 SIMPLE STEPS */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-2xl font-semibold">How it works</h2>
-        <p className="mt-2 text-slate-400">Three simple steps. No jargon.</p>
+      <section className="mx-auto max-w-6xl px-4 py-14">
+        <h2 className="text-2xl font-semibold text-gray-900">How it works</h2>
+        <p className="mt-2 text-gray-600">Three simple steps. No jargon.</p>
 
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Step 1</span>
-              <Upload className="h-6 w-6" aria-hidden />
+              <Upload className="h-5 w-5 text-emerald-500" aria-hidden />
             </div>
-            <h3 className="mt-2 text-lg font-medium">Upload your document</h3>
-            <p className="mt-2 text-slate-400">Drop any document — PDF, image, or more.</p>
-            <a
+            <h3 className="mt-2 text-lg font-medium text-gray-900">
+              Upload your document
+            </h3>
+            <p className="mt-2 text-gray-600">
+              Works with PDFs, images, and more.
+            </p>
+            <Link
               href="/generate"
-              className="mt-4 inline-flex items-center gap-2 text-sm underline decoration-emerald-400/60 hover:text-slate-200"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
             >
               Try now <ArrowRight className="h-5 w-5" aria-hidden />
-            </a>
+            </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Step 2</span>
-              <BadgeCheck className="h-6 w-6" aria-hidden />
+              <BadgeCheck className="h-5 w-5 text-emerald-500" aria-hidden />
             </div>
-            <h3 className="mt-2 text-lg font-medium">Get your certified copy</h3>
-            <p className="mt-2 text-slate-400">
-              We add an invisible proof to your document. It stays fully readable and uniquely yours.
+            <h3 className="mt-2 text-lg font-medium text-gray-900">
+              Get your certified copy
+            </h3>
+            <p className="mt-2 text-gray-600">
+              We add a tamper-evident MEVE marker (date, time, and SHA-256) —
+              your file stays clean and readable.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Step 3</span>
-              <FileDown className="h-6 w-6" aria-hidden />
+              <FileDown className="h-5 w-5 text-emerald-500" aria-hidden />
             </div>
-            <h3 className="mt-2 text-lg font-medium">Download & share</h3>
-            <p className="mt-2 text-slate-400">
-              Keep a portable certificate (<code className="text-slate-300">.meve.json</code>) or share the verified document anytime.
+            <h3 className="mt-2 text-lg font-medium text-gray-900">
+              Download & share
+            </h3>
+            <p className="mt-2 text-gray-600">
+              Share the certified document anytime — anyone can verify it.
             </p>
-            <a
+            <Link
               href="/verify"
-              className="mt-4 inline-flex items-center gap-2 text-sm underline decoration-sky-400/60 hover:text-slate-200"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-sky-600 hover:text-sky-700"
             >
               Verify a document <ArrowRight className="h-5 w-5" aria-hidden />
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -134,81 +141,99 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Individuals */}
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">
-              <Users className="h-5 w-5" aria-hidden />
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+              <Users className="h-4 w-4" aria-hidden />
               Individuals — Free forever
             </span>
-            <h3 className="mt-3 text-xl font-semibold">Protect your documents in seconds</h3>
-            <ul className="mt-3 space-y-2 text-slate-400">
+            <h3 className="mt-3 text-xl font-semibold text-gray-900">
+              Protect your documents in seconds
+            </h3>
+            <ul className="mt-3 space-y-2 text-gray-700">
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden /> Unlimited personal use
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
+                Unlimited personal use
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden /> Readable documents with built-in proof (PDF/PNG)
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
+                Readable files with built-in proof (PDF/PNG)
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden /> Optional portable certificate (.meve.json)
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
+                Optional human-readable certificate
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden /> No accounts. No storage. Instant.
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
+                No accounts. No storage. Instant.
               </li>
             </ul>
             <div className="mt-5 flex gap-3">
-              <a
+              <Link
                 href="/personal"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/10 transition"
+                className="inline-flex items-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2 text-sm hover:bg-gray-50 transition"
               >
-                Explore personal <ArrowRight className="h-5 w-5" aria-hidden />
-              </a>
-              <a
+                Explore personal
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </Link>
+              <Link
                 href="/generate"
-                className="inline-flex items-center gap-2 rounded-xl bg-white text-slate-900 px-4 py-2 text-sm font-medium hover:opacity-90 transition"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 text-white px-4 py-2 text-sm font-medium hover:bg-emerald-600 transition"
               >
-                Start free <ArrowRight className="h-5 w-5" aria-hidden />
-              </a>
+                Start free
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </Link>
             </div>
           </div>
 
           {/* Professionals */}
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur">
-            <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs text-sky-300">
-              <Briefcase className="h-5 w-5" aria-hidden />
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs text-sky-700">
+              <Briefcase className="h-4 w-4" aria-hidden />
               Professionals — API & Dashboard
             </span>
-            <h3 className="mt-3 text-xl font-semibold">Integrate .MEVE into your workflow</h3>
-            <ul className="mt-3 space-y-2 text-slate-400">
+            <h3 className="mt-3 text-xl font-semibold text-gray-900">
+              Integrate .MEVE into your workflow
+            </h3>
+            <ul className="mt-3 space-y-2 text-gray-700">
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-300" aria-hidden /> API & SDKs for automated certification
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-500" aria-hidden />
+                API & SDKs for automated certification
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-300" aria-hidden /> Verification at scale
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-500" aria-hidden />
+                Verification at scale
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-300" aria-hidden /> Email/domain verification for <span className="text-slate-300">Pro</span> badge
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-500" aria-hidden />
+                Email/domain checks for Pro badge
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-300" aria-hidden /> SLA, support & roadmap alignment
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-500" aria-hidden />
+                SLA, support, and roadmap alignment
               </li>
             </ul>
             <div className="mt-5 flex gap-3">
-              <a
+              <Link
                 href="/pro"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/10 transition"
+                className="inline-flex items-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2 text-sm hover:bg-gray-50 transition"
               >
-                Learn more <ArrowRight className="h-5 w-5" aria-hidden />
-              </a>
-              <a
+                Learn more
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </Link>
+              <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 rounded-xl bg-white text-slate-900 px-4 py-2 text-sm font-medium hover:opacity-90 transition"
+                className="inline-flex items-center gap-2 rounded-xl bg-sky-600 text-white px-4 py-2 text-sm font-medium hover:bg-sky-700 transition"
               >
-                Contact us <ArrowRight className="h-5 w-5" aria-hidden />
-              </a>
+                Contact us
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </Link>
             </div>
-            <p className="mt-3 text-xs text-slate-500">Note: “Official” tier is not part of the current offering.</p>
+            <p className="mt-3 text-xs text-gray-500">
+              Note: “Official” tier is not part of the current offering.
+            </p>
           </div>
         </div>
       </section>
     </main>
   );
-      }
+            }
