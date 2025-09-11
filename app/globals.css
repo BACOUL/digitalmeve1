@@ -3,170 +3,160 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Typography base */
+/* ------------------------------------------------------------------
+   Thème (dark par défaut) + variables design
+   Pour activer un look clair façon FreeConvert :
+   <html class="theme-light"> … </html>
+------------------------------------------------------------------- */
+:root {
+  --bg: #0B1220;                 /* fond principal */
+  --fg: #E5EDF9;                 /* texte par défaut */
+  --fg-muted: #C8D3E6;           /* texte secondaire */
+  --surface: #0F172A;            /* cartes / panneaux */
+  --surface-weak: #0B1220;       /* zones faibles */
+  --border: rgba(255,255,255,.12);
+  --accent-1: #34D399;           /* emerald */
+  --accent-2: #38BDF8;           /* sky */
+  --ring: rgba(52, 211, 153, .5);
+  --shadow: 0 8px 30px rgba(0,0,0,.35);
+}
+
+.theme-light {
+  --bg: #FFFFFF;
+  --fg: #0F172A;
+  --fg-muted: #334155;
+  --surface: #F8FAFC;
+  --surface-weak: #FFFFFF;
+  --border: rgba(15, 23, 42, .12);
+  --accent-1: #0EA5E9;           /* bleu doux */
+  --accent-2: #22C55E;           /* vert doux inversé */
+  --ring: rgba(14, 165, 233, .45);
+  --shadow: 0 6px 24px rgba(2,6,23,.12);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base typographie & fond                                             */
+/* ------------------------------------------------------------------ */
 @layer base {
   html, body {
-    @apply bg-[#0B1220] text-slate-100;
+    @apply antialiased;
+    background: var(--bg);
+    color: var(--fg);
   }
-  ::selection {
-    @apply bg-emerald-300/30;
-  }
+  h1, h2, h3, h4 { @apply tracking-tight; color: var(--fg); }
+  p { color: var(--fg-muted); }
+  ::selection { background: color-mix(in oklab, var(--accent-1) 30%, transparent); }
 }
 
-/* Smooth transitions for themey bits */
-@layer utilities {
-  .tap-highlight-none { -webkit-tap-highlight-color: transparent; }
+/* ------------------------------------------------------------------ */
+/* Containers & helpers                                                */
+/* ------------------------------------------------------------------ */
+.container-max { max-width: 1200px; margin-inline: auto; padding-inline: 1rem; }
+@media (min-width:640px){ .container-max{ padding-inline: 2rem; } }
+@media (min-width:1024px){ .container-max{ padding-inline: 3rem; } }
+
+.tap-highlight-none { -webkit-tap-highlight-color: transparent; }
+.focus-ring { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
+
+/* Surfaces (cartes) */
+.surface { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.surface-weak { background: var(--surface-weak); border: 1px solid var(--border); border-radius: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+
+/* Boutons (réutilisables) */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 85%, white 15%);
+  color: var(--fg);
 }
-/* Animations légères pour le menu mobile */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+.btn:hover { background: color-mix(in oklab, var(--surface) 75%, white 25%); }
+.btn:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
+
+.btn-primary {
+  color: #0B1220;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  border-color: transparent;
 }
+.btn-primary:hover { filter: brightness(1.05); }
+
+/* Badges */
+.badge { @apply inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs;
+  border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 80%, white 20%); }
+.badge-green { color: var(--accent-1); border-color: color-mix(in oklab, var(--accent-1) 40%, var(--border)); }
+.badge-red { color: #F87171; border-color: color-mix(in oklab, #F87171 40%, var(--border)); }
+
+/* Dropzone lisible en mobile */
+.dropzone {
+  border: 1.5px dashed var(--border);
+  background: color-mix(in oklab, var(--surface) 90%, black 10%);
+  border-radius: 18px;
+  padding: 22px;
+  transition: border-color .2s ease, background .2s ease, transform .08s ease;
+}
+.dropzone:hover { border-color: color-mix(in oklab, var(--accent-2) 40%, var(--border)); }
+.dropzone:focus-within { outline: none; border-color: var(--accent-1); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-1) 30%, transparent); }
+.dropzone.dragover { transform: scale(0.998); background: color-mix(in oklab, var(--surface) 70%, var(--accent-2) 30%); }
+
+/* Inputs (contraste amélioré) */
+.input {
+  @apply w-full rounded-xl px-3 py-2 text-sm transition;
+  background: color-mix(in oklab, var(--surface) 88%, white 12%);
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+.input::placeholder { color: color-mix(in oklab, var(--fg-muted) 65%, transparent); }
+.input:focus { outline: none; border-color: var(--accent-1); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-1) 30%, transparent); }
+
+/* ------------------------------------------------------------------ */
+/* Effets & animations                                                 */
+/* ------------------------------------------------------------------ */
+@keyframes fadeIn { from { opacity:0; transform: translateY(-4px);} to{opacity:1; transform:none;} }
 .animate-fadeIn { animation: fadeIn 220ms ease-out both; }
 
-@keyframes slideDown {
-  0%   { opacity: 0; transform: translateY(-8px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
+@keyframes slideDown { 0%{opacity:0; transform: translateY(-8px) scale(.98);} 100%{opacity:1; transform:none;} }
 .animate-slideDown { animation: slideDown 220ms cubic-bezier(.2,.9,.2,1) both; }
 
-/* Effet “glass” amélioré pour le header */
+/* Header glass */
 .glass {
-  background: linear-gradient(180deg, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.65) 100%);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, transparent) 0%, color-mix(in oklab, var(--surface) 70%, transparent) 100%);
   backdrop-filter: blur(10px);
 }
 
-/* Conteneur max cohérent (si pas déjà présent) */
-.container-max {
-  max-width: 1200px;
-  margin-inline: auto;
-  padding-inline: 1rem;
-}
-@media (min-width: 640px) { .container-max { padding-inline: 2rem; } }
-@media (min-width: 1024px) { .container-max { padding-inline: 3rem; } }
+/* Aurora blobs */
+.aurora { position:absolute; filter: blur(50px); opacity:.55; mix-blend-mode: screen; will-change: transform,opacity; animation: aurora-float 16s ease-in-out infinite; }
+.aurora-1 { width:42rem; height:42rem; left:-10%; top:-15%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 65%, transparent), transparent 65%); animation-delay:0s; }
+.aurora-2 { width:36rem; height:36rem; right:-12%; top:-10%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 55%, transparent), transparent 65%); animation-delay:3s; }
+.aurora-3 { width:50rem; height:50rem; left:10%; bottom:-25%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 45%, transparent), transparent 65%); animation-delay:6s; }
+@keyframes aurora-float { 0%,100%{transform: translate3d(0,0,0) scale(1);} 50%{transform: translate3d(2rem,-1rem,0) scale(1.05);} }
 
-/* --- WOW Effects ---------------------------------------------------- */
+/* Grain très léger */
+.noise { position:absolute; inset:-50%; opacity:.035; pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); background-size:200px 200px; animation: noiseShift 1.5s steps(2) infinite; }
+@keyframes noiseShift { to { transform: translate3d(1%,-1%,0); } }
 
-/* Aurora blobs : performants (gradients + blur), animés en boucle. */
-.aurora {
-  position: absolute;
-  filter: blur(50px);
-  opacity: 0.55;
-  mix-blend-mode: screen;
-  will-change: transform, opacity;
-  animation: aurora-float 16s ease-in-out infinite;
-}
-.aurora-1 {
-  width: 42rem; height: 42rem;
-  left: -10%; top: -15%;
-  background: radial-gradient(closest-side, rgba(16,185,129,0.65), transparent 65%);
-  animation-delay: 0s;
-}
-.aurora-2 {
-  width: 36rem; height: 36rem;
-  right: -12%; top: -10%;
-  background: radial-gradient(closest-side, rgba(56,189,248,0.55), transparent 65%);
-  animation-delay: 3s;
-}
-.aurora-3 {
-  width: 50rem; height: 50rem;
-  left: 10%; bottom: -25%;
-  background: radial-gradient(closest-side, rgba(34,197,94,0.45), transparent 65%);
-  animation-delay: 6s;
-}
+/* Parallaxe douce au survol desktop */
+section:hover .aurora { transform: translate3d(calc(var(--mx,0) * 8px), calc(var(--my,0) * 8px), 0); }
 
-@keyframes aurora-float {
-  0%, 100% { transform: translate3d(0,0,0) scale(1); }
-  50%      { transform: translate3d(2rem, -1rem, 0) scale(1.05); }
-}
-
-/* Grain ultra léger pour la matière (désactivé sur reduce-motion pour prudence) */
-.noise {
-  position: absolute; inset: -50%;
-  opacity: 0.04; pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  background-size: 200px 200px;
-  animation: noiseShift 1.5s steps(2) infinite;
-}
-@keyframes noiseShift {
-  to { transform: translate3d(1%, -1%, 0); }
-}
-
-/* Petites “chips” & pills réutilisables */
-.chip {
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.05);
-  padding: 0.4rem 0.75rem;
-  text-align: center;
-  backdrop-filter: blur(6px);
-}
-.pill {
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.05);
-  padding: 0.5rem 1rem;
-  color: rgba(255,255,255,0.9);
-  transition: background .2s ease, border-color .2s ease;
-  backdrop-filter: blur(6px);
-}
-.pill:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.18); }
-
-/* Parallaxe : on applique un très léger décalage aux auroras selon la souris */
-section:hover .aurora {
-  transform: translate3d(calc(var(--mx,0) * 8px), calc(var(--my,0) * 8px), 0);
-}
-
-/* Accessibilité : si l’utilisateur préfère réduire les animations, on coupe tout. */
-@media (prefers-reduced-motion: reduce) {
-  .aurora, .noise { animation: none !important; }
-  section:hover .aurora { transform: none !important; }
-  }
-/* Drawer mobile: inert visuel propre */
-@supports (backdrop-filter: blur(4px)) {
-  .drawer-blur { backdrop-filter: blur(6px); }
-}
-
-/* Beam (balayage lumineux sous le titre) */
-.beam {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: calc(50% - 3rem);
-  width: 120%;
-  height: 120px;
-  background: radial-gradient(closest-side, rgba(34,211,238,0.12), transparent 70%);
+/* Beam sous le titre */
+.beam { position:absolute; left:50%; transform:translateX(-50%); top:calc(50% - 3rem); width:120%; height:120px;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 25%, transparent), transparent 70%);
   filter: blur(24px);
   mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
-  opacity: .7;
-  animation: beam-scan 10s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes beam-scan {
-  0%   { transform: translate(-50%, -40px) rotate(-1deg); opacity:.55; }
-  50%  { transform: translate(-50%, 10px) rotate(1deg); opacity:.8; }
-  100% { transform: translate(-50%, -40px) rotate(-1deg); opacity:.55; }
-}
+  opacity:.7; animation: beam-scan 10s ease-in-out infinite; pointer-events:none; }
+@keyframes beam-scan { 0%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} 50%{ transform: translate(-50%, 10px) rotate(1deg); opacity:.8;} 100%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} }
+
+/* Reveal on scroll */
+[data-reveal] { opacity:0; transform: translateY(14px) scale(.995); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+.is-revealed { opacity:1 !important; transform: none !important; }
+
+/* Blurs & drawers */
+@supports (backdrop-filter: blur(4px)) { .drawer-blur { backdrop-filter: blur(6px); } }
+
+/* Réduction d’animations & perfs mobile */
 @media (prefers-reduced-motion: reduce) {
-  .beam { animation: none; }
+  .aurora, .noise, .beam { animation: none !important; }
+  section:hover .aurora { transform: none !important; }
 }
-/* === Grid background doux pour sections === */
-.grid-bg {
-  background:
-    radial-gradient(1200px 600px at 50% -20%, rgba(56,189,248,0.06), transparent 60%),
-    radial-gradient(1000px 500px at -10% 120%, rgba(16,185,129,0.06), transparent 60%),
-    linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0) 200px);
-  mask-image: radial-gradient(1200px 600px at 50% 0, black, transparent 70%);
-}
-
-/* === Reveal on scroll === */
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(14px) scale(0.995);
-  transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1);
-}
-
-.is-revealed {
-  opacity: 1 !important;
-  transform: translateY(0) scale(1) !important;
-}
+@media (max-width: 480px) {
+  .aurora { opacity: .35; filter: blur(42px); }   /* moins envahissant en mobile */
+           }
