@@ -6,7 +6,7 @@ import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
 import { FileDown, ShieldCheck, FileText } from "lucide-react";
-import { watermarkPdfFile } from "@/lib/watermark-pdf";
+import { addWatermarkPdf } from "@/lib/watermark-pdf"; // ⬅️ patch: nouveau nom
 import { embedMeveXmp, sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 
@@ -63,8 +63,8 @@ export default function GeneratePage() {
       const originalHash = await sha256Hex(file);
       setProofHash(originalHash);
 
-      // 2) Apply a subtle DigitalMeve watermark
-      const watermarked = await watermarkPdfFile(file, "DigitalMeve");
+      // 2) Apply a subtle DigitalMeve watermark (stub V1: retourne le PDF identique)
+      const watermarked = await addWatermarkPdf(file); // ⬅️ patch: nouveau nom
       setUploadPct(55);
 
       // 3) Embed MEVE (XMP): hash + timestamp + optional issuer
@@ -79,7 +79,7 @@ export default function GeneratePage() {
       setProofWhen(createdAtISO);
       setUploadPct(85);
 
-      // 4) Download + also open in a new tab (so the browser can offer “Open”)
+      // 4) Download + also open in a new tab
       const { base, ext } = splitName(file.name);
       const outName = `${base}.meve.${ext}`;
       const url = URL.createObjectURL(pdfWithMeve);
@@ -92,7 +92,7 @@ export default function GeneratePage() {
       a.click();
       a.remove();
 
-      // and also open in a new tab
+      // open dans un nouvel onglet
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 15000);
 
@@ -109,7 +109,6 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
 
-      {/* Simple, user-friendly copy (English, no jargon) */}
       <p className="mt-2 text-slate-400">
         Upload your document (PDF for now). We add a light DigitalMeve watermark and store a tamper-proof
         marker inside the file (date, time, and a unique fingerprint). You’ll get{" "}
@@ -148,7 +147,6 @@ export default function GeneratePage() {
         {msg && <p className="text-sm text-emerald-300">{msg}</p>}
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
-        {/* Proof preview card (stays visible on mobile; we auto-scroll here when ready) */}
         {(proofHash || proofWhen) && (
           <div
             ref={proofRef}
@@ -195,7 +193,6 @@ export default function GeneratePage() {
         )}
       </form>
 
-      {/* Helper legend */}
       <div className="mt-8 grid gap-3 sm:grid-cols-2 text-sm text-slate-400">
         <div className="flex items-center gap-2">
           <FileDown className="h-5 w-5" />
@@ -208,4 +205,5 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-          }
+}
+```0
