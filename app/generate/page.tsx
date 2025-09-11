@@ -25,15 +25,15 @@ export default function GeneratePage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // Proof metadata
+  // Proof metadata (preview card)
   const [proofHash, setProofHash] = useState<string | null>(null);
   const [proofWhen, setProofWhen] = useState<string | null>(null);
 
+  // Scroll to preview when ready (good for mobile)
   const proofRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (proofHash && proofWhen && proofRef.current) {
-      proofRef.current.scrollIntoView({ behavior: "smooth" });
+      proofRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [proofHash, proofWhen]);
 
@@ -47,11 +47,11 @@ export default function GeneratePage() {
     setProofWhen(null);
 
     if (!file) {
-      setErr("Please select a PDF file.");
+      setErr("Please select a document (PDF for now).");
       return;
     }
     if (file.type !== "application/pdf") {
-      setErr("Currently, only PDF files are supported.");
+      setErr("Currently we support PDF. More formats coming soon.");
       return;
     }
 
@@ -59,15 +59,15 @@ export default function GeneratePage() {
       setProcessing(true);
       setUploadPct(10);
 
-      // 1) Original hash
+      // 1) Compute the original hash (tamper-evident anchor)
       const originalHash = await sha256Hex(file);
       setProofHash(originalHash);
 
-      // 2) Watermark
+      // 2) Apply a subtle DigitalMeve watermark
       const watermarked = await watermarkPdfFile(file, "DigitalMeve");
       setUploadPct(55);
 
-      // 3) Embed XMP MEVE
+      // 3) Embed MEVE (XMP): hash + timestamp + optional issuer
       const createdAtISO = new Date().toISOString();
       const pdfWithMeve = await embedMeveXmp(watermarked, {
         docSha256: originalHash,
@@ -79,11 +79,12 @@ export default function GeneratePage() {
       setProofWhen(createdAtISO);
       setUploadPct(85);
 
-      // 4) Download + auto-open
+      // 4) Download + also open in a new tab (so the browser can offer “Open”)
       const { base, ext } = splitName(file.name);
       const outName = `${base}.meve.${ext}`;
       const url = URL.createObjectURL(pdfWithMeve);
 
+      // trigger a download
       const a = document.createElement("a");
       a.href = url;
       a.download = outName;
@@ -91,10 +92,11 @@ export default function GeneratePage() {
       a.click();
       a.remove();
 
+      // and also open in a new tab
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 15000);
 
-      setMsg(`Downloaded: ${outName}`);
+      setMsg(`Ready: ${outName}`);
       setProcessing(false);
       setUploadPct(100);
     } catch (e: any) {
@@ -106,11 +108,12 @@ export default function GeneratePage() {
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
+
+      {/* Simple, user-friendly copy (English, no jargon) */}
       <p className="mt-2 text-slate-400">
-        Upload your document. We will add a subtle DigitalMeve watermark and
-        record a tamper-proof marker inside the file (date, time, and unique
-        fingerprint). You will receive <code className="text-slate-300">name.meve.pdf</code>.
-        You can also download a human-readable certificate.
+        Upload your document (PDF for now). We add a light DigitalMeve watermark and store a tamper-proof
+        marker inside the file (date, time, and a unique fingerprint). You’ll get{" "}
+        <code className="text-slate-300">name.meve.pdf</code>. You can also download a human-readable certificate.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -145,6 +148,7 @@ export default function GeneratePage() {
         {msg && <p className="text-sm text-emerald-300">{msg}</p>}
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
+        {/* Proof preview card (stays visible on mobile; we auto-scroll here when ready) */}
         {(proofHash || proofWhen) && (
           <div
             ref={proofRef}
@@ -179,9 +183,10 @@ export default function GeneratePage() {
 
             <button
               type="button"
-              onClick={() =>
-                exportHtmlCertificate(file!.name, proofHash!, proofWhen!, issuer)
-              }
+              onClick={() => {
+                if (!file || !proofHash || !proofWhen) return;
+                exportHtmlCertificate(file.name, proofHash, proofWhen, issuer);
+              }}
               className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-100 hover:bg-white/10"
             >
               <FileText className="h-4 w-4" /> Download Certificate (.html)
@@ -190,6 +195,7 @@ export default function GeneratePage() {
         )}
       </form>
 
+      {/* Helper legend */}
       <div className="mt-8 grid gap-3 sm:grid-cols-2 text-sm text-slate-400">
         <div className="flex items-center gap-2">
           <FileDown className="h-5 w-5" />
@@ -202,4 +208,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-        }
+          }
