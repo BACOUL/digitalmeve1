@@ -9,11 +9,6 @@ import { FileDown, ShieldCheck } from "lucide-react";
 import { watermarkPdfFile } from "@/lib/watermark-pdf";
 import { embedMeveXmp, sha256Hex } from "@/lib/meve-xmp";
 
-// util: nom depuis Content-Disposition
-function filenameFromCD(cd: string | null, fallback: string) {
-  const m = cd?.match(/filename="?([^"]+)"?/i);
-  return m?.[1] ?? fallback;
-}
 function splitName(name?: string) {
   if (!name) return { base: "file", ext: "bin" };
   const m = name.match(/^(.+)\.([^.]+)$/);
@@ -40,93 +35,45 @@ export default function GeneratePage() {
       setErr("Please select a file first.");
       return;
     }
+    if (file.type !== "application/pdf") {
+      setErr("Pour l’instant, seul le PDF est supporté.");
+      return;
+    }
 
     try {
-      // ---------- 1) Prépare le fichier à envoyer ----------
-      let toSend: Blob | File = file;
+      setProcessing(true);
 
-      if (file.type === "application/pdf") {
-        // a) hash de l'original (avant toute modif)
-        const originalSha = await sha256Hex(file);
+      // 1) Calculer le SHA-256 de l'ORIGINAL (avant filigrane)
+      const originalHash = await sha256Hex(file);
 
-        // b) filigrane
-        const watermarked = await watermarkPdfFile(file, "DigitalMeve");
+      // 2) Filigraner localement
+      const watermarked = await watermarkPdfFile(file, "DigitalMeve");
 
-        // c) XMP MEVE (doc_sha256 + meta)
-        toSend = await embedMeveXmp(watermarked, {
-          docSha256: originalSha,
-          createdAtISO: new Date().toISOString(),
-          issuer: issuer.trim(),
-          issuerType: "personal",
-          issuerWebsite: "https://digitalmeve.com",
-        });
-      }
-
-      // ---------- 2) Préparer form ----------
-      const form = new FormData();
-      // IMPORTANT: FormData attend un File. Convertir Blob → File si besoin
-      const toSendFile =
-        toSend instanceof File ? toSend : new File([toSend], file.name, { type: file.type || "application/octet-stream" });
-
-      form.append("file", toSendFile);
-      if (issuer.trim()) form.append("issuer", issuer.trim());
-
-      // ---------- 3) Upload avec vraie progression (XHR) ----------
-      const xhr = new XMLHttpRequest();
-      const promise = new Promise<{ blob: Blob; headers: Headers }>((resolve, reject) => {
-        xhr.open("POST", "/api/proxy/generate", true);
-        xhr.responseType = "blob";
-
-        xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 100));
-        };
-        xhr.onloadstart = () => { setUploadPct(0); setProcessing(false); };
-        xhr.onreadystatechange = () => {
-          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) setProcessing(true);
-        };
-
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.ontimeout = () => reject(new Error("Request timeout"));
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const h = new Headers();
-            const raw = xhr.getAllResponseHeaders().trim().split(/[\r\n]+/);
-            for (const line of raw) {
-              const parts = line.split(": ");
-              const key = parts.shift();
-              const value = parts.join(": ");
-              if (key) h.append(key, value);
-            }
-            resolve({ blob: xhr.response, headers: h });
-          } else {
-            const r = new FileReader();
-            r.onload = () => reject(new Error(String(r.result || "Generation failed.")));
-            r.onerror = () => reject(new Error("Generation failed."));
-            r.readAsText(xhr.response ?? new Blob());
-          }
-        };
-
-        xhr.send(form);
+      // 3) Insérer XMP MEVE (doc_sha256 + date + issuer)
+      const createdAtISO = new Date().toISOString();
+      const pdfWithMeveBlob = await embedMeveXmp(watermarked, {
+        docSha256: originalHash,
+        createdAtISO,
+        issuer: issuer.trim(),
+        issuerType: "personal",
+        issuerWebsite: "https://digitalmeve.com",
       });
 
-      const { blob, headers } = await promise;
-
-      // ---------- 4) Télécharger le .meve.ext retourné ----------
-      const cd = headers.get("Content-Disposition");
+      // 4) Télécharger le fichier final
       const { base, ext } = splitName(file.name);
-      const primaryName = filenameFromCD(cd, `${base}.meve.${ext}`);
-
-      const url = URL.createObjectURL(blob);
+      const outName = `${base}.meve.${ext}`;
+      const url = URL.createObjectURL(pdfWithMeveBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = primaryName;
+      a.download = outName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
 
-      setMsg(`Downloaded ${primaryName}`);
+      setMsg(`Downloaded ${outName}`);
       setProcessing(false);
+      setUploadPct(100);
     } catch (e: any) {
       setErr(e?.message ?? "Generation failed.");
       setProcessing(false);
@@ -137,12 +84,12 @@ export default function GeneratePage() {
     <section className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-slate-100">Generate a .MEVE proof</h1>
       <p className="mt-2 text-slate-400">
-        Upload any file. For PDFs, we’ll watermark it and embed a MEVE marker (XMP) with integrity data,
-        then return <code className="text-slate-300">name.meve.ext</code>.
+        We watermark your PDF, embed a MEVE marker (XMP) with integrity data, then download{" "}
+        <code className="text-slate-300">name.meve.pdf</code>.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
-        <FileDropzone onSelected={setFile} />
+        <FileDropzone onSelected={setFile} accept=".pdf,application/pdf" />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -160,7 +107,9 @@ export default function GeneratePage() {
         <div className="w-full sm:w-auto">
           <CTAButton type="submit" aria-label="Generate proof">Generate Proof</CTAButton>
           {(uploadPct !== undefined || processing) && (
-            <ProgressBar value={processing ? undefined : uploadPct} />
+            <div className="mt-3">
+              <ProgressBar value={processing ? undefined : uploadPct} />
+            </div>
           )}
         </div>
 
@@ -168,7 +117,7 @@ export default function GeneratePage() {
         {err && <p className="text-sm text-rose-400">{err}</p>}
 
         <p className="mt-6 text-xs text-slate-500">
-          DigitalMeve does not store your documents. Files are processed in memory only.
+          100% local: nothing is uploaded. Files are processed in your browser.
         </p>
       </form>
 
@@ -178,4 +127,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-                 }
+}
