@@ -5,15 +5,15 @@ import { Upload, X } from "lucide-react";
 
 type Props = {
   onSelected: (file: File | null) => void;
-  /** Évite image/* et video/* pour ne pas faire apparaître la Caméra sur Android */
+  /** Pas de wildcards image/* / video/* pour éviter l’ouverture caméra sur Android */
   accept?: string;
   maxSizeMB?: number;
   label?: string;
+  hint?: string;
 };
 
 export default function FileDropzone({
   onSelected,
-  // ✅ Par défaut : liste d’extensions/MIME “documents” sans wildcards média
   accept = [
     ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp",
     ".txt", ".json", ".csv",
@@ -31,6 +31,7 @@ export default function FileDropzone({
   ].join(","),
   maxSizeMB = 100,
   label = "Choose a file",
+  hint = "Drag & drop or tap to select. Max {SIZE} MB.",
 }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -83,14 +84,14 @@ export default function FileDropzone({
 
   return (
     <div className="space-y-2">
+      {/* Zone de drop / sélection — contraste mobile ++ */}
       <label
         htmlFor="file-input"
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         className={[
-          "block cursor-pointer rounded-2xl border border-dashed p-6 text-center transition",
-          "bg-slate-900/60 border-white/15 hover:border-emerald-400/40 hover:bg-white/5",
+          "dropzone block cursor-pointer text-center",
           dragOver ? "ring-2 ring-emerald-400/60" : "",
         ].join(" ")}
         aria-label="File dropzone"
@@ -102,31 +103,32 @@ export default function FileDropzone({
           className="hidden"
           onChange={onInputChange}
           accept={accept}
-          // 🔒 Ne pas mettre capture pour éviter l’appareil photo
-          // capture={undefined}
           aria-describedby="file-help"
         />
+
         <div className="flex flex-col items-center gap-2">
-          <Upload className="h-6 w-6 text-slate-300" aria-hidden />
-          <p className="text-slate-200 font-medium">{label}</p>
-          <p id="file-help" className="text-xs text-slate-500">
-            Drag & drop or click to select. Max {maxSizeMB} MB.
+          <Upload className="h-6 w-6 text-slate-200" aria-hidden />
+          <p className="text-base font-medium text-slate-100">{label}</p>
+          <p id="file-help" className="text-xs text-slate-400">
+            {hint.replace("{SIZE}", String(maxSizeMB))}
           </p>
+          <div className="mt-1 hidden sm:block">
+            <span className="badge">PDF, PNG, JPG, DOCX, XLSX, PPTX…</span>
+          </div>
         </div>
       </label>
 
+      {/* Fichier sélectionné */}
       {file && (
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2">
+        <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
           <div className="min-w-0">
-            <p className="truncate text-sm text-slate-200">{file.name}</p>
-            <p className="text-xs text-slate-500">
-              {formatBytes(file.size)}
-            </p>
+            <p className="truncate text-sm text-[var(--fg)]">{file.name}</p>
+            <p className="text-xs text-[var(--fg-muted)]">{formatBytes(file.size)}</p>
           </div>
           <button
             type="button"
             onClick={remove}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+            className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] bg-white/5 px-2 py-1 text-xs text-[var(--fg)] hover:bg-white/10 focus-visible:focus-ring"
             aria-label="Remove selected file"
           >
             <X className="h-4 w-4" />
@@ -146,4 +148,4 @@ function formatBytes(bytes: number) {
   if (mb < 1024) return `${mb.toFixed(2)} MB`;
   const gb = mb / 1024;
   return `${gb.toFixed(2)} GB`;
-          }
+      }
