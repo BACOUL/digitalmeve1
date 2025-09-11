@@ -4,7 +4,7 @@ import { useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
-import { buildProofObject, stringifyCanonical } from "@/lib/proof";
+import { buildProofObject } from "@/lib/proof";
 import { buildProofHtml } from "@/lib/proof-html";
 import { FileDown, FileText, ShieldCheck } from "lucide-react";
 import { addPdfWatermark } from "@/lib/watermark-pdf";
@@ -91,7 +91,8 @@ export default function GeneratePage() {
             resolve({ blob: xhr.response, headers: h });
           } else {
             const reader = new FileReader();
-            reader.onload = () => reject(new Error(String(reader.result || "Generation failed.")));
+            reader.onload = () =>
+              reject(new Error(String(reader.result || "Generation failed.")));
             reader.onerror = () => reject(new Error("Generation failed."));
             reader.readAsText(xhr.response ?? new Blob());
           }
@@ -133,8 +134,7 @@ export default function GeneratePage() {
       if (alsoHtml) {
         try {
           const proof = await buildProofObject(file, issuer.trim());
-          const canonical = stringifyCanonical(proof);
-          const html = buildProofHtml(proof, canonical);
+          const html = buildProofHtml(proof); // <- un seul argument
           const proofBlob = new Blob([html], { type: "text/html;charset=utf-8" });
 
           const proofUrl = URL.createObjectURL(proofBlob);
@@ -225,4 +225,4 @@ export default function GeneratePage() {
       </div>
     </section>
   );
-}
+        }
