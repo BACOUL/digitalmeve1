@@ -1,20 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // V1 = light-only ; on peut laisser 'class' (aucun dark style ne sera utilisé)
   darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx,mdx}',
+    './public/**/*.html'
   ],
   theme: {
     extend: {
-      borderRadius: {
-        '2xl': '1.25rem',
-      },
-      boxShadow: {
-        glow: '0 0 40px rgba(34,211,238,0.35)',
-      },
+      borderRadius: { '2xl': '1.25rem' },
+      boxShadow: { glow: '0 0 40px rgba(34,211,238,0.35)' },
       colors: {
         dm: {
           bg: '#0B1220',
@@ -27,7 +24,6 @@ module.exports = {
         },
       },
       fontFamily: {
-        // si tu utilises next/font plus tard, remplace ici
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['Sora', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
