@@ -1,4 +1,3 @@
-
 // app/page.tsx
 import {
   Upload,
@@ -20,18 +19,30 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           {/* Title */}
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl text-gray-900">
-            DigitalMeve —{" "}
+            Your files.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
-              Simple proof for your documents
+              Verified. Anywhere.
             </span>
           </h1>
 
           {/* Subtitle (plain, non-jargon) */}
           <p className="mt-4 max-w-2xl text-lg text-gray-600">
-            Upload your file. We add a lightweight DigitalMeve mark inside
-            (date, time, and unique fingerprint) — your document stays fully
-            readable and verifiable anywhere.
+            No storage. We only add a lightweight .MEVE marker (date, time, and a unique fingerprint).
+            Your document stays fully readable and verifiable anywhere.
           </p>
+
+          {/* Limits + sample */}
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+            <span>Max 10&nbsp;MB · 5 files/day (free)</span>
+            <span className="hidden sm:inline">•</span>
+            <a
+              href="/sample.pdf"
+              className="inline-flex items-center gap-2 underline decoration-emerald-400 hover:text-gray-700"
+            >
+              Try with sample file
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </a>
+          </div>
 
           {/* CTAs */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -67,7 +78,7 @@ export default function HomePage() {
             </Link>
             <span className="hidden sm:inline">•</span>
             <Link
-              href="/personal"
+              href="/pricing#individuals"
               className="inline-flex items-center gap-2 underline decoration-emerald-400 hover:text-gray-700"
             >
               <Users className="h-5 w-5 text-emerald-500" aria-hidden />
@@ -91,9 +102,7 @@ export default function HomePage() {
             <h3 className="mt-2 text-lg font-medium text-gray-900">
               Upload your document
             </h3>
-            <p className="mt-2 text-gray-600">
-              Works with PDFs, images, and more.
-            </p>
+            <p className="mt-2 text-gray-600">Works with PDFs, images, and more.</p>
             <Link
               href="/generate"
               className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
@@ -111,8 +120,7 @@ export default function HomePage() {
               Get your certified copy
             </h3>
             <p className="mt-2 text-gray-600">
-              We add a tamper-evident MEVE marker (date, time, and SHA-256) —
-              your file stays clean and readable.
+              We compute a SHA-256 fingerprint and embed a .MEVE marker — file stays clean and readable.
             </p>
           </div>
 
@@ -169,7 +177,7 @@ export default function HomePage() {
             </ul>
             <div className="mt-5 flex gap-3">
               <Link
-                href="/personal"
+                href="/pricing#individuals"
                 className="inline-flex items-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2 text-sm hover:bg-gray-50 transition"
               >
                 Explore personal
@@ -236,4 +244,4 @@ export default function HomePage() {
       </section>
     </main>
   );
-            }
+}
