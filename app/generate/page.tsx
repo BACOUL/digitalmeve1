@@ -25,28 +25,23 @@ export default function GeneratePage() {
     if (!file) return;
     setBusy(true);
     try {
-      // 1) Hash du fichier source (spéc MEVE)
+      // 1) Hash de l’original (spéc MEVE)
       const hash = await sha256Hex(file);
 
-      // 2) Watermark -> ArrayBuffer -> Blob (entrée attendue pour l’embed)
-      const watermarkedAB = await addWatermarkPdf(file); // ArrayBuffer
-      const watermarkedBlob = new Blob([watermarkedAB], {
-        type: "application/pdf",
-      });
+      // 2) Watermark -> ArrayBuffer -> Blob (entrée pour l’embed)
+      const watermarkedAB = await addWatermarkPdf(file);
+      const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
 
       const whenISO = new Date().toISOString();
 
-      // 3) Injection métadonnées MEVE (XMP + fallback commentaire PDF)
-      const xmpOut: Blob = await ensureMeveMetadata(watermarkedBlob, {
+      // 3) Injection métadonnées MEVE (XMP si possible + fallback commentaire %MEVE)
+      const outBlob: Blob = await ensureMeveMetadata(watermarkedBlob, {
         docSha256: hash,
         createdAtISO: whenISO,
         issuer,
         issuerType: "personal",
         issuerWebsite: "https://digitalmeve.com",
       });
-
-      // 4) Sortie finale (Blob PDF)
-      const outBlob = xmpOut;
 
       const outName = toMeveName(file.name);
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
@@ -64,27 +59,20 @@ export default function GeneratePage() {
     return `${base}.meve.pdf`;
   }
 
-  // Ouverture 10s + fallback téléchargement (inchangé)
+  // ✅ PDF : téléchargement direct (pas de prévisualisation 10s)
   function downloadPDF() {
     if (!res.pdfBlob || !res.fileName) return;
     const url = URL.createObjectURL(res.pdfBlob);
-
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    setTimeout(() => {
-      try {
-        w?.close();
-      } catch {}
-      URL.revokeObjectURL(url);
-    }, 10000);
-
     const a = document.createElement("a");
     a.href = url;
     a.download = res.fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
   }
 
+  // ✅ Certificat : téléchargement + éventuelle pré-ouverture ~10s (géré dans exportHtmlCertificate)
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     exportHtmlCertificate(
@@ -193,8 +181,8 @@ export default function GeneratePage() {
               </div>
 
               <p className="mt-3 text-xs text-slate-500">
-                Your browser may briefly open a preview tab (~10s) so you can
-                choose “Open” if needed.
+                The PDF downloads directly to preserve integrity.
+                The certificate may briefly open in a new tab (~10s) so you can choose “Open”.
               </p>
             </div>
           )}
@@ -202,4 +190,4 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-}
+               }
