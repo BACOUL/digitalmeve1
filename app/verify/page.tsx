@@ -1,170 +1,205 @@
 // app/verify/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FileDropzone from "@/components/FileDropzone";
 import { CTAButton } from "@/components/CTAButton";
 import ProgressBar from "@/components/ProgressBar";
-import { CheckCircle2, XCircle, Info, ShieldCheck } from "lucide-react";
-import { verifyMevePdf, readMeveXmp, type MeveXmpInfo } from "@/lib/meve-xmp";
+import { ShieldCheck, AlertTriangle, XCircle, FileText } from "lucide-react";
+import { readMeveXmp, verifyMevePdf, MeveXmpInfo } from "@/lib/meve-xmp";
+import { exportHtmlCertificate } from "@/lib/certificate-html";
+
+type Status = "idle" | "checking" | "valid" | "valid_document_missing" | "invalid" | "error";
 
 export default function VerifyPage() {
-  const [mevePdf, setMevePdf] = useState<File | null>(null);
+  const [certified, setCertified] = useState<File | null>(null);
   const [original, setOriginal] = useState<File | null>(null);
 
-  const [verifying, setVerifying] = useState(false);
-  const [progress, setProgress] = useState<number | undefined>(undefined);
+  const [status, setStatus] = useState<Status>("idle");
+  const [details, setDetails] = useState<MeveXmpInfo | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number | undefined>();
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const [status, setStatus] =
-    useState<"idle" | "valid" | "valid_document_missing" | "invalid">("idle");
-  const [reason, setReason] = useState<string | undefined>(undefined);
-  const [meve, setMeve] = useState<MeveXmpInfo | undefined>(undefined);
-  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    if ((status === "valid" || status === "valid_document_missing" || status === "invalid") && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [status]);
 
   async function onVerify(e: React.FormEvent) {
     e.preventDefault();
-    setErr(null);
     setStatus("idle");
-    setReason(undefined);
-    setMeve(undefined);
-    setVerifying(true);
+    setMessage(null);
+    setDetails(null);
     setProgress(10);
 
     try {
-      if (!mevePdf) {
-        setErr("Please choose your name.meve.pdf file.");
-        setVerifying(false);
+      if (!certified) {
+        setStatus("error");
+        setMessage("Please select the certified document first.");
         setProgress(undefined);
         return;
       }
 
-      // Quick read of MEVE metadata (always show details, even if original is missing)
-      const { meve: meta } = await readMeveXmp(mevePdf);
-      setMeve(meta);
+      // Lecture XMP pour afficher les infos même sans original
+      const { meve } = await readMeveXmp(certified);
       setProgress(40);
 
-      // Full verification if original is provided
-      const res = await verifyMevePdf(mevePdf, original ?? undefined);
-      setProgress(90);
+      // Vérification complète si original fourni
+      const res = await verifyMevePdf(certified, original ?? undefined);
+      setProgress(85);
 
+      setDetails(meve ?? null);
       setStatus(res.status);
-      setReason(res.reason);
-      setMeve(res.meve ?? meta);
-    } catch (e: any) {
-      setErr(e?.message ?? "Verification failed.");
-    } finally {
-      setVerifying(false);
+      if (res.status === "invalid") {
+        setMessage(res.reason ?? "Invalid proof.");
+      } else if (res.status === "valid_document_missing") {
+        setMessage("Proof found. Add the original document to confirm integrity.");
+      } else if (res.status === "valid") {
+        setMessage("Verified. This .MEVE file is authentic.");
+      }
       setProgress(100);
-      setTimeout(() => setProgress(undefined), 400);
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err?.message ?? "Verification failed.");
+      setProgress(undefined);
     }
   }
 
+  const canDownloadCertificate =
+    (status === "valid" || status === "valid_document_missing") &&
+    !!details?.doc_sha256 &&
+    !!details?.created_at &&
+    !!certified;
+
   return (
-    <section className="mx-auto max-w-3xl px-4 py-10 text-slate-100">
-      {/* Title */}
-      <h1 className="text-3xl font-bold">Verify a .MEVE proof</h1>
-      <p className="mt-2 text-slate-300">
-        Upload your <span className="font-semibold">name.meve.pdf</span>. Optionally add the
-        original document to confirm integrity (SHA-256 match).
+    <section className="mx-auto max-w-3xl px-4 py-12">
+      <h1 className="text-3xl font-bold text-gray-900">Verify a .MEVE file</h1>
+      <p className="mt-2 text-gray-600">
+        Drop your certified document. Optionally add the original file to confirm integrity (byte-for-byte).
       </p>
 
       <form onSubmit={onVerify} className="mt-8 space-y-6">
-        {/* Card 1 */}
         <div>
-          <label className="mb-2 block text-sm text-slate-200">.MEVE PDF</label>
-          <div className="rounded-2xl border border-white/15 bg-slate-900/80 p-3">
-            <FileDropzone
-              onSelected={setMevePdf}
-              accept=".pdf,application/pdf"
-              label="Tap to select your name.meve.pdf"
-              hint="Drag & drop or tap to select. Max {SIZE} MB."
-            />
-          </div>
+          <label className="block text-sm font-medium text-gray-800 mb-2">Certified document</label>
+          <FileDropzone
+            onSelected={setCertified}
+            accept=".pdf,application/pdf"
+            maxSizeMB={10}
+            label="Select the certified PDF"
+            hint="Drag & drop or tap to select. Max {SIZE} MB."
+          />
+          <p className="mt-1 text-xs text-gray-500">Expected: <code>*.meve.pdf</code> (or any PDF containing MEVE XMP).</p>
         </div>
 
-        {/* Card 2 */}
         <div>
-          <label className="mb-2 block text-sm text-slate-200">
-            Original (optional, recommended)
-          </label>
-          <div className="rounded-2xl border border-white/15 bg-slate-900/80 p-3">
-            <FileDropzone
-              onSelected={setOriginal}
-              label="Tap to select the original document"
-              hint="Used to confirm integrity. Max {SIZE} MB."
-            />
-          </div>
+          <label className="block text-sm font-medium text-gray-800 mb-2">Original document (optional)</label>
+          <FileDropzone
+            onSelected={setOriginal}
+            // On autorise tout type en V1 : PDF/PNG/JPG/DOCX… (l’original)
+            accept={[
+              ".pdf",".png",".jpg",".jpeg",".webp",".txt",".csv",".json",
+              ".doc",".docx",".xls",".xlsx",".ppt",".pptx",
+              "application/pdf","image/png","image/jpeg","image/webp","text/plain","text/csv","application/json",
+              "application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ].join(",")}
+            maxSizeMB={10}
+            label="Select the original file"
+            hint="Optional: add the original to fully verify. Max {SIZE} MB."
+          />
         </div>
 
-        {/* CTA + progress */}
         <div className="w-full sm:w-auto">
-          <CTAButton type="submit" aria-label="Verify .MEVE">Verify</CTAButton>
-          {(progress !== undefined || verifying) && (
+          <CTAButton type="submit" aria-label="Verify .MEVE file">Verify</CTAButton>
+          {progress !== undefined && (
             <div className="mt-3">
-              <ProgressBar value={verifying ? undefined : progress} />
+              <ProgressBar value={progress === 100 ? 100 : progress} />
             </div>
           )}
         </div>
-
-        {err && <p className="text-sm text-rose-400">{err}</p>}
-
-        {/* Result */}
-        {status !== "idle" && (
-          <div className="mt-6 rounded-2xl border border-white/15 bg-slate-900/80 p-5">
-            <div className="mb-3 flex items-center gap-2">
-              {status === "valid" && (
-                <>
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                  <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300">
-                    VALID
-                  </span>
-                </>
-              )}
-              {status === "valid_document_missing" && (
-                <>
-                  <ShieldCheck className="h-5 w-5 text-sky-300" />
-                  <span className="inline-flex items-center rounded-full border border-sky-400/40 bg-sky-400/10 px-2.5 py-0.5 text-xs text-sky-300">
-                    PROOF FOUND — ORIGINAL MISSING
-                  </span>
-                </>
-              )}
-              {status === "invalid" && (
-                <>
-                  <XCircle className="h-5 w-5 text-rose-400" />
-                  <span className="inline-flex items-center rounded-full border border-rose-400/40 bg-rose-400/10 px-2.5 py-0.5 text-xs text-rose-300">
-                    INVALID
-                  </span>
-                </>
-              )}
-            </div>
-
-            {reason && <p className="text-sm text-slate-300">{reason}</p>}
-
-            {/* MEVE details */}
-            <div className="mt-4 grid gap-2 text-sm text-slate-300">
-              <Field k="Version" v={meve?.version} />
-              <Field k="Created" v={meve?.created_at} />
-              <Field k="Issuer" v={meve?.issuer_identity} />
-              <Field k="SHA-256" v={meve?.doc_sha256} code />
-            </div>
-
-            <p className="mt-4 flex items-start gap-2 text-xs text-slate-500">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              The proof is stored in the PDF’s XMP metadata. Changing the original file breaks the integrity check.
-            </p>
-          </div>
-        )}
       </form>
+
+      {/* Résultat */}
+      {status !== "idle" && (
+        <div ref={cardRef} className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-md">
+          <div className="flex items-center gap-2">
+            {status === "valid" && (
+              <>
+                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                <span className="text-emerald-700 font-medium">Verified</span>
+              </>
+            )}
+            {status === "valid_document_missing" && (
+              <>
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <span className="text-amber-700 font-medium">Proof found — original missing</span>
+              </>
+            )}
+            {status === "invalid" && (
+              <>
+                <XCircle className="h-5 w-5 text-rose-600" />
+                <span className="text-rose-700 font-medium">Invalid</span>
+              </>
+            )}
+            {status === "error" && (
+              <>
+                <XCircle className="h-5 w-5 text-rose-600" />
+                <span className="text-rose-700 font-medium">Error</span>
+              </>
+            )}
+          </div>
+
+          {message && <p className="mt-2 text-sm text-gray-600">{message}</p>}
+
+          {/* Détails MEVE */}
+          {details && (
+            <ul className="mt-4 grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
+              <li>
+                <span className="text-gray-500">Version:</span>{" "}
+                {details.version ?? "—"}
+              </li>
+              <li>
+                <span className="text-gray-500">Date:</span>{" "}
+                {details.created_at ? new Date(details.created_at).toLocaleString() : "—"}
+              </li>
+              <li className="sm:col-span-2 break-all">
+                <span className="text-gray-500">SHA-256:</span>{" "}
+                {details.doc_sha256 ?? "—"}
+              </li>
+              <li>
+                <span className="text-gray-500">Issuer:</span>{" "}
+                {details.issuer_identity || "—"}
+              </li>
+              <li>
+                <span className="text-gray-500">Issuer type:</span>{" "}
+                {details.issuer_type || "—"}
+              </li>
+              <li className="sm:col-span-2">
+                <span className="text-gray-500">Issuer website:</span>{" "}
+                {details.issuer_website || "—"}
+              </li>
+            </ul>
+          )}
+
+          {/* Télécharger le certificat HTML quand on a assez d’infos */}
+          {canDownloadCertificate && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!certified || !details?.doc_sha256 || !details?.created_at) return;
+                exportHtmlCertificate(certified.name, details.doc_sha256, details.created_at, details.issuer_identity || "");
+              }}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
+            >
+              <FileText className="h-4 w-4" />
+              Download certificate (.html)
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
-}
-
-/** Small helper for aligned rows */
-function Field({ k, v, code = false }: { k: string; v?: string; code?: boolean }) {
-  return (
-    <div className="flex gap-2">
-      <span className="w-32 shrink-0 text-slate-400">{k}</span>
-      <span className={code ? "break-all font-mono text-xs text-slate-200" : ""}>{v || "—"}</span>
-    </div>
-  );
-        }
+      }
