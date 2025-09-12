@@ -17,24 +17,24 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Individuals */}
+          {/* Products */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800">Individuals</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Products</h3>
             <ul className="mt-3 space-y-2 text-sm text-gray-600">
               <li><Link className="hover:text-emerald-600" href="/generate">Generate</Link></li>
               <li><Link className="hover:text-emerald-600" href="/verify">Verify</Link></li>
-              <li><Link className="hover:text-emerald-600" href="/personal">Overview</Link></li>
-              <li><Link className="hover:text-emerald-600" href="/docs">Docs</Link></li>
+              <li><Link className="hover:text-emerald-600" href="/pricing">Pricing</Link></li>
             </ul>
           </div>
 
-          {/* Professionals */}
+          {/* Company */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800">For Professionals</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Company</h3>
             <ul className="mt-3 space-y-2 text-sm text-gray-600">
-              <li><Link className="hover:text-sky-600" href="/pro">Why .MEVE</Link></li>
+              <li><Link className="hover:text-sky-600" href="/security">Security</Link></li>
+              <li><Link className="hover:text-sky-600" href="/about">About</Link></li>
               <li><Link className="hover:text-sky-600" href="/contact">Contact</Link></li>
-              <li><Link className="hover:text-sky-600" href="/docs#api">API</Link></li>
+              <li><Link className="hover:text-sky-600" href="/changelog">Changelog</Link></li>
             </ul>
           </div>
 
@@ -44,17 +44,21 @@ export default function Footer() {
             <ul className="mt-3 space-y-2 text-sm text-gray-600">
               <li><Link className="hover:text-gray-800" href="/privacy">Privacy</Link></li>
               <li><Link className="hover:text-gray-800" href="/terms">Terms</Link></li>
-              <li><Link className="hover:text-gray-800" href="/security">Security</Link></li>
+              <li><Link className="hover:text-gray-800" href="/cookies">Cookies</Link></li>
+              <li><Link className="hover:text-gray-800" href="/status">Status</Link></li>
             </ul>
           </div>
         </div>
 
+        {/* Bottom bar */}
         <div className="mt-10 flex flex-col-reverse items-center justify-between gap-4 border-t border-gray-200 pt-6 text-xs text-gray-500 sm:flex-row">
           <p>© {new Date().getFullYear()} DigitalMeve. All rights reserved.</p>
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-gray-50 px-3 py-1">
             <span className="text-emerald-600">Free for Individuals</span>
             <span className="text-gray-400">•</span>
-            <span>EN</span>
+            <Link href="/?lang=en" className="hover:text-slate-900">EN</Link>
+            <span className="text-gray-400">/</span>
+            <Link href="/?lang=fr" className="hover:text-slate-900">FR</Link>
           </div>
         </div>
       </div>
