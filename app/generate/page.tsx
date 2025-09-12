@@ -1,3 +1,4 @@
+// app/generate/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -28,7 +29,7 @@ export default function GeneratePage() {
       const watermarked = await addWatermarkPdf(file);
       const whenISO = new Date().toISOString();
 
-      // 🔧 PATCH MINIMAL: convertir ArrayBuffer -> Blob pour embedMeveXmp
+      // 🔧 PATCH 1: convertir ArrayBuffer -> Blob pour embedMeveXmp
       const watermarkedBlob = new Blob([watermarked], { type: "application/pdf" });
 
       const xmpPdf = await embedMeveXmp(watermarkedBlob, {
@@ -39,8 +40,11 @@ export default function GeneratePage() {
         issuerWebsite: "https://digitalmeve.com",
       });
 
+      // 🔧 PATCH 2: s'assurer que la sortie est bien un Blob
+      const outBlob = xmpPdf instanceof Blob ? xmpPdf : new Blob([xmpPdf], { type: "application/pdf" });
+
       const outName = toMeveName(file.name);
-      setRes({ pdfBlob: xmpPdf, fileName: outName, hash, whenISO });
+      setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
     } catch (e) {
       console.error(e);
       alert("Error while generating the proof.");
@@ -55,21 +59,17 @@ export default function GeneratePage() {
     return `${base}.meve.pdf`;
   }
 
-  // ▶️ NOUVELLE VERSION — ouverture 10s + fallback téléchargement
+  // ▶️ ouverture 10s + fallback téléchargement
   function downloadPDF() {
     if (!res.pdfBlob || !res.fileName) return;
     const url = URL.createObjectURL(res.pdfBlob);
 
-    // Ouvre dans un nouvel onglet pendant 10s → l’utilisateur peut choisir d’ouvrir
     const w = window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => {
-      try {
-        w?.close();
-      } catch {}
+      try { w?.close(); } catch {}
       URL.revokeObjectURL(url);
     }, 10000);
 
-    // Fallback "download forcé" si l’ouverture est bloquée
     const a = document.createElement("a");
     a.href = url;
     a.download = res.fileName;
@@ -80,7 +80,6 @@ export default function GeneratePage() {
 
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
-    // exportHtmlCertificate gère le téléchargement + éventuelle prévisualisation 10s
     exportHtmlCertificate(
       res.fileName.replace(/\.pdf$/i, ""),
       res.hash,
@@ -141,7 +140,7 @@ export default function GeneratePage() {
             {busy ? "Generating…" : "Generate Proof"}
           </button>
 
-          {/* Proof Preview — LES DEUX TÉLÉCHARGEMENTS DANS LA CARTE */}
+          {/* Proof Preview */}
           {res.pdfBlob && res.fileName && (
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Proof Preview</h2>
@@ -174,7 +173,6 @@ export default function GeneratePage() {
                 </div>
               </dl>
 
-              {/* Boutons à l’intérieur de la carte */}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={downloadPDF}
