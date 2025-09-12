@@ -25,14 +25,20 @@ export default function GeneratePage() {
     if (!file) return;
     setBusy(true);
     try {
+      // 1) Hash du fichier source (spéc MEVE)
       const hash = await sha256Hex(file);
-      const watermarked = await addWatermarkPdf(file);
+
+      // 2) Watermark -> ArrayBuffer -> Uint8Array (entrée attendue par embedMeveXmp)
+      const watermarkedAB = await addWatermarkPdf(file); // ArrayBuffer
+      const watermarkedU8 =
+        watermarkedAB instanceof Uint8Array
+          ? watermarkedAB
+          : new Uint8Array(watermarkedAB as ArrayBuffer);
+
       const whenISO = new Date().toISOString();
 
-      // 🔧 PATCH 1: convertir ArrayBuffer -> Blob pour embedMeveXmp
-      const watermarkedBlob = new Blob([watermarked], { type: "application/pdf" });
-
-      const xmpPdf = await embedMeveXmp(watermarkedBlob, {
+      // 3) Embedding XMP avec Uint8Array en entrée
+      const xmpU8 = await embedMeveXmp(watermarkedU8, {
         docSha256: hash,
         createdAtISO: whenISO,
         issuer,
@@ -40,8 +46,11 @@ export default function GeneratePage() {
         issuerWebsite: "https://digitalmeve.com",
       });
 
-      // 🔧 PATCH 2: s'assurer que la sortie est bien un Blob
-      const outBlob = xmpPdf instanceof Blob ? xmpPdf : new Blob([xmpPdf], { type: "application/pdf" });
+      // 4) Normaliser la sortie en Blob (PDF)
+      const outBlob =
+        xmpU8 instanceof Blob
+          ? xmpU8
+          : new Blob([xmpU8 as Uint8Array], { type: "application/pdf" });
 
       const outName = toMeveName(file.name);
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
@@ -59,14 +68,16 @@ export default function GeneratePage() {
     return `${base}.meve.pdf`;
   }
 
-  // ▶️ ouverture 10s + fallback téléchargement
+  // Ouverture 10s + fallback téléchargement (inchangé)
   function downloadPDF() {
     if (!res.pdfBlob || !res.fileName) return;
     const url = URL.createObjectURL(res.pdfBlob);
 
     const w = window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => {
-      try { w?.close(); } catch {}
+      try {
+        w?.close();
+      } catch {}
       URL.revokeObjectURL(url);
     }, 10000);
 
@@ -140,7 +151,7 @@ export default function GeneratePage() {
             {busy ? "Generating…" : "Generate Proof"}
           </button>
 
-          {/* Proof Preview */}
+          {/* Proof Preview — les deux téléchargements dans la carte */}
           {res.pdfBlob && res.fileName && (
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Proof Preview</h2>
