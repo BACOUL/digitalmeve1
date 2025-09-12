@@ -3,22 +3,19 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import Portal from "@/components/Portal";
 import {
-  PlusSquare,
-  ShieldCheck,
   Users,
-  Building2,
-  DollarSign,
-  Code2,
-  Shield,
-  Activity,
-  History,
-  Info,
+  FilePlus2,
+  ShieldCheck,
+  BookOpen,
+  Briefcase,
   Mail,
-  Gavel,
-  ChevronRight,
+  Info,
   X,
+  CreditCard,
+  Scale,
+  Activity,
+  Clock,
 } from "lucide-react";
 
 type Props = { open: boolean; onClose: () => void };
@@ -28,7 +25,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Lock scroll
+  // Empêcher le scroll en arrière-plan
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -37,14 +34,14 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, []);
 
-  // ESC to close
+  // ESC pour fermer
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus first element
+  // Focus initial accessible
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -53,15 +50,15 @@ export default function MobileMenu({ open, onClose }: Props) {
   }, []);
 
   return (
-    <Portal>
-      {/* backdrop */}
+    <>
+      {/* overlay cliquable */}
       <div
         aria-hidden
         onClick={onClose}
-        className="fixed inset-0 z-[999] bg-black/30 backdrop-blur-sm"
+        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
       />
 
-      {/* panel */}
+      {/* panneau clair (plus dans un Portal) */}
       <div
         ref={panelRef}
         role="dialog"
@@ -69,154 +66,209 @@ export default function MobileMenu({ open, onClose }: Props) {
         aria-label="Main menu"
         className="fixed inset-0 z-[1000] flex flex-col bg-white"
       >
-        {/* top bar */}
+        {/* barre supérieure */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-          <Link
-            href="/"
-            onClick={onClose}
-            className="flex items-center gap-2 text-xl font-semibold text-gray-900"
-          >
-            <span className="text-emerald-600">Digital</span>
-            <span className="text-sky-600">Meve</span>
+          <Link href="/" onClick={onClose} className="flex items-center gap-2" aria-label="DigitalMeve Home">
+            <span className="text-lg font-semibold tracking-tight">
+              <span className="text-emerald-600">Digital</span>
+              <span className="text-sky-600">Meve</span>
+            </span>
           </Link>
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
           >
-            <X className="h-5 w-5 text-gray-700" />
+            <X className="h-5 w-5 text-slate-700" />
           </button>
         </div>
 
-        {/* scrollable content */}
-        <nav className="flex-1 overflow-y-auto px-2 pb-24 pt-2 text-gray-800">
-          {/* PRODUCTS */}
-          <Section title="PRODUCTS">
-            <Row href="/generate" onClick={onClose} icon={<PlusSquare className="h-5 w-5 text-emerald-600" />}>
-              <span className="font-medium text-gray-900">Generate</span>
-              <span className="block text-sm text-gray-500">Create a .MEVE file</span>
-            </Row>
-            <Row href="/verify" onClick={onClose} icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}>
-              <span className="font-medium text-gray-900">Verify</span>
-              <span className="block text-sm text-gray-500">Check a .MEVE file</span>
-            </Row>
-          </Section>
+        {/* contenu scrollable */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2 text-slate-700">
+          {/* === Produits === */}
+          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Products
+          </p>
+          <ul className="space-y-2 px-1">
+            <li>
+              <Link
+                href="/generate"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <FilePlus2 className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>Generate</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/verify"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <ShieldCheck className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>Verify</span>
+              </Link>
+            </li>
+          </ul>
 
-          {/* SOLUTIONS */}
-          <Section title="SOLUTIONS">
-            <Row href="/personal" onClick={onClose} icon={<Users className="h-5 w-5 text-sky-600" />}>
-              <span className="font-medium text-gray-900">For Individuals</span>
-              <span className="block text-sm text-gray-500">Free, no storage</span>
-            </Row>
-            <Row href="/pro" onClick={onClose} icon={<Building2 className="h-5 w-5 text-sky-600" />}>
-              <span className="font-medium text-gray-900">For Business</span>
-              <span className="block text-sm text-gray-500">API & domain-verified issuer</span>
-            </Row>
-          </Section>
+          <div className="my-4 h-px bg-gray-200" />
 
-          {/* PRICING */}
-          <Section title="PRICING">
-            <Row href="/pricing" onClick={onClose} icon={<DollarSign className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Pricing</span>
-              <span className="block text-sm text-gray-500">Free for individuals</span>
-            </Row>
-          </Section>
+          {/* === Solutions === */}
+          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Solutions
+          </p>
+          <ul className="space-y-2 px-1">
+            <li>
+              <Link
+                href="/personal"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Users className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>For Individuals</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/pro"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Briefcase className="h-5 w-5 text-sky-600 group-hover:scale-110 transition-transform" />
+                <span>For Business</span>
+              </Link>
+            </li>
+          </ul>
 
-          {/* RESOURCES */}
-          <Section title="RESOURCES">
-            <Row href="/developers" onClick={onClose} icon={<Code2 className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Developers</span>
-              <span className="block text-sm text-gray-500">API — coming soon</span>
-            </Row>
-            <Row href="/security" onClick={onClose} icon={<Shield className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Security</span>
-            </Row>
-            <Row href="/status" onClick={onClose} icon={<Activity className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Status</span>
-            </Row>
-            <Row href="/changelog" onClick={onClose} icon={<History className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Changelog</span>
-            </Row>
-          </Section>
+          <div className="my-4 h-px bg-gray-200" />
 
-          {/* COMPANY */}
-          <Section title="COMPANY">
-            <Row href="/about" onClick={onClose} icon={<Info className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">About</span>
-            </Row>
-            <Row href="/contact" onClick={onClose} icon={<Mail className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Contact</span>
-            </Row>
-            <Row href="/legal" onClick={onClose} icon={<Gavel className="h-5 w-5 text-gray-700" />}>
-              <span className="font-medium text-gray-900">Legal</span>
-            </Row>
-          </Section>
+          {/* === Pricing (tarifs) === */}
+          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Pricing
+          </p>
+          <ul className="space-y-2 px-1">
+            <li>
+              <Link
+                href="/pricing"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <CreditCard className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Pricing</span>
+              </Link>
+            </li>
+          </ul>
+
+          <div className="my-4 h-px bg-gray-200" />
+
+          {/* === Resources === */}
+          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Resources
+          </p>
+          <ul className="space-y-2 px-1">
+            <li>
+              <Link
+                href="/developers"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <BookOpen className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Developers</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/security"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <ShieldCheck className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Security</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/status"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Activity className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Status</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/changelog"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Clock className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Changelog</span>
+              </Link>
+            </li>
+          </ul>
+
+          <div className="my-4 h-px bg-gray-200" />
+
+          {/* === Company (Entreprise) === */}
+          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Company
+          </p>
+          <ul className="space-y-2 px-1">
+            <li>
+              <Link
+                href="/about"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Info className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>About</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Mail className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Contact</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/legal"
+                onClick={onClose}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+              >
+                <Scale className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
+                <span>Legal</span>
+              </Link>
+            </li>
+          </ul>
+
+          {/* CTA bas du menu */}
+          <div className="mt-6 px-3">
+            <div className="flex gap-3">
+              <Link
+                href="/generate"
+                onClick={onClose}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
+              >
+                Get Started Free
+              </Link>
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-gray-50"
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
         </nav>
-
-        {/* bottom CTA bar */}
-        <div className="pointer-events-auto fixed bottom-0 left-0 right-0 z-[1001] border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-          <div className="mx-auto flex max-w-7xl gap-3 px-4 py-3">
-            <Link
-              href="/generate"
-              onClick={onClose}
-              className="flex-1 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2.5 text-white font-medium shadow-sm hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-            >
-              Get Started Free
-            </Link>
-            <Link
-              href="/login"
-              onClick={onClose}
-              className="w-[42%] inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-            >
-              Login
-            </Link>
-          </div>
-        </div>
       </div>
-    </Portal>
-  );
-}
-
-/* ---------- subcomponents ---------- */
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="py-3">
-      <p className="px-3 pb-2 text-xs font-semibold tracking-wide text-gray-600">{title}</p>
-      <ul className="divide-y divide-gray-200 rounded-2xl border border-gray-200 overflow-hidden bg-white">
-        {children}
-      </ul>
-    </div>
-  );
-}
-
-function Row({
-  href,
-  onClick,
-  icon,
-  children,
-}: {
-  href: string;
-  onClick: () => void;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <li>
-      <Link
-        href={href}
-        onClick={onClick}
-        className="group flex items-center justify-between gap-3 px-3 py-3.5 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
-      >
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-0.5">{icon}</div>
-          <div className="min-w-0">
-            {/* title + optional description */}
-            <div className="truncate leading-5">{children}</div>
-          </div>
-        </div>
-        <ChevronRight className="h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-600" />
-      </Link>
-    </li>
+    </>
   );
 }
