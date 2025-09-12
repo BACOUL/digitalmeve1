@@ -28,7 +28,10 @@ export default function GeneratePage() {
       const watermarked = await addWatermarkPdf(file);
       const whenISO = new Date().toISOString();
 
-      const xmpPdf = await embedMeveXmp(watermarked, {
+      // 🔧 PATCH MINIMAL: convertir ArrayBuffer -> Blob pour embedMeveXmp
+      const watermarkedBlob = new Blob([watermarked], { type: "application/pdf" });
+
+      const xmpPdf = await embedMeveXmp(watermarkedBlob, {
         docSha256: hash,
         createdAtISO: whenISO,
         issuer,
@@ -199,4 +202,5 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-              }
+}
+```0
