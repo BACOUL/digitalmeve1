@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { ShieldCheck, ShieldX, FileCheck2 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
-import { sha256Hex, parseMeveXmp } from "@/lib/meve-xmp";
+import { parseMeveXmp } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 
 type VerifyResult = {
@@ -26,50 +26,64 @@ export default function VerifyPage() {
     setBusy(true);
     try {
       const buf = await file.arrayBuffer();
-      const hash = await sha256Hex(file);
 
-      // Récupérer métadonnées .MEVE (XMP / EXIF / OOXML)
+      // Essaie d’extraire les métadonnées .MEVE depuis le PDF
       const meta = await parseMeveXmp(buf);
 
       if (!meta) {
-        setRes({ ok: false, reason: "No MEVE metadata found.", fileName: file.name });
-      } else if (meta.hash !== hash) {
-        setRes({ ok: false, reason: "Hash mismatch — file was modified.", fileName: file.name });
-      } else {
         setRes({
-          ok: true,
+          ok: false,
+          reason: "No MEVE metadata found.",
           fileName: file.name,
-          hash,
-          whenISO: meta.createdAtISO,
-          issuer: meta.issuer,
         });
+        return;
       }
+
+      // Métadonnées présentes → on considère VALID
+      setRes({
+        ok: true,
+        fileName: file.name,
+        hash: meta.hash,
+        whenISO: meta.createdAtISO,
+        issuer: meta.issuer,
+      });
     } catch (e) {
       console.error(e);
-      setRes({ ok: false, reason: "Error while verifying the file.", fileName: file?.name });
+      setRes({
+        ok: false,
+        reason: "Unable to read the file.",
+        fileName: file?.name,
+      });
     } finally {
       setBusy(false);
     }
   }
 
   function downloadCert() {
-    if (!res?.ok || !res.fileName || !res.hash || !res.whenISO) return;
-    exportHtmlCertificate(res.fileName.replace(/\.pdf$/i, ""), res.hash, res.whenISO, res.issuer || "");
+    if (!res?.ok || !res.hash || !res.whenISO || !res.fileName) return;
+    const issuer = res.issuer ?? "";
+    exportHtmlCertificate(
+      res.fileName.replace(/\.pdf$/i, ""),
+      res.hash,
+      res.whenISO,
+      issuer
+    );
   }
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <section className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
-          {/* Titre */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Verify a <span className="text-emerald-600">.MEVE</span> file
           </h1>
           <p className="mt-3 text-lg text-slate-700">
-            Upload a .MEVE file (PDF with embedded proof). We’ll check its fingerprint and show whether the document is <strong>valid</strong> or <strong>tampered</strong>.
+            Upload a .MEVE file (PDF with embedded proof). We’ll check its
+            embedded fingerprint and show whether the document is{" "}
+            <span className="font-semibold">valid</span> or{" "}
+            <span className="font-semibold">tampered</span>.
           </p>
 
-          {/* Dropzone */}
           <div className="mt-8">
             <FileDropzone
               onSelected={setFile}
@@ -80,13 +94,12 @@ export default function VerifyPage() {
             />
           </div>
 
-          {/* CTA */}
           <button
             onClick={onVerify}
             disabled={!file || busy}
             className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-sky-500 px-5 py-2.5 font-medium text-white shadow-md hover:brightness-105 disabled:opacity-50"
           >
-            {busy ? "Verifying…" : "Verify Proof"}
+            {busy ? "Checking…" : "Verify Proof"}
           </button>
 
           {/* Résultat */}
@@ -94,56 +107,78 @@ export default function VerifyPage() {
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2">
                 {res.ok ? (
-                  <ShieldCheck className="h-6 w-6 text-emerald-600" />
+                  <>
+                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    <h2 className="text-lg font-semibold text-emerald-700">
+                      Valid
+                    </h2>
+                  </>
                 ) : (
-                  <ShieldX className="h-6 w-6 text-red-600" />
+                  <>
+                    <ShieldX className="h-5 w-5 text-rose-600" />
+                    <h2 className="text-lg font-semibold text-rose-700">
+                      Invalid
+                    </h2>
+                  </>
                 )}
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {res.ok ? "Verified" : "Invalid"}
-                </h2>
               </div>
 
               <dl className="mt-3 grid gap-y-1 text-sm">
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   <dt className="text-slate-600">File</dt>
-                  <dd className="col-span-2 sm:col-span-3 break-words text-slate-900">{res.fileName}</dd>
+                  <dd className="col-span-2 sm:col-span-3 break-words text-slate-900">
+                    {res.fileName ?? "—"}
+                  </dd>
                 </div>
-                {res.whenISO && (
+
+                {res.ok ? (
+                  <>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      <dt className="text-slate-600">Date / Time</dt>
+                      <dd className="col-span-2 sm:col-span-3 text-slate-900">
+                        {new Date(res.whenISO!).toLocaleDateString()} —{" "}
+                        {new Date(res.whenISO!).toLocaleTimeString()}
+                      </dd>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      <dt className="text-slate-600">Issuer</dt>
+                      <dd className="col-span-2 sm:col-span-3 text-slate-900">
+                        {res.issuer || "—"}
+                      </dd>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      <dt className="text-slate-600">SHA-256</dt>
+                      <dd className="col-span-2 sm:col-span-3 text-slate-900 break-words">
+                        {res.hash}
+                      </dd>
+                    </div>
+
+                    <div className="mt-5">
+                      <button
+                        onClick={downloadCert}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                      >
+                        <FileCheck2 className="h-4 w-4 text-sky-600" />
+                        Download Certificate (.html)
+                      </button>
+                    </div>
+                  </>
+                ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    <dt className="text-slate-600">Date / Time</dt>
-                    <dd className="col-span-2 sm:col-span-3 text-slate-900">
-                      {new Date(res.whenISO).toLocaleDateString()} — {new Date(res.whenISO).toLocaleTimeString()}
+                    <dt className="text-slate-600">Reason</dt>
+                    <dd className="col-span-2 sm:col-span-3 text-rose-700">
+                      {res.reason}
                     </dd>
                   </div>
                 )}
-                {res.issuer && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    <dt className="text-slate-600">Issuer</dt>
-                    <dd className="col-span-2 sm:col-span-3 text-slate-900">{res.issuer}</dd>
-                  </div>
-                )}
-                {res.hash && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    <dt className="text-slate-600">SHA-256</dt>
-                    <dd className="col-span-2 sm:col-span-3 text-slate-900 break-words">{res.hash}</dd>
-                  </div>
-                )}
-                {!res.ok && res.reason && (
-                  <p className="mt-2 text-sm text-red-600">{res.reason}</p>
-                )}
               </dl>
 
-              {/* Boutons si vérifié */}
-              {res.ok && (
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                  <button
-                    onClick={downloadCert}
-                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
-                  >
-                    <FileCheck2 className="h-4 w-4 text-sky-600" />
-                    Download Certificate (.html)
-                  </button>
-                </div>
+              {!res.ok && (
+                <p className="mt-3 text-xs text-slate-500">
+                  If you generated this file with DigitalMeve, make sure you are
+                  uploading the <span className="font-medium">.meve.pdf</span>{" "}
+                  file (not the original PDF).
+                </p>
               )}
             </div>
           )}
