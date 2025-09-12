@@ -5,8 +5,9 @@ import { useState } from "react";
 import { Upload, FileDown, FileCheck2 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
-import { ensureMeveMetadata, sha256Hex } from "@/lib/meve-xmp";
+import { sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
+import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // ⬅️ NEW
 
 type GenResult = {
   pdfBlob?: Blob;
@@ -28,19 +29,17 @@ export default function GeneratePage() {
       // 1) Hash de l’original (spéc MEVE)
       const hash = await sha256Hex(file);
 
-      // 2) Watermark -> ArrayBuffer -> Blob (entrée pour l’embed)
-      const watermarkedAB = await addWatermarkPdf(file);
+      // 2) Watermark visuel → ArrayBuffer → Blob
+      const watermarkedAB = await addWatermarkPdf(file); // ArrayBuffer
       const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
 
       const whenISO = new Date().toISOString();
 
-      // 3) Injection métadonnées MEVE (XMP si possible + fallback commentaire %MEVE)
-      const outBlob: Blob = await ensureMeveMetadata(watermarkedBlob, {
-        docSha256: hash,
-        createdAtISO: whenISO,
-        issuer,
-        issuerType: "personal",
-        issuerWebsite: "https://digitalmeve.com",
+      // 3) Filigrane *invisible* (aucune métadonnée) : %MEVE{...}EVEM avant %%EOF
+      const outBlob: Blob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
+        hash,
+        ts: whenISO,
+        issuer: issuer || undefined,
       });
 
       const outName = toMeveName(file.name);
@@ -190,4 +189,4 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-               }
+              }
