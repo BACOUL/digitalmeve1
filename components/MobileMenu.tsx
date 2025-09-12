@@ -1,25 +1,24 @@
-// components/MobileMenu.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Portal from "@/components/Portal";
 import {
-  PlusSquare,
+  X,
+  ChevronRight,
+  FilePlus2,
   ShieldCheck,
   Tag,
   Code2,
   Shield,
   Info,
   Activity,
-  History,
   Mail,
-  Scale,
+  History,
   FileText,
+  Scale,
   Cookie,
-  X,
-  ChevronRight,
-  Users,
+  User2,
 } from "lucide-react";
 
 type Props = { open: boolean; onClose: () => void };
@@ -29,206 +28,216 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // lock scroll + ESC
+  // lock scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
     };
-  }, [onClose]);
-
-  // focus first
-  useEffect(() => {
-    panelRef.current
-      ?.querySelector<HTMLElement>("button,[href]")
-      ?.focus();
   }, []);
 
-  const Row = ({
-    href,
-    icon,
-    label,
-    hint,
-    tint = "emerald",
-  }: {
-    href: string;
-    icon: JSX.Element;
-    label: string;
-    hint?: string;
-    /** emerald | sky | slate */
-    tint?: "emerald" | "sky" | "slate";
-  }) => {
-    const side =
-      tint === "emerald"
-        ? "bg-emerald-500/20 group-hover:bg-emerald-500/30"
-        : tint === "sky"
-        ? "bg-sky-500/20 group-hover:bg-sky-500/30"
-        : "bg-slate-300/30 group-hover:bg-slate-300/40";
+  // esc to close
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
-    return (
-      <li>
-        <Link
-          href={href}
-          onClick={onClose}
-          className="group relative flex items-center justify-between rounded-2xl px-3 py-3.5 transition"
-        >
-          {/* accent bar */}
-          <span
-            className={`absolute left-1 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full ${side} transition-colors`}
-          />
-          <div className="min-w-0 ml-3 flex items-center gap-3">
-            <span className="shrink-0">{icon}</span>
-            <div className="min-w-0">
-              <p className="truncate text-base text-gray-900">{label}</p>
-              {hint && (
-                <p className="truncate text-sm text-gray-500">{hint}</p>
-              )}
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-gray-400" />
-        </Link>
-      </li>
+  // focus first actionable
+  useEffect(() => {
+    const first = panelRef.current?.querySelector<HTMLElement>(
+      "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
     );
-  };
-
-  const Section = ({
-    title,
-    badge,
-    color = "emerald",
-    children,
-  }: {
-    title: string;
-    badge?: string;
-    color?: "emerald" | "sky" | "slate";
-    children: React.ReactNode;
-  }) => {
-    const badgeClasses =
-      color === "emerald"
-        ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-        : color === "sky"
-        ? "bg-sky-50 text-sky-700 ring-1 ring-sky-100"
-        : "bg-slate-100 text-slate-700 ring-1 ring-slate-200";
-
-    return (
-      <div className="px-3">
-        <div className="flex items-center gap-2 px-1 pt-5 pb-2">
-          <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-            {title}
-          </p>
-          {badge && (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] ${badgeClasses}`}>
-              {badge}
-            </span>
-          )}
-        </div>
-        <ul className="space-y-1.5">{children}</ul>
-      </div>
-    );
-  };
+    first?.focus();
+  }, []);
 
   return (
     <Portal>
-      {/* overlay avec léger dégradé */}
-      <button
-        aria-label="Close menu"
+      {/* overlay */}
+      <div
+        aria-hidden
         onClick={onClose}
-        className="fixed inset-0 z-[998] bg-gradient-to-b from-black/50 to-black/30 backdrop-blur-sm"
+        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
       />
+
       {/* panel */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Main menu"
-        className="fixed inset-0 z-[999] flex flex-col bg-white"
+        className="fixed inset-0 z-[1000] flex flex-col bg-white"
       >
-        {/* top bar gradient + brand */}
-        <div className="relative border-b border-gray-200 px-4 py-4">
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_0%_0%,rgba(16,185,129,0.08),transparent_60%),radial-gradient(60%_60%_at_100%_0%,rgba(56,189,248,0.08),transparent_60%)]" />
-          <div className="flex items-center justify-between">
+        {/* top bar with soft gradient */}
+        <div className="relative border-b border-gray-200">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_60%_at_10%_-10%,rgba(16,185,129,.18),transparent_55%),radial-gradient(120%_60%_at_90%_-10%,rgba(56,189,248,.18),transparent_55%)]"
+          />
+          <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
             <Link
               href="/"
               onClick={onClose}
-              className="flex items-center gap-2"
-              aria-label="DigitalMeve Home"
+              className="flex select-none items-center gap-2"
             >
-              <span className="text-lg font-semibold tracking-tight">
+              <span className="text-xl font-extrabold tracking-tight">
                 <span className="text-emerald-600">Digital</span>
                 <span className="text-sky-600">Meve</span>
               </span>
             </Link>
             <button
               onClick={onClose}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              aria-label="Close menu"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white/70 backdrop-blur hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
             >
-              <X className="h-5 w-5 text-gray-700" />
+              <X className="h-5 w-5 text-slate-700" />
             </button>
           </div>
         </div>
 
         {/* content */}
-        <nav className="flex-1 overflow-y-auto py-2">
-          <Section title="Actions" badge="Start here" color="emerald">
-            <Row
-              href="/generate"
-              icon={<PlusSquare className="h-5 w-5 text-emerald-600" />}
-              label="Generate"
-              hint="Create a certified copy"
-              tint="emerald"
-            />
-            <Row
-              href="/verify"
-              icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}
-              label="Verify"
-              hint="Check a .MEVE document"
-              tint="emerald"
-            />
+        <nav className="flex-1 overflow-y-auto px-2 pb-28 pt-3 text-slate-800">
+          {/* ACTIONS */}
+          <Section title="Actions" accent="emerald">
+            <MenuItem href="/generate" icon={<FilePlus2 className="h-5 w-5 text-emerald-600" />}>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-900">Generate</span>
+                <span className="text-sm text-slate-500">Create a .MEVE proof</span>
+              </div>
+            </MenuItem>
+            <MenuItem href="/verify" icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-900">Verify</span>
+                <span className="text-sm text-slate-500">Check any document</span>
+              </div>
+            </MenuItem>
           </Section>
 
-          <Section title="Products" color="sky">
-            <Row
-              href="/pricing"
-              icon={<Tag className="h-5 w-5 text-sky-600" />}
-              label="Pricing"
-              hint="Free for individuals"
-              tint="sky"
-            />
-            <Row
-              href="/developers"
-              icon={<Code2 className="h-5 w-5 text-sky-600" />}
-              label="Developers"
-              hint="API — coming soon"
-              tint="sky"
-            />
+          {/* PRODUCTS */}
+          <Section title="Products" accent="sky">
+            <MenuItem href="/pricing" icon={<Tag className="h-5 w-5 text-sky-600" />}>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-900">Pricing</span>
+                <span className="text-sm text-slate-500">Free for Individuals</span>
+              </div>
+            </MenuItem>
+            <MenuItem href="/developers" icon={<Code2 className="h-5 w-5 text-sky-600" />}>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-900">Developers</span>
+                <span className="text-sm text-slate-500">API — coming soon</span>
+              </div>
+            </MenuItem>
           </Section>
 
-          <Section title="Company" color="slate">
-            <Row href="/security" icon={<Shield className="h-5 w-5 text-slate-600" />} label="Security" tint="slate" />
-            <Row href="/about" icon={<Info className="h-5 w-5 text-slate-600" />} label="About" tint="slate" />
-            <Row href="/status" icon={<Activity className="h-5 w-5 text-slate-600" />} label="Status" tint="slate" />
-            <Row href="/changelog" icon={<History className="h-5 w-5 text-slate-600" />} label="Changelog" tint="slate" />
-            <Row href="/contact" icon={<Mail className="h-5 w-5 text-slate-600" />} label="Contact" tint="slate" />
+          {/* COMPANY */}
+          <Section title="Company" accent="slate">
+            <MenuItem href="/security" icon={<Shield className="h-5 w-5 text-slate-600" />}>
+              <span className="font-medium text-slate-900">Security</span>
+            </MenuItem>
+            <MenuItem href="/about" icon={<Info className="h-5 w-5 text-slate-600" />}>
+              <span className="font-medium text-slate-900">About</span>
+            </MenuItem>
+            <MenuItem href="/status" icon={<Activity className="h-5 w-5 text-slate-600" />}>
+              <span className="font-medium text-slate-900">Status</span>
+            </MenuItem>
+            <MenuItem href="/changelog" icon={<History className="h-5 w-5 text-slate-600" />}>
+              <span className="font-medium text-slate-900">Changelog</span>
+            </MenuItem>
+            <MenuItem href="/contact" icon={<Mail className="h-5 w-5 text-slate-600" />}>
+              <span className="font-medium text-slate-900">Contact</span>
+            </MenuItem>
           </Section>
 
-          <Section title="Legal" color="slate">
-            <Row href="/privacy" icon={<FileText className="h-5 w-5 text-slate-600" />} label="Privacy" tint="slate" />
-            <Row href="/terms" icon={<Scale className="h-5 w-5 text-slate-600" />} label="Terms" tint="slate" />
-            <Row href="/cookies" icon={<Cookie className="h-5 w-5 text-slate-600" />} label="Cookies" tint="slate" />
+          {/* LEGAL */}
+          <Section title="Legal" accent="light">
+            <MenuItem href="/privacy" icon={<FileText className="h-5 w-5 text-slate-500" />}>
+              <span className="font-medium text-slate-900">Privacy</span>
+            </MenuItem>
+            <MenuItem href="/terms" icon={<Scale className="h-5 w-5 text-slate-500" />}>
+              <span className="font-medium text-slate-900">Terms</span>
+            </MenuItem>
+            <MenuItem href="/cookies" icon={<Cookie className="h-5 w-5 text-slate-500" />}>
+              <span className="font-medium text-slate-900">Cookies</span>
+            </MenuItem>
           </Section>
         </nav>
 
-        {/* bottom pill gradient */}
-        <div className="border-t border-gray-200 px-4 py-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-50 to-sky-50 px-3 py-1 text-xs ring-1 ring-emerald-100">
-            <Users className="h-4 w-4 text-emerald-600" />
-            <span className="text-gray-700">Free for Individuals</span>
-          </div>
+        {/* bottom signature bar */}
+        <div className="pointer-events-auto fixed inset-x-0 bottom-0 z-[1001]">
+          <button
+            onClick={onClose}
+            className="mx-auto mb-3 block w-[92%] rounded-2xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-3 text-center text-sm font-medium text-white shadow-lg hover:brightness-105 active:translate-y-[1px]"
+            aria-label="Close menu"
+          >
+            <span className="inline-flex items-center gap-2">
+              <User2 className="h-4 w-4" />
+              Free for Individuals
+            </span>
+          </button>
         </div>
       </div>
     </Portal>
+  );
+}
+
+/* ---------- Small building blocks ---------- */
+
+function Section({
+  title,
+  accent,
+  children,
+}: {
+  title: string;
+  accent: "emerald" | "sky" | "slate" | "light";
+  children: React.ReactNode;
+}) {
+  const rail =
+    accent === "emerald"
+      ? "before:bg-emerald-500/70"
+      : accent === "sky"
+      ? "before:bg-sky-500/70"
+      : accent === "slate"
+      ? "before:bg-slate-400/60"
+      : "before:bg-slate-300/50";
+
+  return (
+    <div className="mt-3">
+      <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {title}
+      </p>
+      <div
+        className={`relative rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-sm ${rail} before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full`}
+      >
+        <ul className="divide-y divide-gray-100">{children}</ul>
+      </div>
+    </div>
+  );
+}
+
+function MenuItem({
+  href,
+  icon,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="group flex items-center justify-between gap-3 px-4 py-3.5"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gray-50 ring-1 ring-gray-200 group-hover:bg-white group-hover:ring-gray-300 transition">
+            {icon}
+          </span>
+          {children}
+        </div>
+        <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:text-slate-500" />
+      </Link>
+    </li>
   );
 }
