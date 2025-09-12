@@ -1,9 +1,9 @@
-// components/MobileMenu.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Portal from "@/components/Portal";
 import {
   Users,
   FilePlus2,
@@ -12,11 +12,14 @@ import {
   Briefcase,
   Mail,
   Info,
-  X,
-  CreditCard,
+  DollarSign,
+  Code2,
   Scale,
   Activity,
-  Clock,
+  FileText,
+  X,
+  ChevronRight,
+  Tag,
 } from "lucide-react";
 
 type Props = { open: boolean; onClose: () => void };
@@ -25,16 +28,10 @@ export default function MobileMenu({ open, onClose }: Props) {
   const pathname = usePathname();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Fermer automatiquement quand l’URL change
-  useEffect(() => {
-    if (!open) return;
-    onClose();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
+  // Ne pas rendre si fermé
   if (!open) return null;
 
-  // Empêcher le scroll derrière
+  // Lock scroll du body
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -50,7 +47,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus initial
+  // Focus initial dans le panneau
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -58,16 +55,28 @@ export default function MobileMenu({ open, onClose }: Props) {
     first?.focus();
   }, []);
 
+  // Fermer si la route change (patch: vérifier que pathname est défini)
+  useEffect(() => {
+    if (open && pathname) onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // utilitaire pour fermer à chaque clic de lien
+  const closeOnClick = <T extends HTMLElement>(e?: React.MouseEvent<T>) => {
+    // laisser Next.js naviguer, puis fermer le menu
+    onClose();
+  };
+
   return (
-    <>
+    <Portal>
       {/* overlay cliquable */}
       <div
         aria-hidden
         onClick={onClose}
-        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-sm"
       />
 
-      {/* panneau */}
+      {/* panneau clair */}
       <div
         ref={panelRef}
         role="dialog"
@@ -75,9 +84,9 @@ export default function MobileMenu({ open, onClose }: Props) {
         aria-label="Main menu"
         className="fixed inset-0 z-[1000] flex flex-col bg-white"
       >
-        {/* top bar */}
+        {/* barre supérieure */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-          <Link href="/" className="flex items-center gap-2" aria-label="DigitalMeve Home">
+          <Link href="/" onClick={closeOnClick} className="flex items-center gap-2">
             <span className="text-lg font-semibold tracking-tight">
               <span className="text-emerald-600">Digital</span>
               <span className="text-sky-600">Meve</span>
@@ -92,178 +101,197 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* contenu */}
-        <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2 text-slate-700">
+        {/* contenu scrollable */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-24 pt-2 text-slate-700">
           {/* PRODUCTS */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Products
           </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/generate"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <FilePlus2 className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span>Generate</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/verify"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <ShieldCheck className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span>Verify</span>
-              </Link>
-            </li>
+          <ul className="px-1">
+            <MenuItem
+              href="/generate"
+              icon={<FilePlus2 className="h-5 w-5 text-emerald-600" />}
+              title="Generate"
+              subtitle="Create a .MEVE file"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/verify"
+              icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}
+              title="Verify"
+              subtitle="Check a .MEVE file"
+              onClick={closeOnClick}
+            />
           </ul>
 
-          <div className="my-4 h-px bg-gray-200" />
+          <Divider />
 
           {/* SOLUTIONS */}
-          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Solutions
           </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/personal"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Users className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span>For Individuals</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/pro"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Briefcase className="h-5 w-5 text-sky-600 group-hover:scale-110 transition-transform" />
-                <span>For Business</span>
-              </Link>
-            </li>
+          <ul className="px-1">
+            <MenuItem
+              href="/personal"
+              icon={<Users className="h-5 w-5 text-sky-600" />}
+              title="For Individuals"
+              subtitle="Free, no storage"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/pro"
+              icon={<Briefcase className="h-5 w-5 text-sky-600" />}
+              title="For Business"
+              subtitle="API & domain-verified issuer"
+              onClick={closeOnClick}
+            />
           </ul>
 
-          <div className="my-4 h-px bg-gray-200" />
+          <Divider />
 
           {/* PRICING */}
-          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Pricing
           </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/pricing"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <CreditCard className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Pricing</span>
-              </Link>
-            </li>
+          <ul className="px-1">
+            <MenuItem
+              href="/pricing"
+              icon={<Tag className="h-5 w-5 text-emerald-600" />}
+              title="Pricing"
+              subtitle="Free for individuals"
+              onClick={closeOnClick}
+            />
           </ul>
 
-          <div className="my-4 h-px bg-gray-200" />
+          <Divider />
 
           {/* RESOURCES */}
-          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Resources
           </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/developers"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <BookOpen className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Developers</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/security"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <ShieldCheck className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Security</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/status"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Activity className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Status</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/changelog"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Clock className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Changelog</span>
-              </Link>
-            </li>
+          <ul className="px-1">
+            <MenuItem
+              href="/developers"
+              icon={<Code2 className="h-5 w-5 text-slate-600" />}
+              title="Developers"
+              subtitle="API — coming soon"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/security"
+              icon={<ShieldCheck className="h-5 w-5 text-slate-600" />}
+              title="Security"
+              subtitle="Overview & FAQ"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/status"
+              icon={<Activity className="h-5 w-5 text-slate-600" />}
+              title="Status"
+              subtitle="Uptime & checks"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/changelog"
+              icon={<FileText className="h-5 w-5 text-slate-600" />}
+              title="Changelog"
+              subtitle="Releases & fixes"
+              onClick={closeOnClick}
+            />
           </ul>
 
-          <div className="my-4 h-px bg-gray-200" />
+          <Divider />
 
           {/* COMPANY */}
-          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Company
           </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/about"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Info className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>About</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/contact"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Mail className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Contact</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/legal"
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Scale className="h-5 w-5 text-slate-700 group-hover:scale-110 transition-transform" />
-                <span>Legal</span>
-              </Link>
-            </li>
+          <ul className="px-1">
+            <MenuItem
+              href="/about"
+              icon={<Info className="h-5 w-5 text-slate-600" />}
+              title="About"
+              subtitle="Who we are"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/contact"
+              icon={<Mail className="h-5 w-5 text-slate-600" />}
+              title="Contact"
+              subtitle="Support & sales"
+              onClick={closeOnClick}
+            />
+            <MenuItem
+              href="/legal"
+              icon={<Scale className="h-5 w-5 text-slate-600" />}
+              title="Legal"
+              subtitle="Terms • Privacy • Cookies"
+              onClick={closeOnClick}
+            />
           </ul>
-
-          {/* CTA bas */}
-          <div className="mt-6 px-3">
-            <div className="flex gap-3">
-              <Link
-                href="/generate"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-              >
-                Get Started Free
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-gray-50"
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
         </nav>
+
+        {/* barre CTA fixe bas */}
+        <div className="pointer-events-auto fixed inset-x-0 bottom-0 z-[1001] bg-white/95 backdrop-blur border-t border-gray-200 p-3">
+          <div className="mx-auto flex max-w-3xl gap-3">
+            <Link
+              href="/generate"
+              onClick={closeOnClick}
+              className="flex-1 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-3 text-white font-medium"
+            >
+              Get Started Free
+            </Link>
+            <Link
+              href="/login"
+              onClick={closeOnClick}
+              className="flex-1 inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-3 text-slate-700 font-medium"
+            >
+              Login
+            </Link>
+          </div>
+        </div>
       </div>
-    </>
+    </Portal>
   );
-        }
+}
+
+/* --- Petits composants internes --------------------------------------- */
+
+function Divider() {
+  return <div className="my-4 h-px bg-gray-200" />;
+}
+
+function MenuItem({
+  href,
+  icon,
+  title,
+  subtitle,
+  onClick,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  onClick?: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        onClick={onClick}
+        className="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 hover:bg-gray-50"
+      >
+        <div className="flex items-center gap-3">
+          {icon}
+          <div className="flex flex-col">
+            <span className="text-base text-slate-800">{title}</span>
+            {subtitle && (
+              <span className="text-xs text-slate-500">{subtitle}</span>
+            )}
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-gray-400" />
+      </Link>
+    </li>
+  );
+    }
