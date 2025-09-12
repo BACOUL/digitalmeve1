@@ -2,13 +2,14 @@
 // Ajoute un filigrane visible "DigitalMeve" + un marqueur invisible MEVE
 // Retourne un ArrayBuffer (PDF final)
 
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
 
 // Encodage Base64URL minimal (sans padding)
 function toBase64Url(u8: Uint8Array): string {
-  let b64 = typeof btoa !== "undefined"
-    ? btoa(String.fromCharCode(...u8))
-    : Buffer.from(u8).toString("base64");
+  let b64 =
+    typeof btoa !== "undefined"
+      ? btoa(String.fromCharCode(...u8))
+      : Buffer.from(u8).toString("base64");
   return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
@@ -23,7 +24,10 @@ function insertCommentBeforeEOF(pdfBytes: Uint8Array, commentLine: string): Uint
     for (let i = pdfBytes.length - eof.length; i >= 0; i--) {
       let ok = true;
       for (let j = 0; j < eof.length; j++) {
-        if (pdfBytes[i + j] !== eof[j]) { ok = false; break; }
+        if (pdfBytes[i + j] !== eof[j]) {
+          ok = false;
+          break;
+        }
       }
       if (ok) return i;
     }
@@ -49,19 +53,19 @@ function insertCommentBeforeEOF(pdfBytes: Uint8Array, commentLine: string): Uint
 export type MeveInvisiblePayload = {
   v: 1;
   alg: "sha-256";
-  hash: string;          // 64 hex
-  ts: string;            // ISO8601
-  issuer?: string;       // email/issuer
+  hash: string; // 64 hex
+  ts: string; // ISO8601
+  issuer?: string; // email/issuer
 };
 
 // API principale : on garde la signature simple + options
 export async function addWatermarkPdf(
   file: Blob,
   opts?: {
-    visibleText?: string;           // défaut: "DigitalMeve"
+    visibleText?: string; // défaut: "DigitalMeve"
     invisiblePayload?: MeveInvisiblePayload;
-    opacity?: number;               // défaut: 0.08
-    scale?: number;                 // défaut: 0.75
+    opacity?: number; // défaut: 0.08
+    scale?: number; // défaut: 0.75
     position?: "center" | "top-left" | "bottom-right";
   }
 ): Promise<ArrayBuffer> {
@@ -98,13 +102,14 @@ export async function addWatermarkPdf(
     }
 
     p.drawText(text, {
-      x: x - (font.widthOfTextAtSize(text, textSize) / 2),
+      x: x - font.widthOfTextAtSize(text, textSize) / 2,
       y: y - textSize / 2,
       size: textSize,
       font,
       color: rgb(0, 0, 0),
       opacity,
-      rotate: position === "center" ? { type: "degrees", angle: 30 } : undefined,
+      // ✅ Correction: pdf-lib attend degrees(…)
+      rotate: position === "center" ? degrees(30) : undefined,
     });
   }
 
@@ -122,4 +127,5 @@ export async function addWatermarkPdf(
   const withMarker = insertCommentBeforeEOF(bytes, marker);
 
   return withMarker.buffer;
-  }
+}
+```0
