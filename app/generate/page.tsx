@@ -28,16 +28,14 @@ export default function GeneratePage() {
       // 1) Hash du fichier source (spéc MEVE)
       const hash = await sha256Hex(file);
 
-      // 2) Watermark -> ArrayBuffer
+      // 2) Watermark -> ArrayBuffer -> Blob (entrée attendue côté embed)
       const watermarkedAB = await addWatermarkPdf(file); // ArrayBuffer
-
-      // 3) Convertir en Blob PDF pour embedMeveXmp (qui accepte Blob | ArrayBuffer)
       const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
 
       const whenISO = new Date().toISOString();
 
-      // 4) Embedding XMP
-      const xmpOut = await embedMeveXmp(watermarkedBlob, {
+      // 3) Embedding XMP (retourne déjà un Blob)
+      const xmpOut: Blob = await embedMeveXmp(watermarkedBlob, {
         docSha256: hash,
         createdAtISO: whenISO,
         issuer,
@@ -45,29 +43,8 @@ export default function GeneratePage() {
         issuerWebsite: "https://digitalmeve.com",
       });
 
-      // 5) Normaliser la sortie en Blob (PDF) — PATCH
-      let outBlob: Blob;
-      if (xmpOut instanceof Blob) {
-        outBlob = xmpOut;
-      } else if (xmpOut instanceof ArrayBuffer) {
-        outBlob = new Blob([xmpOut], { type: "application/pdf" });
-      } else if (xmpOut instanceof Uint8Array) {
-        const ab = xmpOut.buffer.slice(
-          xmpOut.byteOffset,
-          xmpOut.byteOffset + xmpOut.byteLength
-        );
-        outBlob = new Blob([ab], { type: "application/pdf" });
-      } else {
-        const maybe = xmpOut as ArrayBufferView;
-        const ab =
-          maybe?.buffer instanceof ArrayBuffer
-            ? maybe.buffer.slice(
-                (maybe as any).byteOffset ?? 0,
-                ((maybe as any).byteOffset ?? 0) + ((maybe as any).byteLength ?? 0)
-              )
-            : (xmpOut as ArrayBuffer);
-        outBlob = new Blob([ab], { type: "application/pdf" });
-      }
+      // 4) Sortie finale (Blob PDF)
+      const outBlob = xmpOut;
 
       const outName = toMeveName(file.name);
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
@@ -92,9 +69,7 @@ export default function GeneratePage() {
 
     const w = window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => {
-      try {
-        w?.close();
-      } catch {}
+      try { w?.close(); } catch {}
       URL.revokeObjectURL(url);
     }, 10000);
 
@@ -120,7 +95,6 @@ export default function GeneratePage() {
     <main className="min-h-screen bg-white text-slate-900">
       <section className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
-          {/* Titre très lisible */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Generate a <span className="text-emerald-600">.MEVE</span> proof
           </h1>
@@ -133,7 +107,6 @@ export default function GeneratePage() {
             and an optional human-readable certificate (.html).
           </p>
 
-          {/* Dropzone */}
           <div className="mt-8">
             <FileDropzone
               onSelected={setFile}
@@ -144,7 +117,6 @@ export default function GeneratePage() {
             />
           </div>
 
-          {/* Issuer */}
           <div className="mt-5">
             <label className="block text-sm font-medium text-slate-800">
               Issuer (optional)
@@ -158,7 +130,6 @@ export default function GeneratePage() {
             />
           </div>
 
-          {/* CTA */}
           <button
             onClick={onGenerate}
             disabled={!file || busy}
@@ -168,7 +139,6 @@ export default function GeneratePage() {
             {busy ? "Generating…" : "Generate Proof"}
           </button>
 
-          {/* Proof Preview — les deux téléchargements dans la carte */}
           {res.pdfBlob && res.fileName && (
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Proof Preview</h2>
@@ -228,4 +198,4 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-            }
+          }
