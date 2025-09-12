@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ShieldCheck, ShieldX, FileCheck2 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
-import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // ✅ correction de l'import
+import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // ✅ fonction de lecture du filigrane invisible
 
 type VerifyResult = {
   ok: boolean;
@@ -25,10 +25,8 @@ export default function VerifyPage() {
     if (!file) return;
     setBusy(true);
     try {
-      const buf = await file.arrayBuffer();
-
-      // ✅ lecture du filigrane invisible dans le PDF
-      const meta = await readInvisibleWatermarkPdf(buf);
+      // ✅ lecture du filigrane invisible dans le PDF (Blob attendu)
+      const meta = await readInvisibleWatermarkPdf(file);
 
       if (!meta) {
         setRes({
@@ -39,6 +37,7 @@ export default function VerifyPage() {
         return;
       }
 
+      // Métadonnées présentes → on considère VALID
       setRes({
         ok: true,
         fileName: file.name,
@@ -77,8 +76,8 @@ export default function VerifyPage() {
             Verify a <span className="text-emerald-600">.MEVE</span> file
           </h1>
           <p className="mt-3 text-lg text-slate-700">
-            Upload a .MEVE file (PDF with invisible watermark). We’ll check its
-            embedded fingerprint and show whether the document is{" "}
+            Upload a .MEVE file (PDF with embedded proof). We’ll check its
+            invisible watermark and show whether the document is{" "}
             <span className="font-semibold">valid</span> or{" "}
             <span className="font-semibold">tampered</span>.
           </p>
