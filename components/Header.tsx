@@ -28,14 +28,29 @@ export default function Header() {
           <Link href="/verify" className="text-slate-700 hover:text-emerald-700 transition-colors">
             Verify
           </Link>
-          <Link href="/docs" className="text-slate-700 hover:text-emerald-700 transition-colors">
-            Docs
+          <Link href="/pricing" className="text-slate-700 hover:text-emerald-700 transition-colors">
+            Pricing
           </Link>
-          <Link href="/pro" className="text-slate-700 hover:text-sky-700 transition-colors">
-            For Professionals
+          <Link href="/security" className="text-slate-700 hover:text-emerald-700 transition-colors">
+            Security
           </Link>
-          <Link href="/contact" className="text-slate-700 hover:text-sky-700 transition-colors">
-            Contact
+          <Link href="/about" className="text-slate-700 hover:text-emerald-700 transition-colors">
+            About
+          </Link>
+
+          {/* Lang switch (placeholder avant i18n complet) */}
+          <div className="ml-2 flex items-center gap-2 text-sm">
+            <Link href="/?lang=en" className="text-slate-500 hover:text-slate-800">EN</Link>
+            <span className="text-slate-300">/</span>
+            <Link href="/?lang=fr" className="text-slate-500 hover:text-slate-800">FR</Link>
+          </div>
+
+          {/* CTA */}
+          <Link
+            href="/verify"
+            className="ml-2 inline-flex items-center justify-center rounded-xl border border-transparent bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:brightness-110"
+          >
+            Get started
           </Link>
         </nav>
 
