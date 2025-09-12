@@ -14,10 +14,11 @@ import {
   InvisibleWatermarkPayload,
 } from "./marker";
 
-// -- Helpers binaires --
+// ---------- Helpers binaires ----------
 
-function toUint8(ab: ArrayBuffer): Uint8Array {
-  return ab instanceof Uint8Array ? (ab as unknown as Uint8Array) : new Uint8Array(ab);
+function toUint8(src: ArrayBufferLike | Uint8Array): Uint8Array {
+  // Normalise toute source en Uint8Array indépendant
+  return src instanceof Uint8Array ? new Uint8Array(src) : new Uint8Array(src);
 }
 
 function concatBytes(parts: Uint8Array[]): Uint8Array {
@@ -41,21 +42,23 @@ function bytesText(b: Uint8Array): string {
 
 function findLast(data: Uint8Array, needle: string): number {
   const n = textBytes(needle);
-  // Simple recherche depuis la fin
   for (let i = data.length - n.length; i >= 0; i--) {
     let ok = true;
     for (let j = 0; j < n.length; j++) {
-      if (data[i + j] !== n[j]) {
-        ok = false;
-        break;
-      }
+      if (data[i + j] !== n[j]) { ok = false; break; }
     }
     if (ok) return i;
   }
   return -1;
 }
 
-// -- API publique --
+// Copie en ArrayBuffer "classique" puis crée un Blob propre
+function u8ToBlob(u8: Uint8Array, type: string): Blob {
+  const copy = new Uint8Array(u8); // force un buffer non-partagé
+  return new Blob([copy.buffer], { type });
+}
+
+// ---------- API publique ----------
 
 /**
  * Injecte un filigrane invisible dans un PDF (Blob -> Blob).
@@ -69,14 +72,14 @@ export async function embedInvisibleWatermarkPdf(
   const pdfAB = await inputPdf.arrayBuffer();
   const pdf = toUint8(pdfAB);
 
-  // 1) Construire le marqueur texte
+  // 1) Construire le marqueur texte à partir du payload
   const marker = encodeInvisibleWatermark({
     alg: "sha256",
     hash: payload.hash,
     ts: payload.ts,
     issuer: payload.issuer,
   });
-  // Commentaire PDF → doit commencer par '%'
+  // Un commentaire PDF commence par "%"
   const commentLine = textBytes(`\n%${marker}\n`);
 
   // 2) Trouver le dernier %%EOF
@@ -84,15 +87,15 @@ export async function embedInvisibleWatermarkPdf(
   if (eofPos < 0) {
     // PDF atypique : on append quand même en fin (la plupart des lecteurs tolèrent)
     const merged = concatBytes([pdf, commentLine, textBytes("%%EOF\n")]);
-    return new Blob([merged], { type: "application/pdf" });
+    return u8ToBlob(merged, "application/pdf");
   }
 
-  // 3) Insérer AVANT %%EOF sans toucher au xref
+  // 3) Insérer AVANT %%EOF sans toucher au xref déjà présent
   const head = pdf.slice(0, eofPos);
   const tail = pdf.slice(eofPos); // commence à "%%EOF"
   const merged = concatBytes([head, commentLine, tail]);
 
-  return new Blob([merged], { type: "application/pdf" });
+  return u8ToBlob(merged, "application/pdf");
 }
 
 /**
@@ -130,4 +133,4 @@ export async function findRawMarkerPdf(inputPdf: Blob): Promise<string | null> {
   const j = text.indexOf(MARKER_SUFFIX, i + MARKER_PREFIX.length);
   if (j < 0) return null;
   return text.slice(i, j + MARKER_SUFFIX.length);
-                         }
+}
