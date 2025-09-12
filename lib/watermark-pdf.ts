@@ -1,4 +1,4 @@
-// /lib/watermark-pdf.ts
+// lib/watermark-pdf.ts
 // Ajoute un filigrane visible "DigitalMeve" + un marqueur invisible MEVE
 // Retourne un ArrayBuffer (PDF final)
 
@@ -24,10 +24,7 @@ function insertCommentBeforeEOF(pdfBytes: Uint8Array, commentLine: string): Uint
     for (let i = pdfBytes.length - eof.length; i >= 0; i--) {
       let ok = true;
       for (let j = 0; j < eof.length; j++) {
-        if (pdfBytes[i + j] !== eof[j]) {
-          ok = false;
-          break;
-        }
+        if (pdfBytes[i + j] !== eof[j]) { ok = false; break; }
       }
       if (ok) return i;
     }
@@ -53,8 +50,8 @@ function insertCommentBeforeEOF(pdfBytes: Uint8Array, commentLine: string): Uint
 export type MeveInvisiblePayload = {
   v: 1;
   alg: "sha-256";
-  hash: string; // 64 hex
-  ts: string; // ISO8601
+  hash: string;    // 64 hex
+  ts: string;      // ISO8601
   issuer?: string; // email/issuer
 };
 
@@ -62,10 +59,10 @@ export type MeveInvisiblePayload = {
 export async function addWatermarkPdf(
   file: Blob,
   opts?: {
-    visibleText?: string; // défaut: "DigitalMeve"
+    visibleText?: string;           // défaut: "DigitalMeve"
     invisiblePayload?: MeveInvisiblePayload;
-    opacity?: number; // défaut: 0.08
-    scale?: number; // défaut: 0.75
+    opacity?: number;               // défaut: 0.08
+    scale?: number;                 // défaut: 0.75
     position?: "center" | "top-left" | "bottom-right";
   }
 ): Promise<ArrayBuffer> {
@@ -108,7 +105,7 @@ export async function addWatermarkPdf(
       font,
       color: rgb(0, 0, 0),
       opacity,
-      // ✅ Correction: pdf-lib attend degrees(…)
+      // pdf-lib attend degrees(…)
       rotate: position === "center" ? degrees(30) : undefined,
     });
   }
@@ -128,4 +125,3 @@ export async function addWatermarkPdf(
 
   return withMarker.buffer;
 }
-```0
