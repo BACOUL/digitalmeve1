@@ -1,23 +1,19 @@
-import type { MetadataRoute } from "next";
+import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
-  const now = new Date().toISOString();
-
-  const routes = [
-    { url: "", changeFreq: "weekly" as const, priority: 1.0 },
-    { url: "/generate", changeFreq: "weekly" as const, priority: 0.9 },
-    { url: "/verify", changeFreq: "weekly" as const, priority: 0.9 },
-    { url: "/personal", changeFreq: "monthly" as const, priority: 0.6 },
-    { url: "/pro", changeFreq: "monthly" as const, priority: 0.6 },
-    { url: "/docs", changeFreq: "monthly" as const, priority: 0.5 },
-    { url: "/contact", changeFreq: "yearly" as const, priority: 0.4 },
+  const paths = [
+    "", "generate", "verify", "pricing", "developers",
+    "personal", "pro",
+    "security", "about", "status", "changelog",
+    "contact", "legal", "privacy", "terms", "cookies",
+    "login",
   ];
-
-  return routes.map((r) => ({
-    url: `${base}${r.url}`,
+  const now = new Date().toISOString();
+  return paths.map((p) => ({
+    url: `${base}/${p}`.replace(/\/$/, ""),
     lastModified: now,
-    changeFrequency: r.changeFreq,
-    priority: r.priority,
+    changeFrequency: "weekly",
+    priority: p === "" ? 1 : 0.7,
   }));
 }
