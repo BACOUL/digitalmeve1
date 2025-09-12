@@ -1,24 +1,24 @@
+// components/MobileMenu.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Portal from "@/components/Portal";
 import {
-  X,
-  ChevronRight,
   FilePlus2,
   ShieldCheck,
   Tag,
   Code2,
+  Briefcase,
+  Mail,
   Shield,
   Info,
   Activity,
-  Mail,
   History,
   FileText,
   Scale,
   Cookie,
-  User2,
+  X,
 } from "lucide-react";
 
 type Props = { open: boolean; onClose: () => void };
@@ -44,7 +44,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // focus first actionable
+  // focus first
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -54,14 +54,14 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   return (
     <Portal>
-      {/* overlay */}
-      <div
-        aria-hidden
+      {/* Overlay */}
+      <button
+        aria-label="Close menu"
         onClick={onClose}
-        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-sm"
       />
 
-      {/* panel */}
+      {/* Panel */}
       <div
         ref={panelRef}
         role="dialog"
@@ -69,175 +69,184 @@ export default function MobileMenu({ open, onClose }: Props) {
         aria-label="Main menu"
         className="fixed inset-0 z-[1000] flex flex-col bg-white"
       >
-        {/* top bar with soft gradient */}
-        <div className="relative border-b border-gray-200">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_60%_at_10%_-10%,rgba(16,185,129,.18),transparent_55%),radial-gradient(120%_60%_at_90%_-10%,rgba(56,189,248,.18),transparent_55%)]"
-          />
-          <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+        {/* Top bar */}
+        <div className="relative border-b border-gray-200 bg-white/90 px-4 py-4">
+          <div className="mx-auto flex max-w-7xl items-center justify-between">
             <Link
               href="/"
               onClick={onClose}
-              className="flex select-none items-center gap-2"
+              className="text-lg font-semibold tracking-tight"
             >
-              <span className="text-xl font-extrabold tracking-tight">
-                <span className="text-emerald-600">Digital</span>
-                <span className="text-sky-600">Meve</span>
-              </span>
+              <span className="text-emerald-600">Digital</span>
+              <span className="text-sky-600">Meve</span>
             </Link>
             <button
               onClick={onClose}
-              aria-label="Close menu"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white/70 backdrop-blur hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
             >
               <X className="h-5 w-5 text-slate-700" />
             </button>
           </div>
+          {/* brand beam */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -bottom-px h-1 bg-gradient-to-r from-emerald-400 via-emerald-300 to-sky-400"
+          />
         </div>
 
-        {/* content */}
-        <nav className="flex-1 overflow-y-auto px-2 pb-28 pt-3 text-slate-800">
-          {/* ACTIONS */}
+        {/* Content */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-28 pt-3 text-slate-700">
+          {/* ACTIONS (emerald) */}
           <Section title="Actions" accent="emerald">
-            <MenuItem href="/generate" icon={<FilePlus2 className="h-5 w-5 text-emerald-600" />}>
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">Generate</span>
-                <span className="text-sm text-slate-500">Create a .MEVE proof</span>
-              </div>
-            </MenuItem>
-            <MenuItem href="/verify" icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}>
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">Verify</span>
-                <span className="text-sm text-slate-500">Check any document</span>
-              </div>
-            </MenuItem>
+            <Item href="/generate" onClose={onClose} icon={<FilePlus2 className="h-5 w-5 text-emerald-600" />}>
+              Generate
+              <Small>Free • No storage</Small>
+            </Item>
+            <Item href="/verify" onClose={onClose} icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}>
+              Verify
+              <Small>Check a .MEVE file</Small>
+            </Item>
           </Section>
 
-          {/* PRODUCTS */}
+          {/* PRODUCTS (sky) */}
           <Section title="Products" accent="sky">
-            <MenuItem href="/pricing" icon={<Tag className="h-5 w-5 text-sky-600" />}>
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">Pricing</span>
-                <span className="text-sm text-slate-500">Free for Individuals</span>
-              </div>
-            </MenuItem>
-            <MenuItem href="/developers" icon={<Code2 className="h-5 w-5 text-sky-600" />}>
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">Developers</span>
-                <span className="text-sm text-slate-500">API — coming soon</span>
-              </div>
-            </MenuItem>
+            <Item href="/pricing" onClose={onClose} icon={<Tag className="h-5 w-5 text-sky-600" />}>
+              Pricing
+              <Small>Free for individuals</Small>
+            </Item>
+            <Item href="/developers" onClose={onClose} icon={<Code2 className="h-5 w-5 text-sky-600" />}>
+              Developers
+              <Small>API — coming soon</Small>
+            </Item>
           </Section>
 
-          {/* COMPANY */}
-          <Section title="Company" accent="slate">
-            <MenuItem href="/security" icon={<Shield className="h-5 w-5 text-slate-600" />}>
-              <span className="font-medium text-slate-900">Security</span>
-            </MenuItem>
-            <MenuItem href="/about" icon={<Info className="h-5 w-5 text-slate-600" />}>
-              <span className="font-medium text-slate-900">About</span>
-            </MenuItem>
-            <MenuItem href="/status" icon={<Activity className="h-5 w-5 text-slate-600" />}>
-              <span className="font-medium text-slate-900">Status</span>
-            </MenuItem>
-            <MenuItem href="/changelog" icon={<History className="h-5 w-5 text-slate-600" />}>
-              <span className="font-medium text-slate-900">Changelog</span>
-            </MenuItem>
-            <MenuItem href="/contact" icon={<Mail className="h-5 w-5 text-slate-600" />}>
-              <span className="font-medium text-slate-900">Contact</span>
-            </MenuItem>
+          {/* PROFESSIONALS (indigo) */}
+          <Section title="Professionals" accent="indigo">
+            <Item href="/pro" onClose={onClose} icon={<Briefcase className="h-5 w-5 text-indigo-600" />}>
+              Why .MEVE for business
+              <Small>Issuer checks • Scale verify</Small>
+            </Item>
+            <Item href="/contact" onClose={onClose} icon={<Mail className="h-5 w-5 text-indigo-600" />}>
+              Contact sales
+              <Small>SLA & roadmap</Small>
+            </Item>
           </Section>
 
-          {/* LEGAL */}
-          <Section title="Legal" accent="light">
-            <MenuItem href="/privacy" icon={<FileText className="h-5 w-5 text-slate-500" />}>
-              <span className="font-medium text-slate-900">Privacy</span>
-            </MenuItem>
-            <MenuItem href="/terms" icon={<Scale className="h-5 w-5 text-slate-500" />}>
-              <span className="font-medium text-slate-900">Terms</span>
-            </MenuItem>
-            <MenuItem href="/cookies" icon={<Cookie className="h-5 w-5 text-slate-500" />}>
-              <span className="font-medium text-slate-900">Cookies</span>
-            </MenuItem>
+          {/* COMPANY (neutral) */}
+          <Section title="Company">
+            <Item href="/security" onClose={onClose} icon={<Shield className="h-5 w-5 text-slate-500" />}>
+              Security
+            </Item>
+            <Item href="/about" onClose={onClose} icon={<Info className="h-5 w-5 text-slate-500" />}>
+              About
+            </Item>
+            <Item href="/status" onClose={onClose} icon={<Activity className="h-5 w-5 text-slate-500" />}>
+              Status
+            </Item>
+            <Item href="/changelog" onClose={onClose} icon={<History className="h-5 w-5 text-slate-500" />}>
+              Changelog
+            </Item>
+            <Item href="/contact" onClose={onClose} icon={<Mail className="h-5 w-5 text-slate-500" />}>
+              Contact
+            </Item>
+          </Section>
+
+          {/* LEGAL (neutral) */}
+          <Section title="Legal">
+            <Item href="/privacy" onClose={onClose} icon={<FileText className="h-5 w-5 text-slate-500" />}>
+              Privacy
+            </Item>
+            <Item href="/terms" onClose={onClose} icon={<Scale className="h-5 w-5 text-slate-500" />}>
+              Terms
+            </Item>
+            <Item href="/cookies" onClose={onClose} icon={<Cookie className="h-5 w-5 text-slate-500" />}>
+              Cookies
+            </Item>
           </Section>
         </nav>
 
-        {/* bottom signature bar */}
-        <div className="pointer-events-auto fixed inset-x-0 bottom-0 z-[1001]">
-          <button
-            onClick={onClose}
-            className="mx-auto mb-3 block w-[92%] rounded-2xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-3 text-center text-sm font-medium text-white shadow-lg hover:brightness-105 active:translate-y-[1px]"
-            aria-label="Close menu"
-          >
-            <span className="inline-flex items-center gap-2">
-              <User2 className="h-4 w-4" />
-              Free for Individuals
-            </span>
-          </button>
+        {/* Footer badge */}
+        <div className="pointer-events-none fixed bottom-4 left-0 right-0 z-[1001] flex justify-center">
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1 text-xs font-medium text-white shadow-lg ring-1 ring-black/5">
+            Free for Individuals
+          </div>
         </div>
       </div>
     </Portal>
   );
 }
 
-/* ---------- Small building blocks ---------- */
+/* ---------- small building blocks ---------- */
 
 function Section({
   title,
-  accent,
   children,
+  accent,
 }: {
   title: string;
-  accent: "emerald" | "sky" | "slate" | "light";
   children: React.ReactNode;
+  accent?: "emerald" | "sky" | "indigo";
 }) {
-  const rail =
+  const color =
     accent === "emerald"
-      ? "before:bg-emerald-500/70"
+      ? "text-emerald-700"
       : accent === "sky"
-      ? "before:bg-sky-500/70"
-      : accent === "slate"
-      ? "before:bg-slate-400/60"
-      : "before:bg-slate-300/50";
+      ? "text-sky-700"
+      : accent === "indigo"
+      ? "text-indigo-700"
+      : "text-slate-500";
+
+  const divider =
+    accent === "emerald"
+      ? "from-emerald-200/60"
+      : accent === "sky"
+      ? "from-sky-200/60"
+      : accent === "indigo"
+      ? "from-indigo-200/60"
+      : "from-gray-200/60";
 
   return (
-    <div className="mt-3">
-      <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        {title}
-      </p>
-      <div
-        className={`relative rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-sm ${rail} before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full`}
-      >
-        <ul className="divide-y divide-gray-100">{children}</ul>
+    <div className="px-2 py-3">
+      <div className="flex items-center gap-2 px-1">
+        <span className={`text-xs font-semibold uppercase tracking-wide ${color}`}>
+          {title}
+        </span>
+        <span className={`h-px flex-1 bg-gradient-to-r ${divider} to-transparent`} />
       </div>
+      <ul className="mt-2 space-y-1">{children}</ul>
     </div>
   );
 }
 
-function MenuItem({
+function Item({
   href,
   icon,
   children,
+  onClose,
 }: {
   href: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  onClose: () => void;
 }) {
   return (
     <li>
       <Link
         href={href}
-        className="group flex items-center justify-between gap-3 px-4 py-3.5"
+        onClick={onClose}
+        className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
       >
-        <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gray-50 ring-1 ring-gray-200 group-hover:bg-white group-hover:ring-gray-300 transition">
-            {icon}
+        {icon}
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-slate-800 group-hover:text-slate-900">
+            {children}
           </span>
-          {children}
-        </div>
-        <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:text-slate-500" />
+        </span>
       </Link>
     </li>
   );
+}
+
+function Small({ children }: { children: React.ReactNode }) {
+  return <span className="text-xs text-slate-500">{children}</span>;
 }
