@@ -1,3 +1,4 @@
+// components/FileDropzone.tsx
 "use client";
 
 import { useCallback, useRef, useState } from "react";
@@ -29,7 +30,7 @@ export default function FileDropzone({
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ].join(","),
-  maxSizeMB = 100,
+  maxSizeMB = 10, // ✅ V1: 10 MB par fichier
   label = "Choose a file",
   hint = "Drag & drop or tap to select. Max {SIZE} MB.",
 }: Props) {
@@ -84,15 +85,15 @@ export default function FileDropzone({
 
   return (
     <div className="space-y-2">
-      {/* Zone de drop / sélection — contraste mobile ++ */}
+      {/* Zone de drop / sélection — version light */}
       <label
         htmlFor="file-input"
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         className={[
-          "dropzone block cursor-pointer text-center",
-          dragOver ? "ring-2 ring-emerald-400/60" : "",
+          "block cursor-pointer rounded-2xl border border-slate-300 bg-white px-5 py-6 text-center transition",
+          dragOver ? "ring-2 ring-emerald-400/60" : "hover:bg-slate-50",
         ].join(" ")}
         aria-label="File dropzone"
       >
@@ -107,28 +108,30 @@ export default function FileDropzone({
         />
 
         <div className="flex flex-col items-center gap-2">
-          <Upload className="h-6 w-6 text-slate-200" aria-hidden />
-          <p className="text-base font-medium text-slate-100">{label}</p>
-          <p id="file-help" className="text-xs text-slate-400">
+          <Upload className="h-6 w-6 text-slate-500" aria-hidden />
+          <p className="text-base font-medium text-slate-800">{label}</p>
+          <p id="file-help" className="text-xs text-slate-500">
             {hint.replace("{SIZE}", String(maxSizeMB))}
           </p>
           <div className="mt-1 hidden sm:block">
-            <span className="badge">PDF, PNG, JPG, DOCX, XLSX, PPTX…</span>
+            <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+              PDF, PNG, JPG, DOCX, XLSX, PPTX…
+            </span>
           </div>
         </div>
       </label>
 
       {/* Fichier sélectionné */}
       {file && (
-        <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+        <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2 shadow-sm">
           <div className="min-w-0">
-            <p className="truncate text-sm text-[var(--fg)]">{file.name}</p>
-            <p className="text-xs text-[var(--fg-muted)]">{formatBytes(file.size)}</p>
+            <p className="truncate text-sm text-slate-800">{file.name}</p>
+            <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
           </div>
           <button
             type="button"
             onClick={remove}
-            className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] bg-white/5 px-2 py-1 text-xs text-[var(--fg)] hover:bg-white/10 focus-visible:focus-ring"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
             aria-label="Remove selected file"
           >
             <X className="h-4 w-4" />
