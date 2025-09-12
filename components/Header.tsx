@@ -19,19 +19,29 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Desktop nav (sobre) */}
+        {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
-          <Link href="/generate" className="text-gray-700 hover:text-gray-900">Generate</Link>
-          <Link href="/verify" className="text-gray-700 hover:text-gray-900">Verify</Link>
-          <Link href="/pricing" className="text-gray-700 hover:text-gray-900">Pricing</Link>
-          <Link href="/developers" className="text-gray-700 hover:text-gray-900">Developers</Link>
+          <Link href="/generate" className="text-gray-700 hover:text-emerald-700 transition-colors">Generate</Link>
+          <Link href="/verify" className="text-gray-700 hover:text-emerald-700 transition-colors">Verify</Link>
+          <Link href="/pricing" className="text-gray-700 hover:text-sky-700 transition-colors">Pricing</Link>
+          <Link href="/developers" className="text-gray-700 hover:text-sky-700 transition-colors">Developers</Link>
+        </nav>
+
+        {/* Desktop CTAs */}
+        <div className="hidden items-center gap-2 md:flex">
           <Link
             href="/login"
-            className="rounded-xl bg-emerald-500 px-4 py-2 font-medium text-white hover:bg-emerald-600 transition"
+            className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
           >
             Login
           </Link>
-        </nav>
+          <Link
+            href="/generate"
+            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white hover:brightness-105"
+          >
+            Get Started Free
+          </Link>
+        </div>
 
         {/* Mobile trigger */}
         <button
