@@ -1,115 +1,132 @@
 // app/legal/page.tsx
 import type { Metadata } from "next";
-import { Page, PageHeader, Section, H2, P, A, Highlight } from "@/components/Page";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Legal – DigitalMeve",
+  title: "Legal — DigitalMeve",
   description:
-    "Site notice and legal information for DigitalMeve: company details, hosting, editorial responsibility, IP, and contact.",
+    "Legal information for DigitalMeve: company details, hosting, and contact.",
+  alternates: { canonical: "/legal" },
+  openGraph: {
+    title: "Legal — DigitalMeve",
+    description:
+      "Legal information for DigitalMeve: company details, hosting, and contact.",
+    url: "/legal",
+    type: "article",
+  },
 };
 
 export default function LegalPage() {
-  const lastUpdated = new Date().toLocaleDateString("en-US");
-
   return (
-    <Page>
-      <PageHeader title="Legal" subtitle={`Last updated: ${lastUpdated}`} />
+    <main className="min-h-screen bg-white text-gray-800">
+      {/* Hero */}
+      <section className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-18">
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl text-gray-900">
+            Legal{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
+              DigitalMeve
+            </span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg text-gray-600">
+            Core legal information about the service, hosting, and how to
+            contact us.
+          </p>
+        </div>
+      </section>
 
-      <div className="mt-10 space-y-10">
-        <Section>
-          <H2>Publisher / Company</H2>
-          <P>
-            <Highlight>DigitalMeve</Highlight> (the “Publisher”).<br />
-            Registered office: <em>To be completed</em>.<br />
-            Registration / Company No.: <em>To be completed</em>.<br />
-            VAT / Tax ID: <em>To be completed</em>.
-          </P>
-          <P>
-            Contact:{" "}
-            <A href="mailto:contact@digitalmeve.com">contact@digitalmeve.com</A> ·{" "}
-            <A href="mailto:legal@digitalmeve.com">legal@digitalmeve.com</A>
-          </P>
-        </Section>
+      {/* Content */}
+      <section className="mx-auto max-w-6xl px-4 py-12">
+        <div className="prose prose-gray max-w-none">
+          <h2 className="text-2xl font-semibold text-gray-900">Company</h2>
+          <p className="text-gray-700">
+            DigitalMeve is a project focused on providing a simple, universal
+            proof layer for documents. Final company details will be updated
+            here once incorporated in production.
+          </p>
 
-        <Section>
-          <H2>Hosting Provider</H2>
-          <P>
-            The website is hosted by <Highlight>Vercel Inc.</Highlight><br />
-            440 N Barranca Ave #4133, Covina, CA 91723, USA.<br />
+          <h3 className="text-lg font-semibold text-gray-900 mt-8">Contact</h3>
+          <p className="text-gray-700">
+            For legal inquiries, please email{" "}
+            <a
+              href="mailto:legal@digitalmeve.com"
+              className="underline decoration-emerald-300 hover:text-gray-900"
+            >
+              legal@digitalmeve.com
+            </a>
+            .
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-8">Hosting</h3>
+          <p className="text-gray-700">
+            DigitalMeve is hosted on infrastructure provided by Vercel Inc.
+            Mailing address: 440 N Barranca Ave #4133, Covina, CA 91723, USA.
+            <br />
             Website:{" "}
-            <A href="https://vercel.com/" target="_blank" rel="noreferrer">
+            <a
+              href="https://vercel.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-sky-300 hover:text-gray-900"
+            >
               vercel.com
-            </A>
-          </P>
-        </Section>
+            </a>
+          </p>
 
-        <Section>
-          <H2>Editorial Responsibility</H2>
-          <P>
-            The Publisher is responsible for editorial content. For any request related to content on this
-            website, please write to{" "}
-            <A href="mailto:legal@digitalmeve.com">legal@digitalmeve.com</A>.
-          </P>
-        </Section>
+          <h3 className="text-lg font-semibold text-gray-900 mt-8">
+            Terms, Privacy & Cookies
+          </h3>
+          <p className="text-gray-700">
+            Please review our policies for more details:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700">
+            <li>
+              <Link
+                href="/terms"
+                className="underline decoration-emerald-300 hover:text-gray-900"
+              >
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/privacy"
+                className="underline decoration-emerald-300 hover:text-gray-900"
+              >
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/cookies"
+                className="underline decoration-emerald-300 hover:text-gray-900"
+              >
+                Cookie Policy
+              </Link>
+            </li>
+          </ul>
 
-        <Section>
-          <H2>Intellectual Property</H2>
-          <P>
-            Unless otherwise stated, all texts, graphics, logos, icons, and software components on this site
-            are the exclusive property of the Publisher or its licensors and are protected by applicable
-            intellectual property laws. Any reproduction or representation, in whole or in part, without
-            prior written consent is prohibited.
-          </P>
-          <P className="text-sm">
-            “DigitalMeve” and “.MEVE” may be trademarks or trade names. Other names may be trademarks of
-            their respective owners.
-          </P>
-        </Section>
+          <h3 className="text-lg font-semibold text-gray-900 mt-8">
+            Intellectual Property
+          </h3>
+          <p className="text-gray-700">
+            “DigitalMeve” and “.MEVE” may be trademarks or trade names. All
+            product names, logos, and brands are property of their respective
+            owners. Use of these names, logos, and brands does not imply
+            endorsement.
+          </p>
 
-        <Section>
-          <H2>Disclaimer of Liability</H2>
-          <P>
-            The information provided on this site is for general information purposes only. Although we make
-            reasonable efforts to keep the content accurate and up to date, we make no representations or
-            warranties of any kind, express or implied, about the completeness, accuracy, reliability,
-            suitability, or availability with respect to the website or the information, products, services,
-            or related graphics contained on the website for any purpose.
-          </P>
-          <P>
-            The DigitalMeve service embeds tamper-evident metadata into supported file formats. It does not
-            constitute legal advice and does not by itself establish identity, authorship, ownership, or any
-            legal status. Users remain solely responsible for their use of the service and their compliance
-            with applicable laws and third-party rights.
-          </P>
-        </Section>
-
-        <Section>
-          <H2>Abuse Reports & Takedown</H2>
-          <P>
-            To report unlawful content, security issues, or abuse, contact{" "}
-            <A href="mailto:abuse@digitalmeve.com">abuse@digitalmeve.com</A>. Provide a precise description,
-            the URL, and any supporting evidence. We will assess and respond in a reasonable timeframe.
-          </P>
-        </Section>
-
-        <Section>
-          <H2>Governing Law & Jurisdiction</H2>
-          <P>
-            This site notice is governed by the laws applicable at the Publisher’s registered office. Any
-            dispute shall be submitted to the competent courts of that jurisdiction, unless mandatory
-            consumer protection rules provide otherwise.
-          </P>
-        </Section>
-
-        <Section>
-          <H2>Related Policies</H2>
-          <P>
-            • <A href="/privacy">Privacy Policy</A> · <A href="/cookies">Cookies</A> ·{" "}
-            <A href="/terms">Terms of Service</A> · <A href="/security">Security</A> ·{" "}
-            <A href="/status">Status</A> · <A href="/changelog">Changelog</A>
-          </P>
-        </Section>
-      </div>
-    </Page>
+          <h3 className="text-lg font-semibold text-gray-900 mt-8">
+            Liability & Use
+          </h3>
+          <p className="text-gray-700">
+            DigitalMeve is provided “as is”. We do not store your files on our
+            servers and we focus on tamper-evident markers embedded into
+            supported formats. Users remain responsible for their content and
+            compliance with applicable laws.
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }
