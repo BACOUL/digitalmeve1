@@ -28,17 +28,16 @@ export default function GeneratePage() {
       // 1) Hash du fichier source (spéc MEVE)
       const hash = await sha256Hex(file);
 
-      // 2) Watermark -> ArrayBuffer -> Uint8Array (entrée attendue par embedMeveXmp)
+      // 2) Watermark -> ArrayBuffer
       const watermarkedAB = await addWatermarkPdf(file); // ArrayBuffer
-      const watermarkedU8 =
-        watermarkedAB instanceof Uint8Array
-          ? watermarkedAB
-          : new Uint8Array(watermarkedAB as ArrayBuffer);
+
+      // 3) Convertir en Blob PDF pour embedMeveXmp (qui accepte Blob | ArrayBuffer)
+      const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
 
       const whenISO = new Date().toISOString();
 
-      // 3) Embedding XMP avec Uint8Array en entrée
-      const xmpU8 = await embedMeveXmp(watermarkedU8, {
+      // 4) Embedding XMP avec Blob en entrée
+      const xmpOut = await embedMeveXmp(watermarkedBlob, {
         docSha256: hash,
         createdAtISO: whenISO,
         issuer,
@@ -46,11 +45,11 @@ export default function GeneratePage() {
         issuerWebsite: "https://digitalmeve.com",
       });
 
-      // 4) Normaliser la sortie en Blob (PDF)
+      // 5) Normaliser la sortie en Blob (PDF)
       const outBlob =
-        xmpU8 instanceof Blob
-          ? xmpU8
-          : new Blob([xmpU8 as Uint8Array], { type: "application/pdf" });
+        xmpOut instanceof Blob
+          ? xmpOut
+          : new Blob([xmpOut as ArrayBuffer | Uint8Array], { type: "application/pdf" });
 
       const outName = toMeveName(file.name);
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
@@ -211,4 +210,4 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-}
+          }
