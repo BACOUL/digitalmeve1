@@ -1,12 +1,15 @@
-export const runtime = "edge";
+import { MetadataRoute } from "next";
 
-export function GET() {
+export default function robots(): MetadataRoute.Robots {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
-  return new Response(
-    `User-agent: *
-Allow: /
-Sitemap: ${base}/sitemap.xml
-`,
-    { headers: { "Content-Type": "text/plain" } }
-  );
+
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+      },
+    ],
+    sitemap: `${base}/sitemap.xml`,
+  };
 }
