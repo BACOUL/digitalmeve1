@@ -28,10 +28,9 @@ export default function MobileMenu({ open, onClose }: Props) {
   const pathname = usePathname();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Ne pas rendre si fermé
   if (!open) return null;
 
-  // Lock scroll du body
+  // lock scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -40,14 +39,14 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, []);
 
-  // ESC pour fermer
+  // ESC
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus initial dans le panneau
+  // focus
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -55,28 +54,25 @@ export default function MobileMenu({ open, onClose }: Props) {
     first?.focus();
   }, []);
 
-  // Fermer si la route change (patch: vérifier que pathname est défini)
+  // close on route change
   useEffect(() => {
     if (open && pathname) onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // utilitaire pour fermer à chaque clic de lien
-  const closeOnClick = <T extends HTMLElement>(e?: React.MouseEvent<T>) => {
-    // laisser Next.js naviguer, puis fermer le menu
+  // ✅ type très simple et compatible partout
+  const closeOnClick: React.MouseEventHandler = () => {
     onClose();
   };
 
   return (
     <Portal>
-      {/* overlay cliquable */}
       <div
         aria-hidden
         onClick={onClose}
         className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-sm"
       />
 
-      {/* panneau clair */}
       <div
         ref={panelRef}
         role="dialog"
@@ -84,7 +80,6 @@ export default function MobileMenu({ open, onClose }: Props) {
         aria-label="Main menu"
         className="fixed inset-0 z-[1000] flex flex-col bg-white"
       >
-        {/* barre supérieure */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <Link href="/" onClick={closeOnClick} className="flex items-center gap-2">
             <span className="text-lg font-semibold tracking-tight">
@@ -101,12 +96,9 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* contenu scrollable */}
         <nav className="flex-1 overflow-y-auto px-2 pb-24 pt-2 text-slate-700">
           {/* PRODUCTS */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Products
-          </p>
+          <SectionTitle>Products</SectionTitle>
           <ul className="px-1">
             <MenuItem
               href="/generate"
@@ -127,9 +119,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           <Divider />
 
           {/* SOLUTIONS */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Solutions
-          </p>
+          <SectionTitle>Solutions</SectionTitle>
           <ul className="px-1">
             <MenuItem
               href="/personal"
@@ -150,9 +140,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           <Divider />
 
           {/* PRICING */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Pricing
-          </p>
+          <SectionTitle>Pricing</SectionTitle>
           <ul className="px-1">
             <MenuItem
               href="/pricing"
@@ -166,9 +154,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           <Divider />
 
           {/* RESOURCES */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Resources
-          </p>
+          <SectionTitle>Resources</SectionTitle>
           <ul className="px-1">
             <MenuItem
               href="/developers"
@@ -203,9 +189,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           <Divider />
 
           {/* COMPANY */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Company
-          </p>
+          <SectionTitle>Company</SectionTitle>
           <ul className="px-1">
             <MenuItem
               href="/about"
@@ -231,7 +215,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           </ul>
         </nav>
 
-        {/* barre CTA fixe bas */}
+        {/* CTA bas */}
         <div className="pointer-events-auto fixed inset-x-0 bottom-0 z-[1001] bg-white/95 backdrop-blur border-t border-gray-200 p-3">
           <div className="mx-auto flex max-w-3xl gap-3">
             <Link
@@ -255,7 +239,15 @@ export default function MobileMenu({ open, onClose }: Props) {
   );
 }
 
-/* --- Petits composants internes --------------------------------------- */
+/* helpers */
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      {children}
+    </p>
+  );
+}
 
 function Divider() {
   return <div className="my-4 h-px bg-gray-200" />;
@@ -272,7 +264,7 @@ function MenuItem({
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  onClick?: (e: React.MouseEvent) => void;
+  onClick?: React.MouseEventHandler; // ✅ type générique compatible
 }) {
   return (
     <li>
@@ -294,4 +286,4 @@ function MenuItem({
       </Link>
     </li>
   );
-    }
+            }
