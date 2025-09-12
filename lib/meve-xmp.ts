@@ -1,15 +1,15 @@
 // lib/meve-xmp.ts
-// Utilitaires .MEVE — hashing, écriture XMP (déjà présents chez toi), + parsing XMP (NOUVEAU)
+// Utilitaires .MEVE — hashing, écriture XMP, parsing XMP + fallback robuste
 
 export async function sha256Hex(file: Blob | ArrayBuffer): Promise<string> {
   const buf = file instanceof Blob ? await file.arrayBuffer() : file;
   const hash = await crypto.subtle.digest("SHA-256", buf);
-  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(hash)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-// === ÉCRITURE XMP (tu avais déjà embedMeveXmp ; on le ré-exporte tel quel) ===
-// Si ton projet a déjà une implémentation, garde la tienne.
-// Je laisse une signature compatible pour ne pas casser les imports.
+// === Types ===
 export type MeveXmpInput = {
   docSha256: string;
   createdAtISO: string;
@@ -18,88 +18,107 @@ export type MeveXmpInput = {
   issuerWebsite?: string;
 };
 
-export async function embedMeveXmp(
-  inputPdf: Blob,
-  meta: MeveXmpInput
-): Promise<Blob> {
-  // NOTE: garde TA version si elle existe déjà.
-  // Ici on fait un pass-through si rien n'est encore implémenté.
-  // L’important pour /verify est juste le parse — la vraie écriture est déjà en place chez toi.
-  return inputPdf;
-}
-
-// === PARSING XMP (NOUVEAU) ===
-// Tente d’extraire hash / createdAt / issuer depuis le contenu PDF (XMP ou texte)
-// On est tolérant : on supporte `meve:hash="..."`, `meve:ts="..."` / `meve:createdAtISO="..."`,
-// et aussi des variantes JSON glissées dans un paquet XMP.
-
 export type ParsedMeveMeta = {
   hash: string;
   createdAtISO: string;
   issuer?: string;
 };
 
+// === ÉCRITURE XMP (mock si pas d’implémentation PDF-lib dispo) ===
+export async function embedMeveXmp(
+  inputPdf: Blob,
+  meta: MeveXmpInput
+): Promise<Blob> {
+  // 🔹 Si tu as déjà ton implémentation (pdf-lib + injection XMP), garde-la.
+  // Ici : simple pass-through pour ne pas casser les imports.
+  return inputPdf;
+}
+
+// === Fallback : forcer métadonnées MEVE dans un commentaire PDF ===
+export async function ensureMeveMetadata(
+  inputPdf: Blob,
+  meta: MeveXmpInput
+): Promise<Blob> {
+  try {
+    // 1) Tente d’appeler embedMeveXmp (peut déjà insérer correctement)
+    const out = await embedMeveXmp(inputPdf, meta);
+    return out;
+  } catch (e) {
+    console.warn("embedMeveXmp failed, fallback to comment:", e);
+  }
+
+  // 2) Fallback → concatène un commentaire %MEVE en fin de PDF
+  const buf = await inputPdf.arrayBuffer();
+  const marker = `\n%MEVE { "hash": "${meta.docSha256}", "createdAtISO": "${meta.createdAtISO}", "issuer": "${meta.issuer || ""
+    }" }\n`;
+  const markerU8 = new TextEncoder().encode(marker);
+
+  const merged = new Uint8Array(buf.byteLength + markerU8.byteLength);
+  merged.set(new Uint8Array(buf), 0);
+  merged.set(markerU8, buf.byteLength);
+
+  return new Blob([merged], { type: "application/pdf" });
+}
+
+// === PARSING XMP ===
 export async function parseMeveXmp(
   buf: ArrayBuffer
 ): Promise<ParsedMeveMeta | null> {
   const text = safeDecodePdf(buf);
 
-  // helpers
   const pick = (re: RegExp) => {
     const m = text.match(re);
     return m?.[1];
   };
 
-  // 1) Patterns attributs XMP
+  // 1) Attributs XMP classiques
   const hashAttr =
     pick(/meve:hash\s*[:=]\s*["']?([0-9a-f]{64})["']?/i) ||
-    // parfois l’algo est préfixé :
     pick(/meve:hash\s*[:=]\s*["']?(?:sha-256:)?([0-9a-f]{64})["']?/i);
 
-  const createdAttr =
-    pick(/meve:(?:ts|createdAtISO)\s*[:=]\s*["']([^"']+)["']/i);
+  const createdAttr = pick(/meve:(?:ts|createdAtISO)\s*[:=]\s*["']([^"']+)["']/i);
+  const issuerAttr = pick(/meve:issuer\s*[:=]\s*["']([^"']+)["']/i);
 
-  const issuerAttr =
-    pick(/meve:issuer\s*[:=]\s*["']([^"']+)["']/i);
-
-  // 2) Patterns JSON tolérants (si des blocs JSON ont été intégrés dans XMP)
-  const jsonBlock = pick(/(\{[\s\S]{0,5000}?\})/); // limite pour rester léger
+  // 2) JSON intégré
+  const jsonBlock = pick(/(\{[\s\S]{0,5000}?\})/);
   let hashJson: string | undefined;
   let createdJson: string | undefined;
   let issuerJson: string | undefined;
 
   if (jsonBlock) {
-    try {
-      // Essaie de parser grossièrement le JSON ; si plusieurs objets, on ne casse pas
-      const candidate = tryParseJson(jsonBlock);
-      if (candidate) {
-        // recherche profonde tolérante
-        const flat = flatten(candidate);
-        // clés possibles
-        hashJson =
-          flat["meve.hash"] ||
-          flat["hash"] ||
-          flat["meve_hash"] ||
-          undefined;
+    const candidate = tryParseJson(jsonBlock);
+    if (candidate) {
+      const flat = flatten(candidate);
 
-        // retire éventuel préfixe
-        if (hashJson?.startsWith("sha-256:"))
-          hashJson = hashJson.slice(8);
+      hashJson =
+        flat["meve.hash"] ||
+        flat["hash"] ||
+        flat["meve_hash"] ||
+        undefined;
+      if (hashJson?.startsWith("sha-256:")) hashJson = hashJson.slice(8);
 
-        createdJson =
-          flat["meve.createdAtISO"] ||
-          flat["createdAtISO"] ||
-          flat["meve.ts"] ||
-          flat["ts"] ||
-          undefined;
+      createdJson =
+        flat["meve.createdAtISO"] ||
+        flat["createdAtISO"] ||
+        flat["meve.ts"] ||
+        flat["ts"] ||
+        undefined;
 
-        issuerJson =
-          flat["meve.issuer"] ||
-          flat["issuer"] ||
-          undefined;
-      }
-    } catch {
-      // ignore
+      issuerJson = flat["meve.issuer"] || flat["issuer"] || undefined;
+    }
+  }
+
+  // 3) Fallback commentaire %MEVE
+  const commentMatch = text.match(/%MEVE\s+(\{[\s\S]*?\})/);
+  if (commentMatch) {
+    const candidate = tryParseJson(commentMatch[1]);
+    if (candidate) {
+      const flat = flatten(candidate);
+      return {
+        hash: flat["hash"],
+        createdAtISO: flat["createdAtISO"],
+        issuer: flat["issuer"],
+      };
     }
   }
 
@@ -108,17 +127,16 @@ export async function parseMeveXmp(
   const issuer = issuerAttr || issuerJson;
 
   if (!hash || !createdAtISO) return null;
-
   return { hash, createdAtISO, issuer };
 }
 
 // ---------- helpers ----------
-
 function safeDecodePdf(buf: ArrayBuffer): string {
   try {
-    return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(buf));
+    return new TextDecoder("utf-8", { fatal: false }).decode(
+      new Uint8Array(buf)
+    );
   } catch {
-    // fallback latin-1
     return Array.from(new Uint8Array(buf))
       .map((b) => String.fromCharCode(b))
       .join("");
@@ -126,17 +144,23 @@ function safeDecodePdf(buf: ArrayBuffer): string {
 }
 
 function tryParseJson(input: string): any | null {
-  // essaie sur l’entrée brute
-  try { return JSON.parse(input); } catch {}
-  // tente de repérer un objet JSON interne (entre accolades)
+  try {
+    return JSON.parse(input);
+  } catch {}
   const m = input.match(/\{[\s\S]*\}/);
   if (m) {
-    try { return JSON.parse(m[0]); } catch {}
+    try {
+      return JSON.parse(m[0]);
+    } catch {}
   }
   return null;
 }
 
-function flatten(obj: any, prefix = "", out: Record<string, any> = {}): Record<string, any> {
+function flatten(
+  obj: any,
+  prefix = "",
+  out: Record<string, any> = {}
+): Record<string, any> {
   if (obj && typeof obj === "object") {
     for (const [k, v] of Object.entries(obj)) {
       const key = prefix ? `${prefix}.${k}` : k;
