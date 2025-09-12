@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ShieldCheck, ShieldX, FileCheck2 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
-import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // ✅ fonction de lecture du filigrane invisible
+import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf";
 
 type VerifyResult = {
   ok: boolean;
@@ -25,8 +25,8 @@ export default function VerifyPage() {
     if (!file) return;
     setBusy(true);
     try {
-      // ✅ lecture du filigrane invisible dans le PDF (Blob attendu)
-      const meta = await readInvisibleWatermarkPdf(file);
+      // Le lecteur attend un Blob (pas un ArrayBuffer)
+      const meta: any = await readInvisibleWatermarkPdf(file);
 
       if (!meta) {
         setRes({
@@ -37,13 +37,28 @@ export default function VerifyPage() {
         return;
       }
 
-      // Métadonnées présentes → on considère VALID
+      // Rendre les noms de champs tolérants
+      const whenISO: string | undefined =
+        meta.createdAtISO ??
+        meta.tsISO ??
+        meta.timestampISO ??
+        meta.timestamp ??
+        meta.ts ??
+        undefined;
+
+      const issuer: string | undefined =
+        meta.issuer ?? meta.issuerEmail ?? meta.issuerId ?? undefined;
+
+      const hash: string | undefined =
+        meta.hash ?? meta.sha256 ?? meta.docHash ?? undefined;
+
       setRes({
-        ok: true,
+        ok: Boolean(hash && whenISO),
+        reason: !hash || !whenISO ? "Incomplete watermark payload." : undefined,
         fileName: file.name,
-        hash: meta.hash,
-        whenISO: meta.createdAtISO,
-        issuer: meta.issuer,
+        hash,
+        whenISO,
+        issuer,
       });
     } catch (e) {
       console.error(e);
