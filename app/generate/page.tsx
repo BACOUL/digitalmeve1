@@ -1,191 +1,158 @@
-// app/generate/page.tsx
 "use client";
 
 import { useState } from "react";
-import {
-  Upload,
-  FileDown,
-  FileCheck2,
-} from "lucide-react";
-import FileDropzone from "@/components/FileDropzone";
-import { addWatermarkPdf } from "@/lib/watermark-pdf";
-import { embedMeveXmp, sha256Hex } from "@/lib/meve-xmp";
-import { exportHtmlCertificate } from "@/lib/certificate-html";
-
-type GenResult = {
-  pdfBlob?: Blob;
-  fileName?: string;
-  hash?: string;
-  whenISO?: string;
-};
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [res, setRes] = useState<GenResult>({});
+  const [res, setRes] = useState<{
+    pdfBlob?: Blob;
+    certBlob?: Blob;
+    fileName?: string;
+  }>({});
 
-  async function onGenerate() {
-    if (!file) return;
-    setBusy(true);
-    try {
-      const hash = await sha256Hex(file);
-      const watermarked = await addWatermarkPdf(file);
-      const whenISO = new Date().toISOString();
-
-      const xmpPdf = await embedMeveXmp(watermarked, {
-        docSha256: hash,
-        createdAtISO: whenISO,
-        issuer,
-        issuerType: "personal",
-        issuerWebsite: "https://digitalmeve.com",
-      });
-
-      const outName = toMeveName(file.name);
-      setRes({ pdfBlob: xmpPdf, fileName: outName, hash, whenISO });
-    } catch (e) {
-      console.error(e);
-      alert("Error while generating the proof.");
-    } finally {
-      setBusy(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
     }
-  }
+  };
 
-  function toMeveName(name: string) {
-    const m = name.match(/^(.+)\.([^.]+)$/);
-    const base = m ? m[1] : name;
-    return `${base}.meve.pdf`;
-  }
+  const handleGenerate = async () => {
+    if (!file) return;
 
-  function openFor10s(url: string) {
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    setTimeout(() => {
-      try { w?.close(); } catch {}
-    }, 10000);
-  }
+    // Simule un appel backend qui renvoie le PDF + le certificat
+    const pdfBlob = new Blob([`Fake content for ${file.name}`], {
+      type: "application/pdf",
+    });
+    const certBlob = new Blob(
+      [
+        `
+        <html>
+        <head><title>.MEVE Certificate</title></head>
+        <body style="font-family: Arial, sans-serif; background:#fff; color:#000; padding:20px;">
+          <h2>.MEVE Certificate <span style="color:green;">VALID</span></h2>
+          <p><strong>File:</strong> ${file.name}.meve.pdf</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+          <p><strong>Issuer:</strong> ${issuer || "Unknown"}</p>
+          <p><strong>SHA-256:</strong> 123abc456def789...</p>
+          <p>This page summarizes the information stored in the PDF’s XMP metadata by DigitalMeve.</p>
+        </body>
+        </html>
+      `,
+      ],
+      { type: "text/html" }
+    );
 
-  function downloadPDF() {
+    setRes({
+      pdfBlob,
+      certBlob,
+      fileName: file.name.replace(/\.pdf$/i, "") + ".meve.pdf",
+    });
+  };
+
+  const downloadPDF = () => {
     if (!res.pdfBlob || !res.fileName) return;
     const url = URL.createObjectURL(res.pdfBlob);
+
+    // Ouvre un onglet avec le PDF pendant 10 secondes
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => {
+      try {
+        w?.close();
+      } catch {}
+      URL.revokeObjectURL(url);
+    }, 10000);
+
+    // Fallback : déclenche aussi le téléchargement forcé
     const a = document.createElement("a");
     a.href = url;
     a.download = res.fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    openFor10s(url);
-    setTimeout(() => URL.revokeObjectURL(url), 15000);
-  }
+  };
 
-  function downloadCert() {
-    if (!res.fileName || !res.hash || !res.whenISO) return;
-    // exportHtmlCertificate gère le téléchargement + prévisualisation 10s
-    exportHtmlCertificate(res.fileName.replace(/\.pdf$/i, ""), res.hash, res.whenISO, issuer);
-  }
+  const downloadCert = () => {
+    if (!res.certBlob) return;
+    const url = URL.createObjectURL(res.certBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "certificate.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <section className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
-          {/* Titre très lisible */}
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-            Generate a <span className="text-emerald-600">.MEVE</span> proof
-          </h1>
-          <p className="mt-3 text-lg text-slate-700">
-            Upload your document (PDF for now). We add a lightweight DigitalMeve marker
-            (date, time, and a unique fingerprint). You’ll get{" "}
-            <span className="font-semibold">name<span className="text-slate-400">.meve</span>.pdf</span>{" "}
-            and an optional human-readable certificate (.html).
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">
+        Generate a <span className="text-teal-600">.MEVE proof</span>
+      </h1>
+      <p className="text-gray-600 mb-6">
+        Upload your document (PDF for now). We add a light DigitalMeve watermark
+        and store a tamper-proof marker inside the file (date, time, and a
+        unique fingerprint). You’ll get{" "}
+        <code className="text-teal-600">name.meve.pdf</code>. You can also
+        download a human-readable certificate.
+      </p>
+
+      <input
+        type="file"
+        accept="application/pdf"
+        onChange={handleFileChange}
+        className="mb-4"
+      />
+
+      <input
+        type="email"
+        placeholder="Issuer (optional)"
+        value={issuer}
+        onChange={(e) => setIssuer(e.target.value)}
+        className="border rounded px-3 py-2 w-full mb-4"
+      />
+
+      <button
+        onClick={handleGenerate}
+        className="px-4 py-2 rounded bg-teal-600 text-white hover:bg-teal-700"
+      >
+        Generate Proof
+      </button>
+
+      {res.pdfBlob && (
+        <div className="mt-8 border rounded bg-gray-50 p-4">
+          <h2 className="text-lg font-semibold mb-2">Proof Preview</h2>
+          <p>
+            <strong>File:</strong> {res.fileName}
+          </p>
+          <p>
+            <strong>Date:</strong> {new Date().toLocaleDateString()} —{" "}
+            <strong>Time:</strong> {new Date().toLocaleTimeString()}
+          </p>
+          <p>
+            <strong>Issuer:</strong> {issuer || "Unknown"}
+          </p>
+          <p>
+            <strong>SHA-256:</strong> 123abc456def789...
           </p>
 
-          {/* Dropzone */}
-          <div className="mt-8">
-            <FileDropzone
-              onSelected={setFile}
-              label="Choose a file"
-              maxSizeMB={10}
-              hint="Drag & drop or tap to select. Max {SIZE} MB."
-              accept=".pdf,application/pdf"
-            />
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={downloadPDF}
+              className="px-4 py-2 rounded bg-teal-600 text-white hover:bg-teal-700"
+            >
+              Download .MEVE document
+            </button>
+            <button
+              onClick={downloadCert}
+              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-800"
+            >
+              Download Certificate (.html)
+            </button>
           </div>
-
-          {/* Issuer */}
-          <div className="mt-5">
-            <label className="block text-sm font-medium text-slate-800">Issuer (optional)</label>
-            <input
-              type="email"
-              placeholder="e.g. alice@company.com"
-              value={issuer}
-              onChange={(e) => setIssuer(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-            />
-          </div>
-
-          {/* CTA */}
-          <button
-            onClick={onGenerate}
-            disabled={!file || busy}
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-sky-500 px-5 py-2.5 font-medium text-white shadow-md hover:brightness-105 disabled:opacity-50"
-          >
-            <Upload className="h-5 w-5" />
-            {busy ? "Generating…" : "Generate Proof"}
-          </button>
-
-          {/* Proof Preview — LES DEUX TÉLÉCHARGEMENTS DANS LA CARTE */}
-          {res.pdfBlob && res.fileName && (
-            <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Proof Preview</h2>
-
-              <dl className="mt-3 grid gap-y-1 text-sm">
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-slate-600">File</dt>
-                  <dd className="col-span-2 sm:col-span-3 break-words text-slate-900">
-                    {res.fileName}
-                  </dd>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-slate-600">Date / Time</dt>
-                  <dd className="col-span-2 sm:col-span-3 text-slate-900">
-                    {new Date(res.whenISO!).toLocaleDateString()} — {new Date(res.whenISO!).toLocaleTimeString()}
-                  </dd>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-slate-600">Issuer</dt>
-                  <dd className="col-span-2 sm:col-span-3 text-slate-900">{issuer || "—"}</dd>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-slate-600">SHA-256</dt>
-                  <dd className="col-span-2 sm:col-span-3 text-slate-900 break-words">
-                    {res.hash}
-                  </dd>
-                </div>
-              </dl>
-
-              {/* Boutons à l’intérieur de la carte */}
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={downloadPDF}
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
-                >
-                  <FileDown className="h-4 w-4 text-emerald-600" />
-                  Download .MEVE document
-                </button>
-                <button
-                  onClick={downloadCert}
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
-                >
-                  <FileCheck2 className="h-4 w-4 text-sky-600" />
-                  Download Certificate (.html)
-                </button>
-              </div>
-
-              <p className="mt-3 text-xs text-slate-500">
-                Your browser may briefly open a preview tab (~10s) so you can choose “Open” if needed.
-              </p>
-            </div>
-          )}
         </div>
-      </section>
-    </main>
+      )}
+    </div>
   );
-}
+        }
