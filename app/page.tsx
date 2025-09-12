@@ -17,18 +17,19 @@ export default function HomePage() {
       {/* HERO */}
       <section className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          {/* Title */}
+          {/* Title (updated slogan) */}
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl text-gray-900">
-            Your files.{" "}
+            Invisible proof.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
-              Verified. Anywhere.
+              Visible trust.
             </span>
           </h1>
 
-          {/* Subtitle (plain, non-jargon) */}
+          {/* Subtitle (simple, grand public) */}
           <p className="mt-4 max-w-2xl text-lg text-gray-600">
-            No storage. We only add a lightweight .MEVE marker (date, time, and a unique fingerprint).
-            Your document stays fully readable and verifiable anywhere.
+            DigitalMeve protects your documents by adding a built-in, unique proof
+            (date, time, and a file fingerprint). No storage. Your file stays
+            fully readable and easy to verify anywhere.
           </p>
 
           {/* Limits + sample */}
@@ -120,7 +121,8 @@ export default function HomePage() {
               Get your certified copy
             </h3>
             <p className="mt-2 text-gray-600">
-              We compute a SHA-256 fingerprint and embed a .MEVE marker — file stays clean and readable.
+              We compute a SHA-256 fingerprint and embed a .MEVE marker — file stays
+              clean and readable.
             </p>
           </div>
 
