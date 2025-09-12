@@ -1,4 +1,4 @@
-// lib/watermark-pdf.ts
+// /lib/watermark-pdf.ts
 // Ajoute un filigrane visible "DigitalMeve" + un marqueur invisible MEVE
 // Retourne un ArrayBuffer (PDF final)
 
@@ -6,10 +6,9 @@ import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
 
 // Encodage Base64URL minimal (sans padding)
 function toBase64Url(u8: Uint8Array): string {
-  let b64 =
-    typeof btoa !== "undefined"
-      ? btoa(String.fromCharCode(...u8))
-      : Buffer.from(u8).toString("base64");
+  let b64 = typeof btoa !== "undefined"
+    ? btoa(String.fromCharCode(...u8))
+    : Buffer.from(u8).toString("base64");
   return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
@@ -50,9 +49,9 @@ function insertCommentBeforeEOF(pdfBytes: Uint8Array, commentLine: string): Uint
 export type MeveInvisiblePayload = {
   v: 1;
   alg: "sha-256";
-  hash: string;    // 64 hex
-  ts: string;      // ISO8601
-  issuer?: string; // email/issuer
+  hash: string;          // 64 hex
+  ts: string;            // ISO8601
+  issuer?: string;       // email/issuer
 };
 
 // API principale : on garde la signature simple + options
@@ -99,13 +98,12 @@ export async function addWatermarkPdf(
     }
 
     p.drawText(text, {
-      x: x - font.widthOfTextAtSize(text, textSize) / 2,
+      x: x - (font.widthOfTextAtSize(text, textSize) / 2),
       y: y - textSize / 2,
       size: textSize,
       font,
       color: rgb(0, 0, 0),
       opacity,
-      // pdf-lib attend degrees(…)
       rotate: position === "center" ? degrees(30) : undefined,
     });
   }
@@ -114,7 +112,10 @@ export async function addWatermarkPdf(
   const bytes = await pdfDoc.save(); // Uint8Array
 
   // Si pas de payload, on renvoie tel quel
-  if (!invisiblePayload) return bytes.buffer;
+  if (!invisiblePayload) {
+    const copy = bytes.slice(0);     // ← force un vrai ArrayBuffer
+    return copy.buffer;
+  }
 
   // Construit le marqueur invisible MEVE
   const json = JSON.stringify(invisiblePayload);
@@ -123,5 +124,6 @@ export async function addWatermarkPdf(
   // Insère en commentaire PDF (invisible) juste avant %%EOF
   const withMarker = insertCommentBeforeEOF(bytes, marker);
 
-  return withMarker.buffer;
+  const copyMarked = withMarker.slice(0); // ← idem, buffer propre garanti
+  return copyMarked.buffer;
 }
