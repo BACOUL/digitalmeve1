@@ -4,8 +4,8 @@
 import { useState } from "react";
 import { ShieldCheck, ShieldX, FileCheck2 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
-import { parseMeveXmp } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
+import { parseInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // ⬅️ NEW: lecture du filigrane invisible
 
 type VerifyResult = {
   ok: boolean;
@@ -27,25 +27,25 @@ export default function VerifyPage() {
     try {
       const buf = await file.arrayBuffer();
 
-      // Essaie d’extraire les métadonnées .MEVE depuis le PDF
-      const meta = await parseMeveXmp(buf);
+      // Lecture du filigrane invisible "%MEVE{...}EVEM" inséré à la génération
+      const meta = await parseInvisibleWatermarkPdf(buf);
 
       if (!meta) {
         setRes({
           ok: false,
-          reason: "No MEVE metadata found.",
+          reason: "No MEVE invisible watermark found.",
           fileName: file.name,
         });
         return;
       }
 
-      // Métadonnées présentes → on considère VALID
+      // Filigrane trouvé → on considère VALID (présence/parse OK)
       setRes({
         ok: true,
         fileName: file.name,
         hash: meta.hash,
-        whenISO: meta.createdAtISO,
-        issuer: meta.issuer,
+        whenISO: meta.ts,
+        issuer: meta.issuer || "",
       });
     } catch (e) {
       console.error(e);
@@ -78,8 +78,8 @@ export default function VerifyPage() {
             Verify a <span className="text-emerald-600">.MEVE</span> file
           </h1>
           <p className="mt-3 text-lg text-slate-700">
-            Upload a .MEVE file (PDF with embedded proof). We’ll check its
-            embedded fingerprint and show whether the document is{" "}
+            Upload a .MEVE file (PDF with embedded proof). We’ll read the
+            invisible watermark and show whether the document is{" "}
             <span className="font-semibold">valid</span> or{" "}
             <span className="font-semibold">tampered</span>.
           </p>
@@ -102,7 +102,7 @@ export default function VerifyPage() {
             {busy ? "Checking…" : "Verify Proof"}
           </button>
 
-          {/* Résultat */}
+          {/* Result */}
           {res && (
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export default function VerifyPage() {
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       <dt className="text-slate-600">Issuer</dt>
-                      <dd className="col-span-2 sm:col-span-3 text-slate-900">
+                      <dd className="col-span-2 sm:grid-cols-3 text-slate-900">
                         {res.issuer || "—"}
                       </dd>
                     </div>
@@ -176,8 +176,7 @@ export default function VerifyPage() {
               {!res.ok && (
                 <p className="mt-3 text-xs text-slate-500">
                   If you generated this file with DigitalMeve, make sure you are
-                  uploading the <span className="font-medium">.meve.pdf</span>{" "}
-                  file (not the original PDF).
+                  uploading the <span className="font-medium">.meve.pdf</span> file.
                 </p>
               )}
             </div>
