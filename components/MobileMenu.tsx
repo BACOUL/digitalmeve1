@@ -8,10 +8,9 @@ import {
   Users,
   FilePlus2,
   ShieldCheck,
-  BookOpen,
-  Briefcase,
-  Mail,
+  Tag,
   Info,
+  Globe,
   X,
 } from "lucide-react";
 
@@ -22,6 +21,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Lock scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -30,12 +30,14 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, []);
 
+  // ESC to close
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Focus trap (first focusable)
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -79,11 +81,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
         {/* contenu scrollable */}
         <nav className="flex-1 overflow-y-auto px-2 pb-8 pt-2 text-slate-700">
-          {/* Individuals */}
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-600">
-            Individuals
-          </p>
-          <ul className="space-y-2 px-1">
+          <ul className="space-y-2 px-1 pt-2">
             <li>
               <Link
                 href="/generate"
@@ -106,41 +104,22 @@ export default function MobileMenu({ open, onClose }: Props) {
             </li>
             <li>
               <Link
-                href="/docs"
+                href="/pricing"
                 onClick={onClose}
                 className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
               >
-                <BookOpen className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span>Docs</span>
-              </Link>
-            </li>
-          </ul>
-
-          <div className="my-4 h-px bg-gray-200" />
-
-          {/* Professionals */}
-          <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-sky-600">
-            Professionals
-          </p>
-          <ul className="space-y-2 px-1">
-            <li>
-              <Link
-                href="/pro"
-                onClick={onClose}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
-              >
-                <Briefcase className="h-5 w-5 text-sky-600 group-hover:scale-110 transition-transform" />
-                <span>For Professionals</span>
+                <Tag className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>Pricing</span>
               </Link>
             </li>
             <li>
               <Link
-                href="/contact"
+                href="/security"
                 onClick={onClose}
                 className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
               >
-                <Mail className="h-5 w-5 text-sky-600 group-hover:scale-110 transition-transform" />
-                <span>Contact</span>
+                <ShieldCheck className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>Security</span>
               </Link>
             </li>
             <li>
@@ -155,6 +134,33 @@ export default function MobileMenu({ open, onClose }: Props) {
             </li>
           </ul>
 
+          {/* CTA principal */}
+          <div className="px-3 pt-4">
+            <Link
+              href="/verify"
+              onClick={onClose}
+              className="inline-flex w-full items-center justify-center rounded-xl border border-transparent bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-3 text-sm font-semibold text-slate-900 hover:brightness-110"
+            >
+              Get started
+            </Link>
+          </div>
+
+          {/* Lang switch */}
+          <div className="mt-4 px-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs text-slate-600">
+              <Globe className="h-4 w-4" />
+              <span className="flex items-center gap-2">
+                <Link href="/?lang=en" onClick={onClose} className="hover:text-slate-900">
+                  EN
+                </Link>
+                <span className="text-slate-300">/</span>
+                <Link href="/?lang=fr" onClick={onClose} className="hover:text-slate-900">
+                  FR
+                </Link>
+              </span>
+            </div>
+          </div>
+
           {/* badge bas de menu */}
           <div className="mt-6 px-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-gray-50 px-3 py-1 text-xs text-slate-600">
@@ -166,4 +172,4 @@ export default function MobileMenu({ open, onClose }: Props) {
       </div>
     </Portal>
   );
-          }
+              }
