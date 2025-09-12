@@ -3,44 +3,43 @@
 
 import Link from "next/link";
 import { CTAButton } from "@/components/CTAButton";
+import { FileDropzone } from "@/components/FileDropzone";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      {/* halo doux */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center">
-        <div className="mt-16 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-      </div>
-
+    <section className="relative overflow-hidden bg-white">
       <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:py-20">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          <span className="text-slate-100">DigitalMeve — </span>
-          <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-            The reference for your documents’ authenticity
-          </span>
+        {/* Titre principal */}
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+          Your files. <span className="text-emerald-600">Verified.</span>{" "}
+          Anywhere.
         </h1>
 
-        {/* Sous-titre demandé */}
-        <p className="mx-auto mt-3 max-w-2xl text-base text-slate-300">
-          <span className="font-semibold text-slate-100">Simple</span> •{" "}
-          <span className="font-semibold text-slate-100">Universelle</span> •{" "}
-          <span className="font-semibold text-slate-100">Gratuite</span>
+        {/* Sous-texte */}
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+          No storage. Tamper-evident. Instant proof.
         </p>
 
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-          DigitalMeve delivers a simple, universal digital proof — free for everyone.
-        </p>
+        {/* Dropzone */}
+        <div className="mt-10">
+          <FileDropzone />
+          <p className="mt-3 text-sm text-slate-500">
+            Max 10 MB · 5 files/day (free plan)
+          </p>
+        </div>
 
-        {/* CTA ligne classique (on garde celui-ci) */}
-        <div className="mt-8 flex items-center justify-center gap-4">
+        {/* CTA */}
+        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/generate" className="inline-flex">
-            <CTAButton aria-label="Generate a proof">Get Started Free</CTAButton>
+            <CTAButton aria-label="Generate a proof">
+              Get Started Free
+            </CTAButton>
           </Link>
           <Link
             href="/verify"
-            className="inline-flex rounded-2xl border border-white/15 bg-slate-900/70 px-5 py-2.5 text-slate-100 backdrop-blur-md transition hover:border-emerald-400/60"
+            className="inline-flex rounded-2xl border border-slate-300 bg-white px-5 py-2.5 text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-700"
           >
-            Verify a proof
+            Already have a file? Verify it here
           </Link>
         </div>
       </div>
