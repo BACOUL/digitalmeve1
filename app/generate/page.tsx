@@ -36,7 +36,7 @@ export default function GeneratePage() {
 
       const whenISO = new Date().toISOString();
 
-      // 4) Embedding XMP avec Blob en entrée
+      // 4) Embedding XMP
       const xmpOut = await embedMeveXmp(watermarkedBlob, {
         docSha256: hash,
         createdAtISO: whenISO,
@@ -45,11 +45,29 @@ export default function GeneratePage() {
         issuerWebsite: "https://digitalmeve.com",
       });
 
-      // 5) Normaliser la sortie en Blob (PDF)
-      const outBlob =
-        xmpOut instanceof Blob
-          ? xmpOut
-          : new Blob([xmpOut as ArrayBuffer | Uint8Array], { type: "application/pdf" });
+      // 5) Normaliser la sortie en Blob (PDF) — PATCH
+      let outBlob: Blob;
+      if (xmpOut instanceof Blob) {
+        outBlob = xmpOut;
+      } else if (xmpOut instanceof ArrayBuffer) {
+        outBlob = new Blob([xmpOut], { type: "application/pdf" });
+      } else if (xmpOut instanceof Uint8Array) {
+        const ab = xmpOut.buffer.slice(
+          xmpOut.byteOffset,
+          xmpOut.byteOffset + xmpOut.byteLength
+        );
+        outBlob = new Blob([ab], { type: "application/pdf" });
+      } else {
+        const maybe = xmpOut as ArrayBufferView;
+        const ab =
+          maybe?.buffer instanceof ArrayBuffer
+            ? maybe.buffer.slice(
+                (maybe as any).byteOffset ?? 0,
+                ((maybe as any).byteOffset ?? 0) + ((maybe as any).byteLength ?? 0)
+              )
+            : (xmpOut as ArrayBuffer);
+        outBlob = new Blob([ab], { type: "application/pdf" });
+      }
 
       const outName = toMeveName(file.name);
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
@@ -210,4 +228,4 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-          }
+            }
