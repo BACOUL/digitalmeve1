@@ -1,10 +1,13 @@
-// components/Header.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { Menu } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
 
 export default function Header() {
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -40,11 +43,21 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Mobile menu: bouton + drawer gérés à l’intérieur */}
-        <div className="md:hidden">
-          <MobileMenu />
-        </div>
+        {/* Mobile trigger */}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+        >
+          <Menu className="h-5 w-5 text-gray-700" />
+        </button>
       </div>
+
+      {/* Drawer mobile */}
+      <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
 }
