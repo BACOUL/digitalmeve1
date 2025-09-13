@@ -1,123 +1,127 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
-import MobileMenu from "@/components/MobileMenu";
+import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { Menu, LogIn, UserPlus, LogOut, LayoutDashboard, User2 } from "lucide-react";
+import MobileMenu from "./MobileMenu";
 
 export default function Header() {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
-  const pathname = usePathname();
 
-  // Bloque le scroll quand le menu mobile est ouvert
+  // ferme le drawer si on change de route via Link
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-  }, [open]);
+    const close = () => setOpen(false);
+    window.addEventListener("hashchange", close);
+    return () => window.removeEventListener("hashchange", close);
+  }, []);
 
-  // Ferme le menu dès qu’on change de page
-  useEffect(() => {
-    if (open) setOpen(false);
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const isActive = (href: string) => pathname === href;
+  const role =
+    (session?.user as any)?.role === "BUSINESS"
+      ? "Business"
+      : (session?.user as any)?.role === "INDIVIDUAL"
+      ? "Individual"
+      : undefined;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link
-          href="/"
-          className="flex items-center gap-2"
-          aria-label="DigitalMeve Home"
-        >
-          <span className="text-lg font-semibold tracking-tight">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+          {/* Logo */}
+          <Link href="/" className="mr-1 text-lg font-semibold">
             <span className="text-emerald-600">Digital</span>
             <span className="text-sky-600">Meve</span>
-          </span>
-          <span className="ml-2 hidden rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700 md:inline">
-            beta
-          </span>
-        </Link>
+          </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/generate"
-            className={`transition-colors ${
-              isActive("/generate")
-                ? "text-emerald-600 font-semibold"
-                : "text-gray-700 hover:text-emerald-700"
-            }`}
-          >
-            Generate
-          </Link>
-          <Link
-            href="/verify"
-            className={`transition-colors ${
-              isActive("/verify")
-                ? "text-emerald-600 font-semibold"
-                : "text-gray-700 hover:text-emerald-700"
-            }`}
-          >
-            Verify
-          </Link>
-          <Link
-            href="/pricing"
-            className={`transition-colors ${
-              isActive("/pricing")
-                ? "text-sky-600 font-semibold"
-                : "text-gray-700 hover:text-sky-700"
-            }`}
-          >
-            Pricing
-          </Link>
-          <Link
-            href="/developers"
-            className={`transition-colors ${
-              isActive("/developers")
-                ? "text-sky-600 font-semibold"
-                : "text-gray-700 hover:text-sky-700"
-            }`}
-          >
-            Developers
-          </Link>
-        </nav>
+          {/* Nav (desktop) */}
+          <nav className="ml-2 hidden items-center gap-6 text-sm text-slate-700 md:flex">
+            <Link className="hover:text-slate-900" href="/generate">
+              Generate
+            </Link>
+            <Link className="hover:text-slate-900" href="/verify">
+              Verify
+            </Link>
+            <Link className="hover:text-slate-900" href="/personal">
+              For Individuals
+            </Link>
+            <Link className="hover:text-slate-900" href="/pro">
+              For Business
+            </Link>
+            <Link className="hover:text-slate-900" href="/pricing">
+              Pricing
+            </Link>
+          </nav>
 
-        {/* Desktop CTAs */}
-        <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+          <div className="flex-1" />
+
+          {/* Auth zone (desktop) */}
+          <div className="hidden items-center gap-3 md:flex">
+            {!session?.user ? (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-medium text-white shadow-md hover:brightness-105"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Register
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="hidden items-center gap-3 md:flex">
+                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-1.5">
+                    <User2 className="h-4 w-4 text-slate-700" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-900 leading-tight">
+                        {session.user.email}
+                      </p>
+                      {role && (
+                        <p className="text-xs text-slate-500 leading-tight">{role}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Hamburger (mobile) */}
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 md:hidden"
           >
-            Login
-          </Link>
-          <Link
-            href="/generate"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:brightness-105 hover:scale-105 hover:shadow-lg"
-          >
-            Get Started Free
-          </Link>
+            <Menu className="h-5 w-5 text-slate-700" />
+          </button>
         </div>
+      </header>
 
-        {/* Mobile trigger */}
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-        >
-          <Menu className="h-5 w-5 text-gray-700" />
-        </button>
-      </div>
-
+      {/* Drawer */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
-    </header>
+    </>
   );
 }
