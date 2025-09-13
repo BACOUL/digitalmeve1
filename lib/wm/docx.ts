@@ -19,13 +19,17 @@ import {
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-// ---------- Helpers texte/binaire ----------
+// ---------- Helpers ----------
 
 function textToUint8(s: string): Uint8Array {
   return new TextEncoder().encode(s);
 }
 function uint8ToText(b: Uint8Array): string {
   return new TextDecoder("utf-8", { fatal: false }).decode(b);
+}
+// Convertit un Uint8Array en ArrayBuffer propre (conforme aux attentes de BlobPart)
+function u8ToArrayBuffer(u8: Uint8Array): ArrayBuffer {
+  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
 }
 
 // Recherche d'un motif entre PREFIX et SUFFIX dans une string
@@ -156,7 +160,8 @@ export async function embedInvisibleWatermarkDocx(
 
   // 4) Sauver le ZIP en DOCX **avec le bon MIME**
   const u8 = await zip.generateAsync({ type: "uint8array" });
-  return new Blob([u8], { type: DOCX_MIME });
+  const ab = u8ToArrayBuffer(u8);          // ⬅️ conversion explicite
+  return new Blob([ab], { type: DOCX_MIME });
 }
 
 /**
