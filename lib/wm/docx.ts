@@ -1,10 +1,10 @@
 // /lib/wm/docx.ts
 // Filigrane *invisible* pour DOCX via docProps/custom.xml
-// - On encode le payload sous forme de chaîne "MEVE{...}EVEM" dans une propriété personnalisée.
-// - Lecture : on lit docProps/custom.xml et on cherche le marqueur, puis on le décode.
+// - On encode le payload sous forme "MEVE{...}EVEM" dans une propriété personnalisée.
+// - Lecture : on lit docProps/custom.xml, on retrouve le marqueur et on le décode.
 //
-// ⚠️ N'altère pas le contenu visible. Le document reste 100% lisible par Word/LibreOffice.
-// ⚠️ Nécessite la dépendance "jszip".
+// ⚠️ Le contenu visible n’est pas modifié : le document reste 100% lisible par Word/LibreOffice.
+// ⚠️ Nécessite "jszip" dans les dépendances.
 
 import JSZip from "jszip";
 import {
@@ -14,6 +14,10 @@ import {
   decodeInvisibleWatermark,
   InvisibleWatermarkPayload,
 } from "./marker";
+
+// MIME officiel DOCX (évite que certains OS l’affichent comme .zip)
+const DOCX_MIME =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 // ---------- Helpers texte/binaire ----------
 
@@ -40,18 +44,29 @@ function ensureContentTypesForCustomProps(ctXml: string): string {
   }
 
   // On insère juste avant la balise fermante </Types>
-  const insert = `  <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>`;
+  const insert =
+    `  <Override PartName="/docProps/custom.xml" ` +
+    `ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>`;
+
   if (ctXml.includes("</Types>")) {
     return ctXml.replace("</Types>", `${insert}\n</Types>`);
   }
   // Fallback : encapsuler proprement
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n${insert}\n</Types>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+${insert}
+</Types>`;
 }
 
 // Construit/actualise docProps/custom.xml avec une propriété `meve_marker`
-function buildOrUpdateCustomPropsXml(existingXml: string | null, marker: string): string {
-  const NS_CP = 'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties';
-  const NS_VT = 'http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes';
+function buildOrUpdateCustomPropsXml(
+  existingXml: string | null,
+  marker: string
+): string {
+  const NS_CP =
+    "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties";
+  const NS_VT =
+    "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes";
   const HEADER = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`;
   const OPEN = `<Properties xmlns="${NS_CP}" xmlns:vt="${NS_VT}">`;
   const CLOSE = `</Properties>`;
@@ -59,9 +74,9 @@ function buildOrUpdateCustomPropsXml(existingXml: string | null, marker: string)
 
   // Génère un bloc <property> propre
   const meveProperty = (pid: number) =>
-    `  <property fmtid="${FMTID}" pid="${pid}" name="meve_marker">\n` +
-    `    <vt:lpwstr>${escapeXml(marker)}</vt:lpwstr>\n` +
-    `  </property>`;
+    `  <property fmtid="${FMTID}" pid="${pid}" name="meve_marker">
+    <vt:lpwstr>${escapeXml(marker)}</vt:lpwstr>
+  </property>`;
 
   if (!existingXml) {
     // Créer le fichier custom.xml de zéro
@@ -80,7 +95,9 @@ function buildOrUpdateCustomPropsXml(existingXml: string | null, marker: string)
 
   // Sinon, insérer un nouveau <property> avant </Properties>
   // Calculer pid suivant : on lit tous les pid existants et on prend max+1
-  const pids = [...existingXml.matchAll(/pid="(\d+)"/g)].map(m => parseInt(m[1], 10)).filter(n => Number.isFinite(n));
+  const pids = [...existingXml.matchAll(/pid="(\d+)"/g)]
+    .map((m) => parseInt(m[1], 10))
+    .filter((n) => Number.isFinite(n));
   const pidNext = (pids.length ? Math.max(...pids) : 1) + 1;
 
   if (existingXml.includes("</Properties>")) {
@@ -95,10 +112,7 @@ function buildOrUpdateCustomPropsXml(existingXml: string | null, marker: string)
 }
 
 function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // ---------- API publique ----------
@@ -135,13 +149,14 @@ export async function embedInvisibleWatermarkDocx(
   // 3) S'assurer que [Content_Types].xml déclare l'Override
   const ctPath = "[Content_Types].xml";
   const ctXml = zip.file(ctPath) ? await zip.file(ctPath)!.async("string") : null;
-  const nextCtXml = ensureContentTypesForCustomProps(ctXml ?? defaultContentTypesXml());
+  const nextCtXml = ensureContentTypesForCustomProps(
+    ctXml ?? defaultContentTypesXml()
+  );
   zip.file(ctPath, nextCtXml);
 
-  // 4) Sauver le ZIP en DOCX
-  const out = await zip.generateAsync({ type: "blob" });
-  // NB: le type mime peut être renseigné par l'appelant lors du download
-  return out;
+  // 4) Sauver le ZIP en DOCX **avec le bon MIME**
+  const u8 = await zip.generateAsync({ type: "uint8array" });
+  return new Blob([u8], { type: DOCX_MIME });
 }
 
 /**
