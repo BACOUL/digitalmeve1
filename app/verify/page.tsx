@@ -6,6 +6,7 @@ import { ShieldCheck, ShieldX, FileCheck2 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf";
+import { readInvisibleWatermarkDocx } from "@/lib/wm/docx"; // ⬅️ NEW: DOCX
 
 type VerifyResult = {
   ok: boolean;
@@ -21,12 +22,37 @@ export default function VerifyPage() {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<VerifyResult | null>(null);
 
+  function guessKind(f: File): "pdf" | "docx" | "other" {
+    const mt = (f.type || "").toLowerCase();
+    const name = f.name.toLowerCase();
+    if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+    if (
+      mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      name.endsWith(".docx")
+    )
+      return "docx";
+    return "other";
+  }
+
   async function onVerify() {
     if (!file) return;
     setBusy(true);
     try {
-      // Le lecteur attend un Blob (pas un ArrayBuffer)
-      const meta: any = await readInvisibleWatermarkPdf(file);
+      const kind = guessKind(file);
+      if (kind === "other") {
+        setRes({
+          ok: false,
+          reason: "Unsupported file. Use a .meve.pdf or .meve.docx file.",
+          fileName: file.name,
+        });
+        return;
+      }
+
+      // Lecture du filigrane invisible selon le type
+      const meta: any =
+        kind === "pdf"
+          ? await readInvisibleWatermarkPdf(file)
+          : await readInvisibleWatermarkDocx(file);
 
       if (!meta) {
         setRes({
@@ -37,7 +63,7 @@ export default function VerifyPage() {
         return;
       }
 
-      // Rendre les noms de champs tolérants
+      // Champs tolérants
       const whenISO: string | undefined =
         meta.createdAtISO ??
         meta.tsISO ??
@@ -76,7 +102,7 @@ export default function VerifyPage() {
     if (!res?.ok || !res.hash || !res.whenISO || !res.fileName) return;
     const issuer = res.issuer ?? "";
     exportHtmlCertificate(
-      res.fileName.replace(/\.pdf$/i, ""),
+      res.fileName.replace(/\.(pdf|docx)$/i, ""),
       res.hash,
       res.whenISO,
       issuer
@@ -91,7 +117,7 @@ export default function VerifyPage() {
             Verify a <span className="text-emerald-600">.MEVE</span> file
           </h1>
           <p className="mt-3 text-lg text-slate-700">
-            Upload a .MEVE file (PDF with embedded proof). We’ll check its
+            Upload a .MEVE file (PDF or DOCX with embedded proof). We’ll check its
             invisible watermark and show whether the document is{" "}
             <span className="font-semibold">valid</span> or{" "}
             <span className="font-semibold">tampered</span>.
@@ -103,7 +129,7 @@ export default function VerifyPage() {
               label="Choose a file"
               maxSizeMB={10}
               hint="Drag & drop or tap to select. Max {SIZE} MB."
-              accept=".pdf,application/pdf"
+              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             />
           </div>
 
@@ -179,7 +205,7 @@ export default function VerifyPage() {
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     <dt className="text-slate-600">Reason</dt>
-                    <dd className="col-span-2 sm:col-span-3 text-rose-700">
+                    <dd className="col-span-2 sm:grid-cols-3 text-rose-700">
                       {res.reason}
                     </dd>
                   </div>
@@ -189,8 +215,8 @@ export default function VerifyPage() {
               {!res.ok && (
                 <p className="mt-3 text-xs text-slate-500">
                   If you generated this file with DigitalMeve, make sure you are
-                  uploading the <span className="font-medium">.meve.pdf</span>{" "}
-                  file (not the original PDF).
+                  uploading the <span className="font-medium">.meve.pdf</span> or{" "}
+                  <span className="font-medium">.meve.docx</span> file (not the original).
                 </p>
               )}
             </div>
@@ -199,4 +225,4 @@ export default function VerifyPage() {
       </section>
     </main>
   );
-}
+          }
