@@ -7,10 +7,11 @@ import FileDropzone from "@/components/FileDropzone";
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
 import { sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
-import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // ⬅️ NEW
+import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";   // PDF invisible watermark
+import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx"; // ⬅️ NEW: DOCX invisible watermark
 
 type GenResult = {
-  pdfBlob?: Blob;
+  pdfBlob?: Blob; // on réutilise ce champ pour PDF *et* DOCX, pas grave pour le nom
   fileName?: string;
   hash?: string;
   whenISO?: string;
@@ -22,27 +23,59 @@ export default function GeneratePage() {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<GenResult>({});
 
+  function guessKind(f: File): "pdf" | "docx" | "other" {
+    const mt = (f.type || "").toLowerCase();
+    const name = f.name.toLowerCase();
+    if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+    if (
+      mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      name.endsWith(".docx")
+    ) return "docx";
+    return "other";
+  }
+
   async function onGenerate() {
     if (!file) return;
     setBusy(true);
     try {
+      const kind = guessKind(file);
+      if (kind === "other") {
+        alert("Only PDF and DOCX are supported for now.");
+        return;
+      }
+
       // 1) Hash de l’original (spéc MEVE)
       const hash = await sha256Hex(file);
-
-      // 2) Watermark visuel → ArrayBuffer → Blob
-      const watermarkedAB = await addWatermarkPdf(file); // ArrayBuffer
-      const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
-
       const whenISO = new Date().toISOString();
 
-      // 3) Filigrane *invisible* (aucune métadonnée) : %MEVE{...}EVEM avant %%EOF
-      const outBlob: Blob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
-        hash,
-        ts: whenISO,
-        issuer: issuer || undefined,
-      });
+      let outBlob: Blob;
+      let outName: string;
 
-      const outName = toMeveName(file.name);
+      if (kind === "pdf") {
+        // 2) PDF : watermark visuel → ArrayBuffer → Blob
+        const watermarkedAB = await addWatermarkPdf(file);
+        const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
+
+        // 3) Filigrane *invisible* %MEVE{...}EVEM avant %%EOF
+        outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
+          hash,
+          ts: whenISO,
+          issuer: issuer || undefined,
+        });
+
+        outName = toMeveName(file.name, "pdf");
+      } else {
+        // DOCX : pas de watermark visuel (inchangé visuellement)
+        // Injection du marqueur *invisible* dans docProps/custom.xml
+        outBlob = await embedInvisibleWatermarkDocx(file, {
+          hash,
+          ts: whenISO,
+          issuer: issuer || undefined,
+        });
+
+        outName = toMeveName(file.name, "docx");
+      }
+
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
     } catch (e) {
       console.error(e);
@@ -52,13 +85,13 @@ export default function GeneratePage() {
     }
   }
 
-  function toMeveName(name: string) {
+  function toMeveName(name: string, kind: "pdf" | "docx") {
     const m = name.match(/^(.+)\.([^.]+)$/);
     const base = m ? m[1] : name;
-    return `${base}.meve.pdf`;
+    return `${base}.meve.${kind}`;
   }
 
-  // ✅ PDF : téléchargement direct (pas de prévisualisation 10s)
+  // Téléchargement direct
   function downloadPDF() {
     if (!res.pdfBlob || !res.fileName) return;
     const url = URL.createObjectURL(res.pdfBlob);
@@ -71,11 +104,11 @@ export default function GeneratePage() {
     setTimeout(() => URL.revokeObjectURL(url), 15000);
   }
 
-  // ✅ Certificat : téléchargement + éventuelle pré-ouverture ~10s (géré dans exportHtmlCertificate)
+  // Certificat HTML
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     exportHtmlCertificate(
-      res.fileName.replace(/\.pdf$/i, ""),
+      res.fileName.replace(/\.(pdf|docx)$/i, ""),
       res.hash,
       res.whenISO,
       issuer
@@ -90,10 +123,10 @@ export default function GeneratePage() {
             Generate a <span className="text-emerald-600">.MEVE</span> proof
           </h1>
           <p className="mt-3 text-lg text-slate-700">
-            Upload your document (PDF for now). We add a lightweight DigitalMeve
+            Upload your document (PDF or DOCX). We add a lightweight DigitalMeve
             marker (date, time, and a unique fingerprint). You’ll get{" "}
             <span className="font-semibold">
-              name<span className="text-slate-400">.meve</span>.pdf
+              name<span className="text-slate-400">.meve</span>.pdf/.docx
             </span>{" "}
             and an optional human-readable certificate (.html).
           </p>
@@ -104,7 +137,7 @@ export default function GeneratePage() {
               label="Choose a file"
               maxSizeMB={10}
               hint="Drag & drop or tap to select. Max {SIZE} MB."
-              accept=".pdf,application/pdf"
+              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             />
           </div>
 
@@ -180,8 +213,8 @@ export default function GeneratePage() {
               </div>
 
               <p className="mt-3 text-xs text-slate-500">
-                The PDF downloads directly to preserve integrity.
-                The certificate may briefly open in a new tab (~10s) so you can choose “Open”.
+                The file downloads directly to preserve integrity. The certificate may briefly
+                open in a new tab (~10s) so you can choose “Open”.
               </p>
             </div>
           )}
@@ -189,4 +222,4 @@ export default function GeneratePage() {
       </section>
     </main>
   );
-              }
+                    }
