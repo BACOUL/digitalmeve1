@@ -1,5 +1,4 @@
-// prisma/schema.prisma
-
+// schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,15 +9,10 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
-  role      Role     @default(INDIVIDUAL) // Particulier ou Pro
+  role      String   @default("INDIVIDUAL")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-enum Role {
-  INDIVIDUAL
-  PRO
 }
