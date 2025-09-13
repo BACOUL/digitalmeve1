@@ -1,183 +1,83 @@
-/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------  
-   Thème (dark par défaut) + variables design harmonisées  
-------------------------------------------------------------------- */
+/* --------------------------------------------------------------- */
+/* Variables de marque DigitalMeve                                  */
+/* --------------------------------------------------------------- */
 :root {
   --bg: #0B1220;
+  --surface: #111827;
   --fg: #E5EDF9;
   --fg-muted: #C8D3E6;
-  --surface: #0F172A;
-  --surface-weak: #0B1220;
+
+  --accent-1: #34D399; /* vert DM → confiance / succès */
+  --accent-2: #38BDF8; /* bleu DM → CTA principal */
+  --danger: #F43F5E;
+
   --border: rgba(255,255,255,.12);
-
-  --primary: #0EA5E9;   /* Sky / bleu = CTA principal */
-  --accent:  #22C55E;   /* Emerald / vert = accent secondaire */
-  --danger:  #EF4444;
-
-  --ring: color-mix(in oklab, var(--primary) 45%, transparent);
+  --ring: rgba(56,189,248,.45); /* halo bleu DM */
   --shadow: 0 8px 30px rgba(0,0,0,.35);
 }
 
-.theme-light {
-  --bg: #FFFFFF;
-  --fg: #0F172A;
-  --fg-muted: #334155;
-  --surface: #F8FAFC;
-  --surface-weak: #FFFFFF;
-  --border: rgba(15,23,42,.12);
-
-  --primary: #0EA5E9;
-  --accent:  #22C55E;
-  --danger:  #EF4444;
-
-  --ring: color-mix(in oklab, var(--primary) 45%, transparent);
-  --shadow: 0 6px 24px rgba(2,6,23,.12);
-}
-
-/* ------------------------------------------------------------------ */
-/* Base typographie & fond                                             */
-/* ------------------------------------------------------------------ */
+/* --------------------------------------------------------------- */
+/* Typographie & fond                                               */
+/* --------------------------------------------------------------- */
 @layer base {
-  body {
-    @apply antialiased font-sans;
+  html, body {
+    @apply antialiased;
     background: var(--bg);
     color: var(--fg);
   }
-  h1,h2,h3,h4 {
-    @apply font-display tracking-tight;
-    color: var(--fg);
-  }
-  h1 { @apply text-4xl md:text-5xl; }
-  h2 { @apply text-3xl md:text-4xl; }
-  h3 { @apply text-2xl; }
+  h1, h2, h3, h4 { @apply tracking-tight font-display; color: var(--fg); }
   p { color: var(--fg-muted); }
-  ::selection { background: color-mix(in oklab, var(--primary) 30%, transparent); }
+  ::selection { background: color-mix(in oklab, var(--accent-2) 30%, transparent); }
 }
 
-/* ------------------------------------------------------------------ */
-/* Containers & helpers                                                */
-/* ------------------------------------------------------------------ */
-.container-max { max-width: 1200px; margin-inline: auto; padding-inline: 1rem; }
-@media (min-width:640px){ .container-max{ padding-inline: 2rem; } }
-@media (min-width:1024px){ .container-max{ padding-inline: 3rem; } }
+/* --------------------------------------------------------------- */
+/* Règles d’usage des couleurs (brand usage)                       */
+/* --------------------------------------------------------------- */
 
-.tap-highlight-none { -webkit-tap-highlight-color: transparent; }
-.focus-ring { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
-
-.no-scroll {
-  overflow: hidden !important;
-  height: 100vh !important;
-  overscroll-behavior: contain;
-  touch-action: none;
-}
-
-/* ------------------------------------------------------------------ */
-/* Surfaces & cartes                                                   */
-/* ------------------------------------------------------------------ */
-.surface { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
-.surface-weak { background: var(--surface-weak); border: 1px solid var(--border); border-radius: 16px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
-
-/* ------------------------------------------------------------------ */
-/* Boutons                                                            */
-/* ------------------------------------------------------------------ */
-.btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
-  border: 1px solid var(--border);
-  background: color-mix(in oklab, var(--surface) 85%, white 15%);
-  color: var(--fg);
-}
-.btn:hover { background: color-mix(in oklab, var(--surface) 75%, white 25%); }
-.btn:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
-
+/* Bouton CTA principal → bleu DM */
 .btn-primary {
-  color: #fff;
-  background: var(--primary);
-  border-color: transparent;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
+  background: var(--accent-2);
+  color: #0B1220; /* contraste fort sur bleu */
+  border: none;
 }
 .btn-primary:hover { filter: brightness(1.05); }
 
-.btn-accent {
-  color: #fff;
-  background: var(--accent);
-  border-color: transparent;
-}
-.btn-accent:hover { filter: brightness(1.05); }
-
-/* ------------------------------------------------------------------ */
-/* Badges                                                             */
-/* ------------------------------------------------------------------ */
-.badge {
-  @apply inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs;
+/* Bouton secondaire → neutre */
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
+  background: var(--surface);
+  color: var(--fg);
   border: 1px solid var(--border);
-  background: color-mix(in oklab, var(--surface) 80%, white 20%);
 }
-.badge-primary { color: var(--primary); border-color: color-mix(in oklab, var(--primary) 40%, var(--border)); }
-.badge-accent  { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); }
-.badge-danger  { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 40%, var(--border)); }
+.btn-secondary:hover { background: color-mix(in oklab, var(--surface) 75%, white 25%); }
 
-/* ------------------------------------------------------------------ */
-/* Inputs                                                             */
-/* ------------------------------------------------------------------ */
+/* Badges */
+.badge-free { color: var(--accent-1); border: 1px solid var(--accent-1); }
+.badge-pro { color: var(--accent-2); border: 1px solid var(--accent-2); }
+.badge-danger { color: var(--danger); border: 1px solid var(--danger); }
+
+/* Inputs cohérents */
 .input {
   @apply w-full rounded-xl px-3 py-2 text-sm transition;
   background: color-mix(in oklab, var(--surface) 88%, white 12%);
   border: 1px solid var(--border);
   color: var(--fg);
 }
-.input::placeholder { color: color-mix(in oklab, var(--fg-muted) 65%, transparent); }
-.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent); }
-
-/* ------------------------------------------------------------------ */
-/* Effets & animations                                                 */
-/* ------------------------------------------------------------------ */
-@keyframes fadeIn { from { opacity:0; transform: translateY(-4px);} to{opacity:1; transform:none;} }
-.animate-fadeIn { animation: fadeIn 220ms ease-out both; }
-
-@keyframes slideDown { 0%{opacity:0; transform: translateY(-8px) scale(.98);} 100%{opacity:1; transform:none;} }
-.animate-slideDown { animation: slideDown 220ms cubic-bezier(.2,.9,.2,1) both; }
-
-/* Header glass */
-.glass {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, transparent) 0%, color-mix(in oklab, var(--surface) 70%, transparent) 100%);
-  backdrop-filter: blur(10px);
+.input:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-2) 30%, transparent);
 }
 
-/* Aurora blobs */
-.aurora { position:absolute; filter: blur(50px); opacity:.55; mix-blend-mode: screen; will-change: transform,opacity; animation: aurora-float 16s ease-in-out infinite; pointer-events:none; }
-.aurora-1 { width:42rem; height:42rem; left:-10%; top:-15%; background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 65%, transparent), transparent 65%); animation-delay:0s; }
-.aurora-2 { width:36rem; height:36rem; right:-12%; top:-10%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 55%, transparent), transparent 65%); animation-delay:3s; }
-.aurora-3 { width:50rem; height:50rem; left:10%; bottom:-25%; background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 45%, transparent), transparent 65%); animation-delay:6s; }
-@keyframes aurora-float { 0%,100%{transform: translate3d(0,0,0) scale(1);} 50%{transform: translate3d(2rem,-1rem,0) scale(1.05);} }
-
-/* Grain */
-.noise { position:absolute; inset:-50%; opacity:.035; pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); background-size:200px 200px; animation: noiseShift 1.5s steps(2) infinite; }
-@keyframes noiseShift { to { transform: translate3d(1%,-1%,0); } }
-
-/* Beam */
-.beam { position:absolute; left:50%; transform:translateX(-50%); top:calc(50% - 3rem); width:120%; height:120px;
-  background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 25%, transparent), transparent 70%);
-  filter: blur(24px);
-  mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
-  opacity:.7; animation: beam-scan 10s ease-in-out infinite; pointer-events:none; }
-@keyframes beam-scan { 0%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} 50%{ transform: translate(-50%, 10px) rotate(1deg); opacity:.8;} 100%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} }
-
-/* Reveal on scroll */
-[data-reveal] { opacity:0; transform: translateY(14px) scale(.995); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
-.is-revealed { opacity:1 !important; transform: none !important; }
-
-/* Blurs & drawers */
-@supports (backdrop-filter: blur(4px)) { .drawer-blur { backdrop-filter: blur(6px); } }
-
-/* Réduction d’animations & perfs mobile */
-@media (prefers-reduced-motion: reduce) {
-  .aurora, .noise, .beam { animation: none !important; }
-  section:hover .aurora { transform: none !important; }
+/* Cartes */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
 }
-@media (max-width: 480px) {
-  .aurora { opacity: .35; filter: blur(42px); }
-                        }
