@@ -17,7 +17,7 @@ export default function HomePage() {
       {/* HERO */}
       <section className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          {/* Title (updated slogan) */}
+          {/* Title (slogan validé) */}
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl text-gray-900">
             Invisible proof.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
@@ -25,7 +25,7 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Subtitle (simple, grand public) */}
+          {/* Sous-titre simple & grand public */}
           <p className="mt-4 max-w-2xl text-lg text-gray-600">
             DigitalMeve protects your documents by adding a built-in, unique proof
             (date, time, and a file fingerprint). No storage. Your file stays
@@ -67,7 +67,7 @@ export default function HomePage() {
           <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-5 w-5 text-emerald-500" aria-hidden />
-              Built-in for PDF & PNG
+              Built-in for PDF & DOCX
             </span>
             <span className="hidden sm:inline">•</span>
             <Link
@@ -103,7 +103,9 @@ export default function HomePage() {
             <h3 className="mt-2 text-lg font-medium text-gray-900">
               Upload your document
             </h3>
-            <p className="mt-2 text-gray-600">Works with PDFs, images, and more.</p>
+            <p className="mt-2 text-gray-600">
+              Works with PDF & Word (DOCX). More formats next.
+            </p>
             <Link
               href="/generate"
               className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
@@ -121,8 +123,8 @@ export default function HomePage() {
               Get your certified copy
             </h3>
             <p className="mt-2 text-gray-600">
-              We compute a SHA-256 fingerprint and embed a .MEVE marker — file stays
-              clean and readable.
+              We compute a SHA-256 fingerprint and embed a .MEVE marker — your file
+              stays clean and fully readable.
             </p>
           </div>
 
@@ -166,7 +168,7 @@ export default function HomePage() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
-                Readable files with built-in proof (PDF/PNG)
+                Readable files with built-in proof (PDF/DOCX)
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
