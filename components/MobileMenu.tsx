@@ -1,7 +1,9 @@
+// components/MobileMenu.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Portal from "@/components/Portal";
 import {
   Users,
@@ -16,12 +18,28 @@ import {
 
 type Props = { open: boolean; onClose: () => void };
 
+// petite utilitaire pour classes
+function cx(...cls: Array<string | false | null | undefined>) {
+  return cls.filter(Boolean).join(" ");
+}
+
+// garde “safe” pour pathname
+function useSafePathname() {
+  try {
+    return usePathname() || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function MobileMenu({ open, onClose }: Props) {
+  // IMPORTANT : ne rien rendre si fermé (ta version faisait ça, on garde)
   if (!open) return null;
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const pathname = useSafePathname();
 
-  // Empêche le scroll de la page derrière le menu
+  // Empêche le scroll derrière
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -32,20 +50,59 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   // Fermer avec ESC
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus initial
+  // Focus initial (tolérant)
   useEffect(() => {
-    const first = panelRef.current?.querySelector<HTMLElement>(
-      "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
-    );
-    first?.focus();
+    try {
+      const first = panelRef.current?.querySelector<HTMLElement>(
+        "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
+      );
+      first?.focus?.();
+    } catch {
+      /* no-op */
+    }
   }, []);
 
-  // Handler unique et simple pour fermer au click
+  // Focus trap (ne fait rien si pas de focusables)
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const root = panelRef.current;
+    if (!root) return;
+
+    const all = root.querySelectorAll<HTMLElement>(
+      "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
+    );
+    const list = Array.from(all).filter(
+      (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1
+    );
+    if (list.length === 0) return;
+
+    const first = list[0];
+    const last = list[list.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+
+    if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    } else if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    }
+  }, []);
+
+  // style actif (tolérant)
+  const isActive = (href: string) => {
+    if (!pathname) return false;
+    return href === "/" ? pathname === "/" : (pathname === href || pathname.startsWith(href + "/"));
+  };
+
+  // click overlay/lien
   const closeOnClick: React.MouseEventHandler = () => onClose();
 
   return (
@@ -64,6 +121,7 @@ export default function MobileMenu({ open, onClose }: Props) {
         aria-modal="true"
         aria-label="Main menu"
         className="fixed inset-0 z-[1000] flex flex-col bg-white"
+        onKeyDown={onKeyDown}
       >
         {/* barre supérieure */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
@@ -72,6 +130,7 @@ export default function MobileMenu({ open, onClose }: Props) {
               <span className="text-emerald-600">Digital</span>
               <span className="text-sky-600">Meve</span>
             </span>
+            <span className="sr-only">DigitalMeve</span>
           </Link>
           <button
             onClick={onClose}
@@ -93,7 +152,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/generate"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/generate") && "bg-emerald-50 ring-1 ring-emerald-200"
+                )}
+                aria-current={isActive("/generate") ? "page" : undefined}
               >
                 <FilePlus2 className="h-5 w-5 text-emerald-600" />
                 <span>Generate</span>
@@ -103,7 +166,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/verify"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/verify") && "bg-emerald-50 ring-1 ring-emerald-200"
+                )}
+                aria-current={isActive("/verify") ? "page" : undefined}
               >
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
                 <span>Verify</span>
@@ -122,7 +189,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/personal"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/personal") && "bg-sky-50 ring-1 ring-sky-200"
+                )}
+                aria-current={isActive("/personal") ? "page" : undefined}
               >
                 <Users className="h-5 w-5 text-sky-600" />
                 <span>For Individuals</span>
@@ -132,7 +203,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/pro"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/pro") && "bg-sky-50 ring-1 ring-sky-200"
+                )}
+                aria-current={isActive("/pro") ? "page" : undefined}
               >
                 <Briefcase className="h-5 w-5 text-sky-600" />
                 <span>For Business</span>
@@ -151,7 +226,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/pricing"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/pricing") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/pricing") ? "page" : undefined}
               >
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Pricing</span>
@@ -161,7 +240,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/developers"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/developers") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/developers") ? "page" : undefined}
               >
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Developers</span>
@@ -171,7 +254,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/security"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/security") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/security") ? "page" : undefined}
               >
                 <ShieldCheck className="h-5 w-5 text-slate-600" />
                 <span>Security</span>
@@ -181,7 +268,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/status"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/status") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/status") ? "page" : undefined}
               >
                 <Info className="h-5 w-5 text-slate-600" />
                 <span>Status</span>
@@ -191,7 +282,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/changelog"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/changelog") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/changelog") ? "page" : undefined}
               >
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Changelog</span>
@@ -210,7 +305,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/about"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/about") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/about") ? "page" : undefined}
               >
                 <Info className="h-5 w-5 text-slate-600" />
                 <span>About</span>
@@ -220,7 +319,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/contact"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/contact") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/contact") ? "page" : undefined}
               >
                 <Mail className="h-5 w-5 text-slate-600" />
                 <span>Contact</span>
@@ -230,7 +333,11 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/legal"
                 onClick={closeOnClick}
-                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50"
+                className={cx(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
+                  isActive("/legal") && "bg-gray-50 ring-1 ring-gray-200"
+                )}
+                aria-current={isActive("/legal") ? "page" : undefined}
               >
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Legal</span>
@@ -249,4 +356,4 @@ export default function MobileMenu({ open, onClose }: Props) {
       </div>
     </Portal>
   );
-}
+                }
