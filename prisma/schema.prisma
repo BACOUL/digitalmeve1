@@ -5,20 +5,20 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // tu pourras changer en "postgresql" plus tard si besoin
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String   // hashé (jamais en clair)
+  password  String
   role      Role     @default(INDIVIDUAL)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 enum Role {
-  INDIVIDUAL // particulier
-  BUSINESS   // pro
+  INDIVIDUAL
+  BUSINESS
 }
