@@ -1,12 +1,12 @@
 // app/verify/page.tsx
 "use client";
 
-import { useState } from "react";
-import { ShieldCheck, ShieldX, FileCheck2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ShieldCheck, ShieldX, FileCheck2, Lock, BadgeCheck } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf";
-import { readInvisibleWatermarkDocx } from "@/lib/wm/docx"; // ⬅️ NEW: DOCX
+import { readInvisibleWatermarkDocx } from "@/lib/wm/docx"; // DOCX
 
 type VerifyResult = {
   ok: boolean;
@@ -21,6 +21,19 @@ export default function VerifyPage() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<VerifyResult | null>(null);
+
+  const kind = useMemo<"pdf" | "docx" | "other">(() => {
+    if (!file) return "other";
+    const mt = (file.type || "").toLowerCase();
+    const name = file.name.toLowerCase();
+    if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+    if (
+      mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      name.endsWith(".docx")
+    )
+      return "docx";
+    return "other";
+  }, [file]);
 
   function guessKind(f: File): "pdf" | "docx" | "other" {
     const mt = (f.type || "").toLowerCase();
@@ -37,9 +50,10 @@ export default function VerifyPage() {
   async function onVerify() {
     if (!file) return;
     setBusy(true);
+    setRes(null);
     try {
-      const kind = guessKind(file);
-      if (kind === "other") {
+      const k = guessKind(file);
+      if (k === "other") {
         setRes({
           ok: false,
           reason: "Unsupported file. Use a .meve.pdf or .meve.docx file.",
@@ -48,11 +62,9 @@ export default function VerifyPage() {
         return;
       }
 
-      // Lecture du filigrane invisible selon le type
-      const meta: any =
-        kind === "pdf"
-          ? await readInvisibleWatermarkPdf(file)
-          : await readInvisibleWatermarkDocx(file);
+      const meta: any = k === "pdf"
+        ? await readInvisibleWatermarkPdf(file)
+        : await readInvisibleWatermarkDocx(file);
 
       if (!meta) {
         setRes({
@@ -63,18 +75,10 @@ export default function VerifyPage() {
         return;
       }
 
-      // Champs tolérants
       const whenISO: string | undefined =
-        meta.createdAtISO ??
-        meta.tsISO ??
-        meta.timestampISO ??
-        meta.timestamp ??
-        meta.ts ??
-        undefined;
-
+        meta.createdAtISO ?? meta.tsISO ?? meta.timestampISO ?? meta.timestamp ?? meta.ts ?? undefined;
       const issuer: string | undefined =
         meta.issuer ?? meta.issuerEmail ?? meta.issuerId ?? undefined;
-
       const hash: string | undefined =
         meta.hash ?? meta.sha256 ?? meta.docHash ?? undefined;
 
@@ -123,9 +127,30 @@ export default function VerifyPage() {
             <span className="font-semibold">tampered</span>.
           </p>
 
+          {/* Trust badges */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1">
+              <Lock className="h-4 w-4 text-emerald-600" />
+              No storage — runs locally
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1">
+              <BadgeCheck className="h-4 w-4 text-sky-600" />
+              Works offline
+            </span>
+            {file && kind !== "other" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1">
+                <FileCheck2 className="h-4 w-4 text-emerald-600" />
+                {kind.toUpperCase()} detected
+              </span>
+            )}
+          </div>
+
           <div className="mt-8">
             <FileDropzone
-              onSelected={setFile}
+              onSelected={(f) => {
+                setFile(f);
+                setRes(null);
+              }}
               label="Choose a file"
               maxSizeMB={10}
               hint="Drag & drop or tap to select. Max {SIZE} MB."
@@ -133,13 +158,25 @@ export default function VerifyPage() {
             />
           </div>
 
-          <button
-            onClick={onVerify}
-            disabled={!file || busy}
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-sky-500 px-5 py-2.5 font-medium text-white shadow-md hover:brightness-105 disabled:opacity-50"
-          >
-            {busy ? "Checking…" : "Verify Proof"}
-          </button>
+          <div className="mt-6 flex items-center gap-3">
+            <button
+              onClick={onVerify}
+              disabled={!file || busy}
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-sky-500 px-5 py-2.5 font-medium text-white shadow-md hover:brightness-105 disabled:opacity-50"
+            >
+              {busy ? "Checking…" : "Verify Proof"}
+            </button>
+
+            {file && (
+              <button
+                onClick={() => { setFile(null); setRes(null); }}
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Reset
+              </button>
+            )}
+          </div>
 
           {/* Résultat */}
           {res && (
@@ -148,16 +185,12 @@ export default function VerifyPage() {
                 {res.ok ? (
                   <>
                     <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                    <h2 className="text-lg font-semibold text-emerald-700">
-                      Valid
-                    </h2>
+                    <h2 className="text-lg font-semibold text-emerald-700">Valid</h2>
                   </>
                 ) : (
                   <>
                     <ShieldX className="h-5 w-5 text-rose-600" />
-                    <h2 className="text-lg font-semibold text-rose-700">
-                      Invalid
-                    </h2>
+                    <h2 className="text-lg font-semibold text-rose-700">Invalid</h2>
                   </>
                 )}
               </div>
@@ -205,7 +238,7 @@ export default function VerifyPage() {
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     <dt className="text-slate-600">Reason</dt>
-                    <dd className="col-span-2 sm:grid-cols-3 text-rose-700">
+                    <dd className="col-span-2 sm:col-span-3 text-rose-700">
                       {res.reason}
                     </dd>
                   </div>
@@ -225,4 +258,4 @@ export default function VerifyPage() {
       </section>
     </main>
   );
-          }
+        }
