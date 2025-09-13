@@ -1,3 +1,4 @@
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,28 +8,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// IMPORTANT : correspond exactement à ta table "User"
+// - createdAt/updatedAt sont mappés à createdat/updatedat
+// - role est du texte (INDIVIDUAL | BUSINESS) avec un CHECK en base
 model User {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String   // hashé avec bcrypt
-  role      Role     @default(INDIVIDUAL) // INDIVIDUAL = particulier ; BUSINESS = pro
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  password  String
+  role      String   @default("INDIVIDUAL")
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @default(now()) @updatedAt @map("updatedat")
 
-  sessions  Session[]
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  expires   DateTime
-  sessionToken String @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-enum Role {
-  INDIVIDUAL
-  BUSINESS
+  @@map("User")
 }
