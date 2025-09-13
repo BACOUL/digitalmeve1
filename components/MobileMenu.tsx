@@ -3,8 +3,6 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import Portal from "@/components/Portal";
 import {
   Users,
   FilePlus2,
@@ -25,25 +23,22 @@ function cx(...cls: Array<string | false | null | undefined>) {
 export default function MobileMenu({ open, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
-  const pathname = usePathname();
 
   if (!open) return null;
 
-  // Bloque le scroll derrière le panneau
+  // Empêche le scroll derrière
   useEffect(() => {
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
     };
   }, []);
 
-  // Mémorise le focus et le restaure à la fermeture
+  // Mémorise & restaure le focus
   useEffect(() => {
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
-    return () => {
-      lastFocusedRef.current?.focus?.();
-    };
+    return () => lastFocusedRef.current?.focus?.();
   }, []);
 
   // ESC pour fermer
@@ -53,7 +48,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus initial
+  // Focus initial dans le panneau
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -61,7 +56,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     first?.focus();
   }, []);
 
-  // Focus trap (Tab / Shift+Tab)
+  // Focus trap
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key !== "Tab") return;
     const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
@@ -80,30 +75,23 @@ export default function MobileMenu({ open, onClose }: Props) {
     }
   }, []);
 
-  // Fermer au clic (overlay/lien)
   const closeOnClick: React.MouseEventHandler = () => onClose();
 
-  // Style actif
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
-
   return (
-    <Portal>
-      {/* Overlay */}
+    <>
+      {/* Overlay (pas de Portal, rendu direct) */}
       <div
         aria-hidden
         onClick={onClose}
-        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm opacity-100 animate-fadeIn"
+        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
       />
-
       {/* Panneau */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="mobileMenuTitle"
-        id="mobile-menu"
-        className="fixed inset-0 z-[1000] flex flex-col bg-white outline-none translate-y-0 animate-slideDown"
+        aria-label="Main menu"
+        className="fixed inset-0 z-[1000] flex flex-col bg-white outline-none"
         onKeyDown={onKeyDown}
       >
         {/* Barre supérieure */}
@@ -114,9 +102,6 @@ export default function MobileMenu({ open, onClose }: Props) {
               <span className="text-sky-600">Meve</span>
             </span>
           </Link>
-
-          <h2 id="mobileMenuTitle" className="sr-only">Main menu</h2>
-
           <button
             onClick={onClose}
             aria-label="Close menu"
@@ -126,8 +111,8 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Contenu */}
-        <nav className="flex-1 overflow-y-auto px-2 pb-24 pt-2 text-slate-700" aria-label="Mobile">
+        {/* Contenu scrollable */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-24 pt-2 text-slate-700" aria-label="Mobile menu">
           {/* Products */}
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Products
@@ -138,10 +123,8 @@ export default function MobileMenu({ open, onClose }: Props) {
                 href="/generate"
                 onClick={closeOnClick}
                 className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
-                  isActive("/generate") && "bg-emerald-50 ring-1 ring-emerald-200"
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 )}
-                aria-current={isActive("/generate") ? "page" : undefined}
               >
                 <FilePlus2 className="h-5 w-5 text-emerald-600" />
                 <span>Generate</span>
@@ -152,10 +135,8 @@ export default function MobileMenu({ open, onClose }: Props) {
                 href="/verify"
                 onClick={closeOnClick}
                 className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
-                  isActive("/verify") && "bg-emerald-50 ring-1 ring-emerald-200"
+                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 )}
-                aria-current={isActive("/verify") ? "page" : undefined}
               >
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
                 <span>Verify</span>
@@ -174,11 +155,7 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/personal"
                 onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
-                  isActive("/personal") && "bg-sky-50 ring-1 ring-sky-200"
-                )}
-                aria-current={isActive("/personal") ? "page" : undefined}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40"
               >
                 <Users className="h-5 w-5 text-sky-600" />
                 <span>For Individuals</span>
@@ -188,11 +165,7 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/pro"
                 onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
-                  isActive("/pro") && "bg-sky-50 ring-1 ring-sky-200"
-                )}
-                aria-current={isActive("/pro") ? "page" : undefined}
+                className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40"
               >
                 <Briefcase className="h-5 w-5 text-sky-600" />
                 <span>For Business</span>
@@ -208,71 +181,31 @@ export default function MobileMenu({ open, onClose }: Props) {
           </p>
           <ul className="space-y-2 px-1">
             <li>
-              <Link
-                href="/pricing"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/pricing") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/pricing") ? "page" : undefined}
-              >
+              <Link href="/pricing" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Pricing</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/developers"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/developers") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/developers") ? "page" : undefined}
-              >
+              <Link href="/developers" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Developers</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/security"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/security") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/security") ? "page" : undefined}
-              >
+              <Link href="/security" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <ShieldCheck className="h-5 w-5 text-slate-600" />
                 <span>Security</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/status"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/status") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/status") ? "page" : undefined}
-              >
+              <Link href="/status" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <Info className="h-5 w-5 text-slate-600" />
                 <span>Status</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/changelog"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/changelog") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/changelog") ? "page" : undefined}
-              >
+              <Link href="/changelog" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Changelog</span>
               </Link>
@@ -287,43 +220,19 @@ export default function MobileMenu({ open, onClose }: Props) {
           </p>
           <ul className="space-y-2 px-1">
             <li>
-              <Link
-                href="/about"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/about") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/about") ? "page" : undefined}
-              >
+              <Link href="/about" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <Info className="h-5 w-5 text-slate-600" />
                 <span>About</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/contact"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/contact") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/contact") ? "page" : undefined}
-              >
+              <Link href="/contact" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <Mail className="h-5 w-5 text-slate-600" />
                 <span>Contact</span>
               </Link>
             </li>
             <li>
-              <Link
-                href="/legal"
-                onClick={closeOnClick}
-                className={cx(
-                  "group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50",
-                  isActive("/legal") && "bg-gray-50 ring-1 ring-gray-200"
-                )}
-                aria-current={isActive("/legal") ? "page" : undefined}
-              >
+              <Link href="/legal" onClick={closeOnClick} className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base hover:bg-gray-50">
                 <BookOpen className="h-5 w-5 text-slate-600" />
                 <span>Legal</span>
               </Link>
@@ -339,6 +248,6 @@ export default function MobileMenu({ open, onClose }: Props) {
           </div>
         </nav>
       </div>
-    </Portal>
+    </>
   );
-        }
+}
