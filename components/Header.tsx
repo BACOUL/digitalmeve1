@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Fermer le menu dès qu’on change de page (fiabilise le retour du scroll)
+  useEffect(() => {
+    if (open) setOpen(false);
+    // sécurité : remet le body comme il faut si un style traîne
+    document.body.style.overflow = "";
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
@@ -56,7 +65,6 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Drawer mobile */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
