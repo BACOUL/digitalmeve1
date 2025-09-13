@@ -137,7 +137,7 @@
   mix-blend-mode: screen; 
   will-change: transform,opacity; 
   animation: aurora-float 16s ease-in-out infinite; 
-  pointer-events:none; /* ✅ empêche le blocage du scroll */
+  pointer-events:none; /* empêche le blocage du scroll */
 }
 .aurora-1 { width:42rem; height:42rem; left:-10%; top:-15%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 65%, transparent), transparent 65%); animation-delay:0s; }
 .aurora-2 { width:36rem; height:36rem; right:-12%; top:-10%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 55%, transparent), transparent 65%); animation-delay:3s; }
@@ -161,7 +161,7 @@
   mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
   opacity:.7; 
   animation: beam-scan 10s ease-in-out infinite; 
-  pointer-events:none; /* ✅ empêche le blocage du scroll */
+  pointer-events:none; /* empêche le blocage du scroll */
 }
 @keyframes beam-scan { 0%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} 50%{ transform: translate(-50%, 10px) rotate(1deg); opacity:.8;} 100%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} }
 
@@ -179,5 +179,4 @@
 }
 @media (max-width: 480px) {
   .aurora { opacity: .35; filter: blur(42px); }
-}
-```0
+           }
