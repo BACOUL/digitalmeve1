@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, LogIn, UserPlus, LogOut, UserCircle2 } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
+  const { data: session, status } = useSession();
+
   if (!open) return null;
+
+  async function onSignOut() {
+    onClose();
+    // Redirige vers l’accueil après déconnexion
+    await signOut({ callbackUrl: "/" });
+  }
 
   return (
     <div
@@ -16,7 +25,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     >
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-        <Link href="/" onClick={onClose} className="text-lg font-semibold">
+        <Link href="/" onClick={onClose} className="text-lg font-semibold" aria-label="DigitalMeve Home">
           <span className="text-emerald-600">Digital</span>
           <span className="text-sky-600">Meve</span>
         </Link>
@@ -121,6 +130,69 @@ export default function MobileMenu({ open, onClose }: Props) {
               </Link>
             </li>
           </ul>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gray-200" />
+
+        {/* Account section */}
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Account
+          </p>
+
+          {status === "authenticated" && session?.user ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
+                <UserCircle2 className="h-5 w-5 text-slate-600" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {session.user.email}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {(session.user as any).role?.toLowerCase?.() === "business" ? "Business" : "Individual"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/dashboard"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                >
+                  <UserCircle2 className="h-4 w-4" />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={onSignOut}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+              >
+                <LogIn className="h-4 w-4" />
+                Login
+              </Link>
+              <Link
+                href="/register"
+                onClick={onClose}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow hover:brightness-105"
+              >
+                <UserPlus className="h-4 w-4" />
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
     </div>
