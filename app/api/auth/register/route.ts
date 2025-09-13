@@ -1,10 +1,7 @@
+// app/api/auth/register/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/password";
-
-// Évite tout cache/prérendu
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { hash } from "bcryptjs";
+import prisma from "@/lib/prisma";
 
 type Body = {
   email?: string;
@@ -14,33 +11,36 @@ type Body = {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as Body;
-    const email = (body.email || "").trim().toLowerCase();
-    const password = body.password || "";
-    const role = body.role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL";
+    const { email, password, role }: Body = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Missing fields" }, { status: 400 });
+    }
+    if (password.length < 6) {
+      return NextResponse.json({ ok: false, error: "Password too short" }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 });
+    const lowerEmail = email.trim().toLowerCase();
+
+    // existe déjà ?
+    const exists = await prisma.user.findUnique({ where: { email: lowerEmail } });
+    if (exists) {
+      return NextResponse.json({ ok: false, error: "User already exists" }, { status: 400 });
     }
 
-    const hashed = hashPassword(password);
+    const hashed = await hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: { email, password: hashed, role },
-      select: { id: true, email: true, role: true, createdAt: true },
+    await prisma.user.create({
+      data: {
+        email: lowerEmail,
+        password: hashed,
+        role: role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL",
+      },
     });
 
-    return NextResponse.json({ ok: true, user }, { status: 201 });
-  } catch (err: any) {
-    console.error("REGISTER ERROR:", err);
-    return NextResponse.json(
-      { error: "Internal error", details: String(err?.message ?? err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: true }, { status: 201 });
+  } catch (err) {
+    console.error("Register error:", err);
+    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
   }
 }
