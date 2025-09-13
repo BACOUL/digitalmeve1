@@ -29,7 +29,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  // Empêche le scroll derrière
+  // Bloque le scroll derrière le panneau
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -38,7 +38,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, []);
 
-  // Mémorise l'élément focus avant ouverture & restore à la fermeture
+  // Mémorise le focus et le restaure à la fermeture
   useEffect(() => {
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
     return () => {
@@ -46,16 +46,14 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, []);
 
-  // Fermer avec ESC
+  // ESC pour fermer
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus initial dans le panneau
+  // Focus initial
   useEffect(() => {
     const first = panelRef.current?.querySelector<HTMLElement>(
       "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
@@ -64,37 +62,30 @@ export default function MobileMenu({ open, onClose }: Props) {
   }, []);
 
   // Focus trap (Tab / Shift+Tab)
-  const onKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
-        "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
-      );
-      if (!focusables || focusables.length === 0) return;
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
+      "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
+    );
+    if (!nodes || nodes.length === 0) return;
+    const list = Array.from(nodes).filter((el) => !el.hasAttribute("disabled"));
+    const first = list[0];
+    const last = list[list.length - 1];
+    if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    } else if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    }
+  }, []);
 
-      const list = Array.from(focusables).filter((el) => !el.hasAttribute("disabled"));
-      const first = list[0];
-      const last = list[list.length - 1];
-
-      if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      } else if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    },
-    []
-  );
-
-  // Fermer au click (overlay ou lien)
+  // Fermer au clic (overlay/lien)
   const closeOnClick: React.MouseEventHandler = () => onClose();
 
-  // Style actif pour les liens
+  // Style actif
   const isActive = (href: string) =>
-    href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(href + "/");
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <Portal>
@@ -105,7 +96,7 @@ export default function MobileMenu({ open, onClose }: Props) {
         className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm opacity-100 animate-fadeIn"
       />
 
-      {/* Panneau (slide-over) */}
+      {/* Panneau */}
       <div
         ref={panelRef}
         role="dialog"
@@ -117,19 +108,14 @@ export default function MobileMenu({ open, onClose }: Props) {
       >
         {/* Barre supérieure */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <Link href="/" onClick={closeOnClick} className="flex items-center gap-2">
-              <span className="text-lg font-semibold tracking-tight">
-                <span className="text-emerald-600">Digital</span>
-                <span className="text-sky-600">Meve</span>
-              </span>
-              <span className="sr-only">DigitalMeve</span>
-            </Link>
-          </div>
+          <Link href="/" onClick={closeOnClick} className="flex items-center gap-2" aria-label="DigitalMeve Home">
+            <span className="text-lg font-semibold tracking-tight">
+              <span className="text-emerald-600">Digital</span>
+              <span className="text-sky-600">Meve</span>
+            </span>
+          </Link>
 
-          <h2 id="mobileMenuTitle" className="sr-only">
-            Main menu
-          </h2>
+          <h2 id="mobileMenuTitle" className="sr-only">Main menu</h2>
 
           <button
             onClick={onClose}
@@ -140,9 +126,9 @@ export default function MobileMenu({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Contenu scrollable */}
+        {/* Contenu */}
         <nav className="flex-1 overflow-y-auto px-2 pb-24 pt-2 text-slate-700" aria-label="Mobile">
-          {/* PRODUCTS */}
+          {/* Products */}
           <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Products
           </p>
@@ -179,7 +165,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
           <div className="my-4 h-px bg-gray-200" />
 
-          {/* SOLUTIONS */}
+          {/* Solutions */}
           <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-sky-600">
             Solutions
           </p>
@@ -216,7 +202,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
           <div className="my-4 h-px bg-gray-200" />
 
-          {/* RESOURCES */}
+          {/* Resources */}
           <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Resources
           </p>
@@ -295,7 +281,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
           <div className="my-4 h-px bg-gray-200" />
 
-          {/* COMPANY */}
+          {/* Company */}
           <p className="px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Company
           </p>
@@ -344,7 +330,7 @@ export default function MobileMenu({ open, onClose }: Props) {
             </li>
           </ul>
 
-          {/* Badge bas de menu */}
+          {/* Badge */}
           <div className="mt-6 px-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-gray-50 px-3 py-1 text-xs text-slate-600">
               <Users className="h-4 w-4" />
@@ -355,4 +341,4 @@ export default function MobileMenu({ open, onClose }: Props) {
       </div>
     </Portal>
   );
-                }
+        }
