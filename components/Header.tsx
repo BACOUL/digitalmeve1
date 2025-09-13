@@ -1,44 +1,15 @@
+// components/Header.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
 import MobileMenu from "@/components/MobileMenu";
 
 export default function Header() {
-  const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-
-  // Fermer le menu et retirer tout lock dès qu’on navigue
-  useEffect(() => {
-    if (open) setOpen(false);
-    // retire toute trace de lock même si un cleanup aurait raté
-    document.body.classList.remove("no-scroll");
-    document.body.style.overflow = "";
-    return () => {
-      document.body.classList.remove("no-scroll");
-      document.body.style.overflow = "";
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  // Quand on ouvre/ferme, gérer la classe no-scroll ici aussi (double sécurité)
-  useEffect(() => {
-    if (open) {
-      document.body.classList.add("no-scroll");
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.classList.remove("no-scroll");
-      document.body.style.overflow = "";
-    }
-  }, [open]);
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" aria-label="DigitalMeve Home" onClick={() => setOpen(false)}>
+        <Link href="/" className="flex items-center gap-2" aria-label="DigitalMeve Home">
           <span className="text-lg font-semibold tracking-tight">
             <span className="text-emerald-600">Digital</span>
             <span className="text-sky-600">Meve</span>
@@ -69,20 +40,11 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Mobile trigger */}
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-        >
-          <Menu className="h-5 w-5 text-gray-700" />
-        </button>
+        {/* Mobile menu: bouton + drawer gérés à l’intérieur */}
+        <div className="md:hidden">
+          <MobileMenu />
+        </div>
       </div>
-
-      <MobileMenu open={open} onClose={() => setOpen(false)} />
     </header>
   );
 }
