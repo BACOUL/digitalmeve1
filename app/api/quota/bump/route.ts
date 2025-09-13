@@ -1,64 +1,58 @@
+// app/api/quota/bump/route.ts
 import { cookies } from "next/headers";
-import { QUOTA_COOKIE, MAX_FREE_PER_DAY, todayUTC, verifyCookieValue, makeCookieValue } from "@/lib/quota";
-import crypto from "node:crypto";
 
-export const dynamic = "force-dynamic";
+const QUOTA_COOKIE = "dm_quota";
+const ONE_YEAR = 60 * 60 * 24 * 365;
+
+function todayUTC() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate()
+  ).padStart(2, "0")}`;
+}
+
+type Payload = {
+  d: string;   // YYYY-MM-DD (UTC)
+  n: number;   // count for the day
+};
 
 export async function POST() {
-  const secret = process.env.QUOTA_SECRET;
-  if (!secret) {
-    return Response.json({ error: "Server misconfigured: QUOTA_SECRET missing" }, { status: 500 });
-  }
+  // ⚠️ Next 15 : cookies() → Promise => on attend
+  const store = await cookies();
 
-  const jar = cookies();
-  const raw = jar.get(QUOTA_COOKIE)?.value;
+  const raw = store.get(QUOTA_COOKIE)?.value;
   const today = todayUTC();
 
-  // Lire ou initialiser le payload
-  let payload =
-    (raw && verifyCookieValue(raw, secret)) ||
-    null;
-
-  // Reset si jour différent ou payload invalide
-  if (!payload || payload.d !== today) {
-    payload = { d: today, c: 0, id: payload?.id || crypto.randomUUID() };
+  // Lire l'état courant
+  let payload: Payload = { d: today, n: 0 };
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Payload;
+      if (parsed && parsed.d === today && typeof parsed.n === "number") {
+        payload = parsed;
+      }
+    } catch (_) {
+      // ignore / reset
+    }
   }
 
-  // Si on a atteint la limite
-  if (payload.c >= MAX_FREE_PER_DAY) {
-    // Rafraîchir le cookie (même payload) pour prolonger la durée
-    const cookieVal = makeCookieValue(payload, secret);
-    jar.set(QUOTA_COOKIE, cookieVal, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 jours
-    });
-    return Response.json(
-      { allowed: false, reason: "limit_reached", remaining: 0, count: payload.c, resetDayUTC: payload.d },
-      { status: 429 }
-    );
-  }
+  // Incrémenter
+  payload.n += 1;
 
-  // Incrément
-  payload.c += 1;
-  const remaining = Math.max(0, MAX_FREE_PER_DAY - payload.c);
-
-  // Écrire le cookie signé
-  const cookieVal = makeCookieValue(payload, secret);
-  jar.set(QUOTA_COOKIE, cookieVal, {
+  // Ecrire le nouveau cookie (HTTPOnly pour éviter les bidouilles côté client)
+  store.set(QUOTA_COOKIE, JSON.stringify(payload), {
     httpOnly: true,
-    secure: true,
     sameSite: "lax",
+    secure: true,
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: ONE_YEAR,
   });
 
-  return Response.json({
-    allowed: true,
-    count: payload.c,
-    remaining,
-    resetDayUTC: payload.d,
-  });
+  return new Response(
+    JSON.stringify({ ok: true, date: payload.d, count: payload.n }),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 }
