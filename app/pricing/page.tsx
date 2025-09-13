@@ -1,4 +1,3 @@
-// app/pricing/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -13,13 +12,17 @@ import {
   Zap,
   Layers,
   HelpCircle,
+  Star,
 } from "lucide-react";
 
+/** ---------------------------
+ * Types & Data
+ * -------------------------- */
 type Plan = {
   id: string;
   label: string;
-  priceMonthly: number;
-  priceYearly: number; // prix / mois équivalent, payé annuel
+  priceMonthly: number;   // prix / mois (facturé mensuel)
+  priceYearly: number;    // prix / mois équivalent, facturé annuel
   badge?: string;
   tagline: string;
   ctaHref: string;
@@ -53,12 +56,12 @@ const BUSINESS: Plan[] = [
     id: "starter",
     label: "Starter",
     priceMonthly: 19,
-    priceYearly: 15,
+    priceYearly: 15, // affiché si Yearly = true (equiv /mo)
     tagline: "Solo / small teams",
     ctaHref: "/contact",
     ctaLabel: "Talk to us",
     features: [
-      "Dashboard (Teams & usage)",
+      "Dashboard (teams & usage)",
       "API/SDK access",
       "Domain / email verification badge",
       "Basic rate limits",
@@ -103,15 +106,30 @@ const BUSINESS: Plan[] = [
   },
 ];
 
+/** ---------------------------
+ * Helpers
+ * -------------------------- */
+function formatPriceUSD(amount: number) {
+  if (amount <= 0) return "Free";
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+  } catch {
+    return `$${amount}`;
+  }
+}
+
+/** ---------------------------
+ * Page
+ * -------------------------- */
 export default function PricingPage() {
   const [yearly, setYearly] = useState(true);
 
+  // Plans business avec affichage /mo équivalent si yearly = true
   const business = useMemo(() => {
     if (!yearly) return BUSINESS;
-    // clone en ajustant l’affichage du prix (mensuel équivalent, facturation annuelle)
     return BUSINESS.map((p) =>
-      p.priceYearly && p.priceMonthly
-        ? { ...p, priceMonthly: p.priceYearly } // on affiche /mois équivalent
+      p.priceMonthly && p.priceYearly
+        ? { ...p, priceMonthly: p.priceYearly }
         : p
     );
   }, [yearly]);
@@ -129,30 +147,42 @@ export default function PricingPage() {
               </span>
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              Free for individuals. Flexible plans for businesses that integrate
-              .MEVE at scale — with APIs, dashboard, and support.
+              Free for individuals. Flexible plans for businesses integrating{" "}
+              <span className="font-semibold text-gray-800">.MEVE</span> at scale — with APIs, dashboard, and support.
             </p>
           </div>
 
           {/* Toggle */}
-          <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-3 py-2">
+          <div
+            className="mt-8 inline-flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-3 py-2"
+            role="tablist"
+            aria-label="Billing cycle"
+          >
             <button
+              role="tab"
+              aria-selected={!yearly}
               onClick={() => setYearly(false)}
-              className={`rounded-full px-3 py-1 text-sm ${
-                !yearly ? "bg-white shadow text-gray-900" : "text-gray-600"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                !yearly ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Monthly
             </button>
             <button
+              role="tab"
+              aria-selected={yearly}
               onClick={() => setYearly(true)}
-              className={`rounded-full px-3 py-1 text-sm ${
-                yearly ? "bg-white shadow text-gray-900" : "text-gray-600"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                yearly ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Yearly <span className="text-emerald-600">– save up to 20%</span>
             </button>
           </div>
+
+          <p className="mt-3 text-xs text-gray-500">
+            Prices shown in USD. Taxes/VAT may apply at checkout.
+          </p>
         </div>
       </section>
 
@@ -170,13 +200,13 @@ export default function PricingPage() {
           {INDIVIDUALS.map((p) => (
             <PlanCard key={p.id} plan={p} yearly={yearly} />
           ))}
-          {/* Carte “Why free” */}
+
+          {/* Why free card */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <h3 className="text-lg font-semibold text-gray-900">Why is it free?</h3>
             <p className="mt-2 text-gray-600 text-sm">
-              We believe a basic layer of trust for documents should be universal.
-              DigitalMeve computes a local fingerprint and embeds a lightweight
-              marker — your file stays private and fully readable.
+              A basic layer of trust for documents should be universal. DigitalMeve computes a local fingerprint and embeds
+              a lightweight marker — your file stays private and fully readable.
             </p>
             <ul className="mt-4 space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2">
@@ -211,7 +241,7 @@ export default function PricingPage() {
           <h2 className="text-2xl font-semibold text-gray-900">For Business</h2>
         </div>
         <p className="mt-2 text-gray-600">
-          API and dashboard to certify and verify at scale, with support and controls.
+          API and dashboard to certify and verify at scale — with support and controls.
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -220,7 +250,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Feature bullets */}
+        {/* Reasons to believe */}
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
           <Feature
             icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}
@@ -237,6 +267,11 @@ export default function PricingPage() {
             title="Fast & private"
             desc="Local hashing in the browser; no upload of your content for personal use."
           />
+        </div>
+
+        {/* Comparison table (big clarity win) */}
+        <div className="mt-12">
+          <ComparisonTable yearly={yearly} />
         </div>
 
         {/* CTA bar */}
@@ -280,13 +315,17 @@ export default function PricingPage() {
           />
           <QA
             q="What if the document changes?"
-            a="Even a one-byte change will alter the fingerprint. The verification will show that it’s been tampered."
+            a="Even a one-byte change will alter the fingerprint. Verification will show it’s been tampered."
           />
         </div>
       </section>
     </main>
   );
 }
+
+/** ---------------------------
+ * Components
+ * -------------------------- */
 
 function PlanCard({
   plan,
@@ -298,7 +337,7 @@ function PlanCard({
   highlight?: boolean;
 }) {
   const isFree = plan.priceMonthly === 0 && plan.priceYearly === 0;
-  const price = isFree ? 0 : plan.priceMonthly; // déjà ajusté côté parent si yearly=true
+  const displayPrice = isFree ? "Free" : formatPriceUSD(plan.priceMonthly); // déjà ajusté via parent si yearly=true
 
   return (
     <div
@@ -306,22 +345,26 @@ function PlanCard({
         "relative rounded-2xl border bg-white p-6 shadow-sm",
         highlight ? "border-sky-300" : "border-gray-200",
       ].join(" ")}
+      aria-labelledby={`${plan.id}-label`}
     >
       {plan.badge && (
-        <div className="absolute -top-3 right-4 inline-flex items-center rounded-full bg-sky-600 px-2.5 py-1 text-xs font-medium text-white">
+        <div className="absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full bg-sky-600 px-2.5 py-1 text-xs font-medium text-white">
+          <Star className="h-3.5 w-3.5" />
           {plan.badge}
         </div>
       )}
 
-      <h3 className="text-lg font-semibold text-gray-900">{plan.label}</h3>
+      <h3 id={`${plan.id}-label`} className="text-lg font-semibold text-gray-900">
+        {plan.label}
+      </h3>
       <p className="mt-1 text-sm text-gray-600">{plan.tagline}</p>
 
       <div className="mt-4">
         {isFree ? (
-          <p className="text-3xl font-semibold text-gray-900">Free</p>
+          <p className="text-3xl font-semibold text-gray-900">{displayPrice}</p>
         ) : (
           <div className="flex items-end gap-1">
-            <p className="text-3xl font-semibold text-gray-900">${price}</p>
+            <p className="text-3xl font-semibold text-gray-900">{displayPrice}</p>
             <span className="pb-1 text-sm text-gray-500">/mo</span>
             {yearly && <span className="pb-1 text-xs text-emerald-600">billed yearly</span>}
           </div>
@@ -336,6 +379,7 @@ function PlanCard({
             ? "bg-emerald-500 text-white hover:bg-emerald-600"
             : "bg-sky-600 text-white hover:bg-sky-700",
         ].join(" ")}
+        aria-label={`${plan.ctaLabel} — ${plan.label}`}
       >
         {plan.ctaLabel}
         <ArrowRight className="h-4 w-4" />
@@ -383,4 +427,72 @@ function QA({ q, a }: { q: string; a: string }) {
       <p className="mt-2 text-sm text-gray-600">{a}</p>
     </div>
   );
-        }
+}
+
+/** Comparison table: clarifie les différences clé entre plans Business */
+function ComparisonTable({ yearly }: { yearly: boolean }) {
+  const rows = [
+    { feature: "API & SDKs", starter: true, growth: true, enterprise: true },
+    { feature: "Dashboard & team roles", starter: "Basic", growth: "Advanced", enterprise: "Custom" },
+    { feature: "Rate limits / concurrency", starter: "Standard", growth: "Higher", enterprise: "Custom" },
+    { feature: "Bulk verification tools", starter: false, growth: true, enterprise: true },
+    { feature: "Webhooks & audit logs", starter: false, growth: true, enterprise: true },
+    { feature: "Support", starter: "Email", growth: "Priority", enterprise: "Dedicated" },
+    { feature: "Security & compliance", starter: "Shared", growth: "Shared", enterprise: "Custom SLAs, DPA, SSO/SCIM" },
+    { feature: "Deployment options", starter: "Cloud", growth: "Cloud", enterprise: "On-prem / region pinning (roadmap)" },
+  ];
+
+  const headerPrices = BUSINESS.map((p) =>
+    p.id === "enterprise"
+      ? "Custom"
+      : yearly
+      ? formatPriceUSD(p.priceYearly) + "/mo*"
+      : formatPriceUSD(p.priceMonthly) + "/mo"
+  );
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+      <table className="w-full text-left text-sm text-gray-800">
+        <thead className="whitespace-nowrap bg-gray-50 text-gray-900">
+          <tr>
+            <th className="px-4 py-3">Feature</th>
+            <th className="px-4 py-3">Starter <span className="ml-2 text-xs text-gray-500">{headerPrices[0]}</span></th>
+            <th className="px-4 py-3">Growth <span className="ml-2 text-xs text-gray-500">{headerPrices[1]}</span></th>
+            <th className="px-4 py-3">Enterprise <span className="ml-2 text-xs text-gray-500">{headerPrices[2]}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.feature} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+              <td className="px-4 py-3 font-medium">{r.feature}</td>
+              <td className="px-4 py-3">{renderCell(r.starter)}</td>
+              <td className="px-4 py-3">{renderCell(r.growth)}</td>
+              <td className="px-4 py-3">{renderCell(r.enterprise)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex items-center justify-between px-4 py-3 text-xs text-gray-500">
+        <span>* Yearly shows equivalent /mo price, billed annually.</span>
+        <Link href="/contact" className="inline-flex items-center gap-1 text-sky-700 hover:underline">
+          Need a custom quote? <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function renderCell(val: boolean | string) {
+  if (typeof val === "boolean") {
+    return val ? (
+      <span className="inline-flex items-center gap-1 text-emerald-600">
+        <CheckCircle2 className="h-4 w-4" /> Included
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 text-gray-400">
+        <XCircle className="h-4 w-4" /> —
+      </span>
+    );
+  }
+  return <span className="text-gray-700">{val}</span>;
+    }
