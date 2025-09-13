@@ -9,7 +9,11 @@ export default function MobileMenu({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[1000] bg-white h-dvh overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+    >
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
         <Link href="/" onClick={onClose} className="text-lg font-semibold">
