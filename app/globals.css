@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------  
-   Thème (dark par défaut) + variables design  
+   Thème (dark par défaut) + variables design harmonisées  
 ------------------------------------------------------------------- */
 :root {
   --bg: #0B1220;
@@ -13,9 +13,12 @@
   --surface: #0F172A;
   --surface-weak: #0B1220;
   --border: rgba(255,255,255,.12);
-  --accent-1: #34D399;
-  --accent-2: #38BDF8;
-  --ring: rgba(52, 211, 153, .5);
+
+  --primary: #0EA5E9;   /* Sky / bleu = CTA principal */
+  --accent:  #22C55E;   /* Emerald / vert = accent secondaire */
+  --danger:  #EF4444;
+
+  --ring: color-mix(in oklab, var(--primary) 45%, transparent);
   --shadow: 0 8px 30px rgba(0,0,0,.35);
 }
 
@@ -25,10 +28,13 @@
   --fg-muted: #334155;
   --surface: #F8FAFC;
   --surface-weak: #FFFFFF;
-  --border: rgba(15, 23, 42, .12);
-  --accent-1: #0EA5E9;
-  --accent-2: #22C55E;
-  --ring: rgba(14, 165, 233, .45);
+  --border: rgba(15,23,42,.12);
+
+  --primary: #0EA5E9;
+  --accent:  #22C55E;
+  --danger:  #EF4444;
+
+  --ring: color-mix(in oklab, var(--primary) 45%, transparent);
   --shadow: 0 6px 24px rgba(2,6,23,.12);
 }
 
@@ -36,14 +42,20 @@
 /* Base typographie & fond                                             */
 /* ------------------------------------------------------------------ */
 @layer base {
-  html, body {
-    @apply antialiased;
+  body {
+    @apply antialiased font-sans;
     background: var(--bg);
     color: var(--fg);
   }
-  h1, h2, h3, h4 { @apply tracking-tight; color: var(--fg); }
+  h1,h2,h3,h4 {
+    @apply font-display tracking-tight;
+    color: var(--fg);
+  }
+  h1 { @apply text-4xl md:text-5xl; }
+  h2 { @apply text-3xl md:text-4xl; }
+  h3 { @apply text-2xl; }
   p { color: var(--fg-muted); }
-  ::selection { background: color-mix(in oklab, var(--accent-1) 30%, transparent); }
+  ::selection { background: color-mix(in oklab, var(--primary) 30%, transparent); }
 }
 
 /* ------------------------------------------------------------------ */
@@ -56,7 +68,6 @@
 .tap-highlight-none { -webkit-tap-highlight-color: transparent; }
 .focus-ring { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
 
-/* 🔒 Verrou de scroll pour menus/drawers */
 .no-scroll {
   overflow: hidden !important;
   height: 100vh !important;
@@ -64,12 +75,16 @@
   touch-action: none;
 }
 
-/* Surfaces (cartes) */
+/* ------------------------------------------------------------------ */
+/* Surfaces & cartes                                                   */
+/* ------------------------------------------------------------------ */
 .surface { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
 .surface-weak { background: var(--surface-weak); border: 1px solid var(--border); border-radius: 16px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
 
-/* Boutons */
+/* ------------------------------------------------------------------ */
+/* Boutons                                                            */
+/* ------------------------------------------------------------------ */
 .btn {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
   border: 1px solid var(--border);
@@ -80,31 +95,34 @@
 .btn:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
 
 .btn-primary {
-  color: #0B1220;
-  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  color: #fff;
+  background: var(--primary);
   border-color: transparent;
 }
 .btn-primary:hover { filter: brightness(1.05); }
 
-/* Badges */
-.badge { @apply inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs;
-  border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 80%, white 20%); }
-.badge-green { color: var(--accent-1); border-color: color-mix(in oklab, var(--accent-1) 40%, var(--border)); }
-.badge-red { color: #F87171; border-color: color-mix(in oklab, #F87171 40%, var(--border)); }
-
-/* Dropzone */
-.dropzone {
-  border: 1.5px dashed var(--border);
-  background: color-mix(in oklab, var(--surface) 90%, black 10%);
-  border-radius: 18px;
-  padding: 22px;
-  transition: border-color .2s ease, background .2s ease, transform .08s ease;
+.btn-accent {
+  color: #fff;
+  background: var(--accent);
+  border-color: transparent;
 }
-.dropzone:hover { border-color: color-mix(in oklab, var(--accent-2) 40%, var(--border)); }
-.dropzone:focus-within { outline: none; border-color: var(--accent-1); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-1) 30%, transparent); }
-.dropzone.dragover { transform: scale(0.998); background: color-mix(in oklab, var(--surface) 70%, var(--accent-2) 30%); }
+.btn-accent:hover { filter: brightness(1.05); }
 
-/* Inputs */
+/* ------------------------------------------------------------------ */
+/* Badges                                                             */
+/* ------------------------------------------------------------------ */
+.badge {
+  @apply inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 80%, white 20%);
+}
+.badge-primary { color: var(--primary); border-color: color-mix(in oklab, var(--primary) 40%, var(--border)); }
+.badge-accent  { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); }
+.badge-danger  { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 40%, var(--border)); }
+
+/* ------------------------------------------------------------------ */
+/* Inputs                                                             */
+/* ------------------------------------------------------------------ */
 .input {
   @apply w-full rounded-xl px-3 py-2 text-sm transition;
   background: color-mix(in oklab, var(--surface) 88%, white 12%);
@@ -112,7 +130,7 @@
   color: var(--fg);
 }
 .input::placeholder { color: color-mix(in oklab, var(--fg-muted) 65%, transparent); }
-.input:focus { outline: none; border-color: var(--accent-1); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-1) 30%, transparent); }
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent); }
 
 /* ------------------------------------------------------------------ */
 /* Effets & animations                                                 */
@@ -130,18 +148,10 @@
 }
 
 /* Aurora blobs */
-.aurora { 
-  position:absolute; 
-  filter: blur(50px); 
-  opacity:.55; 
-  mix-blend-mode: screen; 
-  will-change: transform,opacity; 
-  animation: aurora-float 16s ease-in-out infinite; 
-  pointer-events:none; /* empêche le blocage du scroll */
-}
-.aurora-1 { width:42rem; height:42rem; left:-10%; top:-15%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 65%, transparent), transparent 65%); animation-delay:0s; }
-.aurora-2 { width:36rem; height:36rem; right:-12%; top:-10%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 55%, transparent), transparent 65%); animation-delay:3s; }
-.aurora-3 { width:50rem; height:50rem; left:10%; bottom:-25%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 45%, transparent), transparent 65%); animation-delay:6s; }
+.aurora { position:absolute; filter: blur(50px); opacity:.55; mix-blend-mode: screen; will-change: transform,opacity; animation: aurora-float 16s ease-in-out infinite; pointer-events:none; }
+.aurora-1 { width:42rem; height:42rem; left:-10%; top:-15%; background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 65%, transparent), transparent 65%); animation-delay:0s; }
+.aurora-2 { width:36rem; height:36rem; right:-12%; top:-10%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 55%, transparent), transparent 65%); animation-delay:3s; }
+.aurora-3 { width:50rem; height:50rem; left:10%; bottom:-25%; background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 45%, transparent), transparent 65%); animation-delay:6s; }
 @keyframes aurora-float { 0%,100%{transform: translate3d(0,0,0) scale(1);} 50%{transform: translate3d(2rem,-1rem,0) scale(1.05);} }
 
 /* Grain */
@@ -149,20 +159,11 @@
 @keyframes noiseShift { to { transform: translate3d(1%,-1%,0); } }
 
 /* Beam */
-.beam { 
-  position:absolute; 
-  left:50%; 
-  transform:translateX(-50%); 
-  top:calc(50% - 3rem); 
-  width:120%; 
-  height:120px;
-  background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 25%, transparent), transparent 70%);
+.beam { position:absolute; left:50%; transform:translateX(-50%); top:calc(50% - 3rem); width:120%; height:120px;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 25%, transparent), transparent 70%);
   filter: blur(24px);
   mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
-  opacity:.7; 
-  animation: beam-scan 10s ease-in-out infinite; 
-  pointer-events:none; /* empêche le blocage du scroll */
-}
+  opacity:.7; animation: beam-scan 10s ease-in-out infinite; pointer-events:none; }
 @keyframes beam-scan { 0%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} 50%{ transform: translate(-50%, 10px) rotate(1deg); opacity:.8;} 100%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} }
 
 /* Reveal on scroll */
@@ -179,4 +180,4 @@
 }
 @media (max-width: 480px) {
   .aurora { opacity: .35; filter: blur(42px); }
-           }
+                        }
