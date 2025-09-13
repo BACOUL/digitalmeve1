@@ -2,70 +2,179 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --------------------- */
-/* Variables globales    */
-/* --------------------- */
+/* ===========================
+   Tokens de marque (Light)
+=========================== */
 :root {
+  /* Neutres */
+  --bg: #FFFFFF;
+  --surface: #F8FAFC;
+  --border: rgba(2,6,23,.12);
+  --fg: #0F172A;
+  --fg-muted: #475569;
+
+  /* Marque & états */
+  --brand-blue: #0EA5E9;                    /* BLEU = pro/tech/business */
+  --brand-green: #22C55E;                   /* VERT = gratuit/confiance/individuel */
+  --brand-gradient: linear-gradient(90deg, #0EA5E9 0%, #22C55E 100%); /* fusion (logo/CTA global) */
+  --danger: #EF4444;
+
+  /* Effets */
+  --ring: rgba(14,165,233,.45);
+  --shadow: 0 6px 24px rgba(2,6,23,.12);
+}
+
+/* ===========================
+   Tokens de marque (Dark)
+=========================== */
+.dark {
   --bg: #0B1220;
-  --fg: #E5EDF9;
-  --fg-muted: #C8D3E6;
   --surface: #0F172A;
   --border: rgba(255,255,255,.12);
-  --cta: #0EA5E9;
-  --accent: #22C55E;
-  --danger: #EF4444;
+  --fg: #E5EDF9;
+  --fg-muted: #C8D3E6;
+
+  --brand-blue: #0EA5E9;
+  --brand-green: #22C55E;
+  --brand-gradient: linear-gradient(90deg, #0EA5E9 0%, #22C55E 100%);
+  --danger: #F87171;
+
+  --ring: rgba(14,165,233,.35);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
 }
 
-.theme-light {
-  --bg: #FFFFFF;
-  --fg: #0F172A;
-  --fg-muted: #334155;
-  --surface: #F8FAFC;
-  --border: rgba(15,23,42,.12);
-  --cta: #0EA5E9;
-  --accent: #22C55E;
-  --danger: #EF4444;
-}
-
-/* --------------------- */
-/* Base typographie      */
-/* --------------------- */
+/* ===========================
+   Base typographie
+=========================== */
 @layer base {
-  body {
-    @apply antialiased font-sans bg-[var(--bg)] text-[var(--fg)];
+  html, body {
+    @apply antialiased;
+    background: var(--bg);
+    color: var(--fg);
   }
   h1, h2, h3, h4 {
-    @apply font-display tracking-tight text-[var(--fg)];
+    @apply font-display tracking-tight;
+    color: var(--fg);
   }
-  p { @apply font-sans text-[var(--fg-muted)]; }
+  p, li {
+    @apply font-sans;
+    color: var(--fg-muted);
+  }
+  a { color: var(--brand-blue); }
+  a:hover { color: color-mix(in oklab, var(--brand-blue) 80%, black); }
+  ::selection { background: color-mix(in oklab, var(--brand-blue) 24%, transparent); }
 }
 
-/* --------------------- */
-/* Classes utilitaires   */
-/* --------------------- */
-.heading-1 { @apply font-display font-bold text-4xl md:text-5xl; }
-.heading-2 { @apply font-display font-semibold text-2xl md:text-3xl; }
-.heading-3 { @apply font-display font-semibold text-xl; }
+/* ===========================
+   Échelle titres & textes
+=========================== */
+@layer components {
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[.12em] text-neutral-600; }
 
-.body-base { @apply font-sans text-base text-[var(--fg-muted)]; }
-.body-sm   { @apply font-sans text-sm text-[var(--fg-muted)]; }
-.caption   { @apply font-sans text-xs text-[var(--fg-muted)]; }
+  .h1 { @apply font-display font-semibold text-4xl sm:text-5xl leading-tight; }
+  .h2 { @apply font-display font-semibold text-2xl sm:text-3xl leading-snug; }
+  .h3 { @apply font-display font-semibold text-xl leading-snug; }
 
-.btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
+  .body { @apply font-sans text-base text-[var(--fg-muted)]; }
+  .small { @apply font-sans text-sm text-[var(--fg-muted)]; }
+  .caption { @apply font-sans text-xs text-[var(--fg-muted)]; }
 }
+
+/* ===========================
+   Surfaces / cartes
+=========================== */
+@layer components {
+  .surface {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+}
+
+/* ===========================
+   Inputs / formulaires
+=========================== */
+@layer components {
+  .input {
+    @apply w-full rounded-xl px-3 py-2 text-sm transition;
+    background: color-mix(in oklab, var(--surface) 92%, white 8%);
+    border: 1px solid var(--border);
+    color: var(--fg);
+  }
+  .input::placeholder { color: color-mix(in oklab, var(--fg-muted) 60%, transparent); }
+  .input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px var(--ring); }
+  .label { @apply block text-sm font-medium; color: var(--fg); }
+}
+
+/* ===========================
+   Boutons (règles d’usage)
+=========================== */
+/* CTA global = FUSION (logo) */
 .btn-primary {
-  @apply bg-[var(--cta)] text-white font-semibold shadow-md hover:brightness-105;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white shadow-md transition;
+  background: var(--brand-gradient);
 }
-.btn-accent {
-  @apply bg-[var(--accent)] text-white font-semibold shadow-md hover:brightness-105;
+.btn-primary:hover { filter: brightness(1.05); }
+
+/* PRO/BUSINESS = BLEU */
+.btn-pro {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition;
+  background: var(--brand-blue);
 }
+.btn-pro:hover { filter: brightness(1.05); }
+
+/* FREE/INDIVIDUAL = VERT */
+.btn-free {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition;
+  background: var(--brand-green);
+}
+.btn-free:hover { filter: brightness(1.05); }
+
+/* Neutre / secondaire */
 .btn-neutral {
-  @apply bg-[var(--surface)] text-[var(--fg)] border border-[var(--border)] hover:bg-[color-mix(in_oklab,var(--surface)_80%,white_20%)];
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+.btn-neutral:hover { background: color-mix(in oklab, var(--surface) 90%, white 10%); }
+
+/* Danger */
+.btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition;
+  background: var(--danger);
 }
 
-.badge {
-  @apply inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs border;
+/* ===========================
+   Badges / statuts
+=========================== */
+@layer components {
+  .badge {
+    @apply inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium;
+    border: 1px solid var(--border);
+    background: color-mix(in oklab, var(--surface) 88%, white 12%);
+  }
+  .badge-pro   { color: var(--brand-blue);  border-color: color-mix(in oklab, var(--brand-blue) 40%, var(--border)); }
+  .badge-free  { color: var(--brand-green); border-color: color-mix(in oklab, var(--brand-green) 40%, var(--border)); }
+  .badge-muted { color: var(--fg-muted); }
 }
-.badge-green { @apply border-[var(--accent)] text-[var(--accent)]; }
-.badge-red   { @apply border-[var(--danger)] text-[var(--danger)]; }
+
+/* ===========================
+   Helpers texte/couleurs
+=========================== */
+.text-pro      { color: var(--brand-blue); }
+.text-free     { color: var(--brand-green); }
+.text-success  { color: var(--brand-green); }
+.text-error    { color: var(--danger); }
+.text-gradient { background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* ===========================
+   Accessibilité / focus
+=========================== */
+.focus-ring { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
