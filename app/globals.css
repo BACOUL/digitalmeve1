@@ -3,20 +3,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------
-   Thème (dark par défaut) + variables design
-   Pour activer un look clair façon FreeConvert :
-   <html class="theme-light"> … </html>
+/* ------------------------------------------------------------------  
+   Thème (dark par défaut) + variables design  
 ------------------------------------------------------------------- */
 :root {
-  --bg: #0B1220;                 /* fond principal */
-  --fg: #E5EDF9;                 /* texte par défaut */
-  --fg-muted: #C8D3E6;           /* texte secondaire */
-  --surface: #0F172A;            /* cartes / panneaux */
-  --surface-weak: #0B1220;       /* zones faibles */
+  --bg: #0B1220;
+  --fg: #E5EDF9;
+  --fg-muted: #C8D3E6;
+  --surface: #0F172A;
+  --surface-weak: #0B1220;
   --border: rgba(255,255,255,.12);
-  --accent-1: #34D399;           /* emerald */
-  --accent-2: #38BDF8;           /* sky */
+  --accent-1: #34D399;
+  --accent-2: #38BDF8;
   --ring: rgba(52, 211, 153, .5);
   --shadow: 0 8px 30px rgba(0,0,0,.35);
 }
@@ -28,8 +26,8 @@
   --surface: #F8FAFC;
   --surface-weak: #FFFFFF;
   --border: rgba(15, 23, 42, .12);
-  --accent-1: #0EA5E9;           /* bleu doux */
-  --accent-2: #22C55E;           /* vert doux inversé */
+  --accent-1: #0EA5E9;
+  --accent-2: #22C55E;
   --ring: rgba(14, 165, 233, .45);
   --shadow: 0 6px 24px rgba(2,6,23,.12);
 }
@@ -63,7 +61,7 @@
 .surface-weak { background: var(--surface-weak); border: 1px solid var(--border); border-radius: 16px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
 
-/* Boutons (réutilisables) */
+/* Boutons */
 .btn {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition;
   border: 1px solid var(--border);
@@ -86,7 +84,7 @@
 .badge-green { color: var(--accent-1); border-color: color-mix(in oklab, var(--accent-1) 40%, var(--border)); }
 .badge-red { color: #F87171; border-color: color-mix(in oklab, #F87171 40%, var(--border)); }
 
-/* Dropzone lisible en mobile */
+/* Dropzone */
 .dropzone {
   border: 1.5px dashed var(--border);
   background: color-mix(in oklab, var(--surface) 90%, black 10%);
@@ -98,7 +96,7 @@
 .dropzone:focus-within { outline: none; border-color: var(--accent-1); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-1) 30%, transparent); }
 .dropzone.dragover { transform: scale(0.998); background: color-mix(in oklab, var(--surface) 70%, var(--accent-2) 30%); }
 
-/* Inputs (contraste amélioré) */
+/* Inputs */
 .input {
   @apply w-full rounded-xl px-3 py-2 text-sm transition;
   background: color-mix(in oklab, var(--surface) 88%, white 12%);
@@ -124,25 +122,39 @@
 }
 
 /* Aurora blobs */
-.aurora { position:absolute; filter: blur(50px); opacity:.55; mix-blend-mode: screen; will-change: transform,opacity; animation: aurora-float 16s ease-in-out infinite; }
+.aurora { 
+  position:absolute; 
+  filter: blur(50px); 
+  opacity:.55; 
+  mix-blend-mode: screen; 
+  will-change: transform,opacity; 
+  animation: aurora-float 16s ease-in-out infinite; 
+  pointer-events:none; /* ✅ fix scroll */
+}
 .aurora-1 { width:42rem; height:42rem; left:-10%; top:-15%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 65%, transparent), transparent 65%); animation-delay:0s; }
 .aurora-2 { width:36rem; height:36rem; right:-12%; top:-10%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 55%, transparent), transparent 65%); animation-delay:3s; }
 .aurora-3 { width:50rem; height:50rem; left:10%; bottom:-25%; background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-1) 45%, transparent), transparent 65%); animation-delay:6s; }
 @keyframes aurora-float { 0%,100%{transform: translate3d(0,0,0) scale(1);} 50%{transform: translate3d(2rem,-1rem,0) scale(1.05);} }
 
-/* Grain très léger */
+/* Grain */
 .noise { position:absolute; inset:-50%; opacity:.035; pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); background-size:200px 200px; animation: noiseShift 1.5s steps(2) infinite; }
 @keyframes noiseShift { to { transform: translate3d(1%,-1%,0); } }
 
-/* Parallaxe douce au survol desktop */
-section:hover .aurora { transform: translate3d(calc(var(--mx,0) * 8px), calc(var(--my,0) * 8px), 0); }
-
-/* Beam sous le titre */
-.beam { position:absolute; left:50%; transform:translateX(-50%); top:calc(50% - 3rem); width:120%; height:120px;
+/* Beam */
+.beam { 
+  position:absolute; 
+  left:50%; 
+  transform:translateX(-50%); 
+  top:calc(50% - 3rem); 
+  width:120%; 
+  height:120px;
   background: radial-gradient(closest-side, color-mix(in oklab, var(--accent-2) 25%, transparent), transparent 70%);
   filter: blur(24px);
   mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
-  opacity:.7; animation: beam-scan 10s ease-in-out infinite; pointer-events:none; }
+  opacity:.7; 
+  animation: beam-scan 10s ease-in-out infinite; 
+  pointer-events:none; /* ✅ fix scroll */
+}
 @keyframes beam-scan { 0%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} 50%{ transform: translate(-50%, 10px) rotate(1deg); opacity:.8;} 100%{ transform: translate(-50%, -40px) rotate(-1deg); opacity:.55;} }
 
 /* Reveal on scroll */
@@ -158,5 +170,5 @@ section:hover .aurora { transform: translate3d(calc(var(--mx,0) * 8px), calc(var
   section:hover .aurora { transform: none !important; }
 }
 @media (max-width: 480px) {
-  .aurora { opacity: .35; filter: blur(42px); }   /* moins envahissant en mobile */
-           }
+  .aurora { opacity: .35; filter: blur(42px); }
+}
