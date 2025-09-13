@@ -25,10 +25,10 @@ const authOptions: NextAuthOptions = {
         const ok = verifyPassword(password, user.password);
         if (!ok) return null;
 
+        // Ne pas référencer user.name (ce champ n'existe pas dans ton schema)
         return {
           id: user.id,
           email: user.email,
-          name: user.name ?? null,
           role: (user as any).role ?? "INDIVIDUAL",
         } as any;
       },
@@ -55,6 +55,5 @@ const authOptions: NextAuthOptions = {
   },
 };
 
-// IMPORTANT : n’exporter que GET et POST
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
