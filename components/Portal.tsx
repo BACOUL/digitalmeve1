@@ -1,21 +1,19 @@
+// components/Portal.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-type Props = { children: React.ReactNode };
-
-export default function Portal({ children }: Props) {
-  const elRef = useRef<HTMLDivElement | null>(null);
-  if (!elRef.current) elRef.current = document.createElement("div");
+export default function Portal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  const [container, setContainer] = useState<Element | null>(null);
 
   useEffect(() => {
-    const el = elRef.current!;
-    document.body.appendChild(el);
-    return () => {
-      document.body.removeChild(el);
-    };
+    setMounted(true);
+    setContainer(document.body);
+    return () => setMounted(false);
   }, []);
 
-  return createPortal(children, elRef.current);
+  if (!mounted || !container) return null;
+  return createPortal(children, container);
 }
