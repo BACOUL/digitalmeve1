@@ -3,16 +3,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-type Props = { children: React.ReactNode };
-
-export default function Portal({ children }: Props) {
+export default function Portal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    // Monte uniquement côté client
     setMounted(true);
+    return () => setMounted(false);
   }, []);
-
-  if (!mounted || typeof document === "undefined") return null;
+  if (!mounted) return null;              // évite tout accès à document côté SSR
   return createPortal(children, document.body);
 }
