@@ -18,17 +18,21 @@ export default function RegisterPage() {
     setError(null);
 
     const form = e.currentTarget;
-    const email = (form.elements.namedItem("email") as HTMLInputElement).value.trim().toLowerCase();
-    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+    const email = (form.elements.namedItem("email") as HTMLInputElement)
+      .value.trim()
+      .toLowerCase();
+    const password = (form.elements.namedItem("password") as HTMLInputElement)
+      .value;
 
-    // Call our API to create user
-    const resp = await fetch("/api/register", {
+    // 🔧 Patch: bon endpoint API
+    const resp = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, role }),
     });
 
     const json = await resp.json().catch(() => null);
+
     if (!resp.ok || !json?.ok) {
       setBusy(false);
       setError(json?.error ?? "Unable to create account.");
@@ -36,11 +40,19 @@ export default function RegisterPage() {
     }
 
     // Auto-login
-    const login = await signIn("credentials", { redirect: false, email, password });
+    const login = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
     setBusy(false);
+
     if (!login || login.error) {
+      // Si l’auto-login échoue, on redirige vers la page de login
       window.location.href = "/login";
     } else {
+      // Redir selon le type de compte
       window.location.href = role === "BUSINESS" ? "/business" : "/";
     }
   }
@@ -58,7 +70,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div>
               <label className="text-sm font-medium text-gray-800">Email</label>
               <div className="mt-1 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3">
@@ -69,6 +81,7 @@ export default function RegisterPage() {
                   required
                   placeholder="you@company.com"
                   className="h-10 w-full bg-transparent text-sm outline-none"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -84,8 +97,12 @@ export default function RegisterPage() {
                   minLength={6}
                   placeholder="••••••••"
                   className="h-10 w-full bg-transparent text-sm outline-none"
+                  autoComplete="new-password"
                 />
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Minimum 6 characters.
+              </p>
             </div>
 
             {/* Role selector */}
@@ -121,7 +138,11 @@ export default function RegisterPage() {
               </div>
             </fieldset>
 
-            {error && <p className="text-sm text-rose-600">{error}</p>}
+            {error && (
+              <p className="text-sm text-rose-600" aria-live="assertive">
+                {error}
+              </p>
+            )}
 
             <button
               disabled={busy}
@@ -147,4 +168,4 @@ export default function RegisterPage() {
       </section>
     </main>
   );
-            }
+                  }
