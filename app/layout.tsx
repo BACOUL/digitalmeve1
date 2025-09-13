@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AuthProvider from "@/components/AuthProvider"; // ⬅️ import ici
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
       "DigitalMeve delivers a simple, universal digital proof — free for individuals.",
     images: [
       {
-        url: "/og/og-image.png", // 1200x630 in /public/og/
+        url: "/og/og-image.png",
         width: 1200,
         height: 630,
         alt: "DigitalMeve — The .MEVE Standard",
@@ -46,22 +47,20 @@ export const metadata: Metadata = {
   applicationName: "DigitalMeve",
   referrer: "strict-origin-when-cross-origin",
   other: {
-    // Light theme color for mobile address bar, etc.
     "theme-color": "#ffffff",
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="antialiased">
       <body className="min-h-screen flex flex-col bg-white text-slate-900">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        {/* ✅ Fournit la session à tout l’app */}
+        <AuthProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
