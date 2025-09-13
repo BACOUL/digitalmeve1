@@ -1,18 +1,24 @@
 // prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite" // tu pourras changer en "postgresql" plus tard si besoin
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   email     String   @unique
-  password  String
-  role      String   @default("INDIVIDUAL")
+  password  String   // hashé (jamais en clair)
+  role      Role     @default(INDIVIDUAL)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  INDIVIDUAL // particulier
+  BUSINESS   // pro
 }
