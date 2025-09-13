@@ -1,58 +1,59 @@
-// components/Header.tsx
+// components/MobileMenu.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import MobileMenu from "@/components/MobileMenu";
+import { Menu, X } from "lucide-react";
 
-export default function Header() {
+export default function MobileMenu() {
+  const [open, setOpen] = useState(false);
+
+  const toggleMenu = () => setOpen((prev) => !prev);
+  const closeMenu = () => setOpen(false);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" aria-label="DigitalMeve Home">
-          <span className="text-lg font-semibold tracking-tight">
-            <span className="text-emerald-600">Digital</span>
-            <span className="text-sky-600">Meve</span>
-          </span>
-        </Link>
+    <div className="md:hidden">
+      {/* Bouton burger */}
+      <button
+        onClick={toggleMenu}
+        aria-label="Toggle menu"
+        className="p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
+      >
+        {open ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
+      </button>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link href="/generate" className="text-gray-700 hover:text-emerald-700 transition-colors">
+      {/* Overlay */}
+      {open && (
+        <div
+          onClick={closeMenu}
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        />
+      )}
+
+      {/* Drawer */}
+      <nav
+        className={`fixed top-0 right-0 z-50 h-full w-64 bg-slate-900 shadow-lg transform transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="p-6 flex flex-col gap-6">
+          <Link href="/" onClick={closeMenu} className="text-slate-100 hover:text-emerald-400">
+            Home
+          </Link>
+          <Link href="/generate" onClick={closeMenu} className="text-slate-100 hover:text-emerald-400">
             Generate
           </Link>
-          <Link href="/verify" className="text-gray-700 hover:text-emerald-700 transition-colors">
+          <Link href="/verify" onClick={closeMenu} className="text-slate-100 hover:text-emerald-400">
             Verify
           </Link>
-          <Link href="/pricing" className="text-gray-700 hover:text-sky-700 transition-colors">
+          <Link href="/pricing" onClick={closeMenu} className="text-slate-100 hover:text-emerald-400">
             Pricing
           </Link>
-          <Link href="/developers" className="text-gray-700 hover:text-sky-700 transition-colors">
-            Developers
-          </Link>
-        </nav>
-
-        {/* Desktop CTAs */}
-        <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
-          >
-            Login
-          </Link>
-          <Link
-            href="/generate"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white hover:brightness-105"
-          >
-            Get Started Free
+          <Link href="/contact" onClick={closeMenu} className="text-slate-100 hover:text-emerald-400">
+            Contact
           </Link>
         </div>
-
-        {/* Mobile menu (bouton + drawer gérés à l’intérieur) */}
-        <div className="md:hidden">
-          <MobileMenu />
-        </div>
-      </div>
-    </header>
+      </nav>
+    </div>
   );
 }
