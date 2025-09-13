@@ -17,7 +17,7 @@ export default function HomePage() {
       {/* HERO */}
       <section className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          {/* Title (slogan validé) */}
+          {/* Title (updated slogan) */}
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl text-gray-900">
             Invisible proof.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
@@ -25,7 +25,7 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Sous-titre simple & grand public */}
+          {/* Subtitle (simple, grand public) */}
           <p className="mt-4 max-w-2xl text-lg text-gray-600">
             DigitalMeve protects your documents by adding a built-in, unique proof
             (date, time, and a file fingerprint). No storage. Your file stays
@@ -67,7 +67,7 @@ export default function HomePage() {
           <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-5 w-5 text-emerald-500" aria-hidden />
-              Built-in for PDF & DOCX
+              Built-in for PDF & PNG
             </span>
             <span className="hidden sm:inline">•</span>
             <Link
@@ -103,9 +103,7 @@ export default function HomePage() {
             <h3 className="mt-2 text-lg font-medium text-gray-900">
               Upload your document
             </h3>
-            <p className="mt-2 text-gray-600">
-              Works with PDF & Word (DOCX). More formats next.
-            </p>
+            <p className="mt-2 text-gray-600">Works with PDFs, images, and more.</p>
             <Link
               href="/generate"
               className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
@@ -123,8 +121,8 @@ export default function HomePage() {
               Get your certified copy
             </h3>
             <p className="mt-2 text-gray-600">
-              We compute a SHA-256 fingerprint and embed a .MEVE marker — your file
-              stays clean and fully readable.
+              We compute a SHA-256 fingerprint and embed a .MEVE marker — file stays
+              clean and readable.
             </p>
           </div>
 
@@ -149,6 +147,77 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* WHY DIGITALMEVE */}
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <h2 className="text-2xl font-semibold text-gray-900">Why DigitalMeve</h2>
+        <p className="mt-2 text-gray-600">
+          Designed for everyone — from individuals to enterprises. Simple to use, hard to fake.
+        </p>
+
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* 1 */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <ShieldCheck className="h-5 w-5" aria-hidden />
+              <span className="font-medium">Authenticity proof</span>
+            </div>
+            <p className="mt-2 text-sm text-gray-700">
+              A unique fingerprint (SHA-256) with date/time is embedded directly into the file.
+            </p>
+          </div>
+
+          {/* 2 */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <BadgeCheck className="h-5 w-5" aria-hidden />
+              <span className="font-medium">Readable everywhere</span>
+            </div>
+            <p className="mt-2 text-sm text-gray-700">
+              Your file stays clean and fully readable — nothing to install to open it.
+            </p>
+          </div>
+
+          {/* 3 */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <Users className="h-5 w-5" aria-hidden />
+              <span className="font-medium">Free for individuals</span>
+            </div>
+            <p className="mt-2 text-sm text-gray-700">
+              Protect personal documents at no cost. Businesses can scale with Pro tools.
+            </p>
+          </div>
+
+          {/* 4 */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <FileDown className="h-5 w-5" aria-hidden />
+              <span className="font-medium">No storage, no account</span>
+            </div>
+            <p className="mt-2 text-sm text-gray-700">
+              We don’t keep your files. Generate and verify in seconds — privacy by design.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/generate"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-white font-medium hover:bg-emerald-600 transition"
+          >
+            Protect a document now
+            <ArrowRight className="h-5 w-5" aria-hidden />
+          </Link>
+          <Link
+            href="/verify"
+            className="inline-flex items-center justify-center gap-2 rounded-xl ring-1 ring-gray-200 px-5 py-2.5 text-slate-900 hover:bg-gray-50 transition"
+          >
+            Verify a document
+            <ArrowRight className="h-5 w-5" aria-hidden />
+          </Link>
+        </div>
+      </section>
+
       {/* CLEAR SPLIT: INDIVIDUALS vs PROFESSIONALS */}
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <div className="grid gap-6 lg:grid-cols-2">
@@ -168,7 +237,7 @@ export default function HomePage() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
-                Readable files with built-in proof (PDF/DOCX)
+                Readable files with built-in proof (PDF/PNG)
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" aria-hidden />
