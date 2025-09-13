@@ -4,7 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -55,5 +55,6 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
+// IMPORTANT : n’exporter que GET et POST
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
