@@ -1,127 +1,80 @@
 "use client";
 
 import Link from "next/link";
-import { Users, Briefcase, CheckCircle2 } from "lucide-react";
+import { CTAButton } from "@/components/CTAButton";
 
 export default function Hero() {
   return (
     <section id="hero" className="relative overflow-hidden">
-      {/* subtle glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center"
-      >
-        <div className="mt-24 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl md:h-96 md:w-96" />
+      {/* Layers visuels (légers et désactivés si reduced motion) */}
+      <div aria-hidden className="hero-layers -z-10">
+        <div className="aurora aurora-1" />
+        <div className="aurora aurora-2" />
+        <div className="aurora aurora-3" />
+        <div className="beam" />
+        <div className="noise" />
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:py-20">
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:py-20">
         {/* Headline */}
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">
-          <span className="text-white">Invisible proof.</span>{" "}
+        <h1 className="heading-1">
           <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-            Visible trust.
+            Invisible proof. Visible trust.
           </span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="mx-auto mt-5 max-w-3xl text-lg text-slate-300">
-          DigitalMeve adds an invisible proof to your documents and delivers an
-          official certificate. They remain identical, always readable, and easy
-          to check — no account, no storage.
+        {/* Subheading (sans jargon, avec certificat) */}
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted">
+          DigitalMeve adds an invisible proof to your documents and delivers an official certificate. 
+          They remain identical, always readable, and easy to check — no account, no storage.
         </p>
 
-        {/* Primary CTA */}
-        <div className="mt-8 flex justify-center">
+        {/* Micro-claims */}
+        <p id="hero-claims" className="mx-auto mt-3 max-w-2xl text-sm text-muted">
+          Free for individuals · No account · No storage
+        </p>
+
+        {/* CTAs – style global cohérent */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4" aria-describedby="hero-claims">
+          <Link href="/generate" className="btn-primary--glow">Get started for free</Link>
+
           <Link
-            href="/generate"
-            className="rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-6 py-3 text-base font-semibold text-slate-900 shadow-[0_0_40px_rgba(34,211,238,0.35)] hover:brightness-110"
+            href="/verify"
+            className="btn-ghost"
           >
-            Get started for free
+            Verify a document
           </Link>
         </div>
 
-        {/* Micro claims (pills) */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-            Free for individuals
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-            No account
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-            No storage
-          </span>
-        </div>
-
-        {/* Split cards */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-2">
+        {/* Deux cartes sous-CTA */}
+        <div className="mx-auto mt-8 grid max-w-4xl gap-4 sm:grid-cols-2">
           {/* Individuals */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-left backdrop-blur-sm">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-300">
-              <Users className="h-4 w-4" />
-              For Individuals
-            </div>
-
-            <h3 className="text-lg font-semibold text-white">
-              Protect your personal documents in seconds
-            </h3>
-            <ul className="mt-3 space-y-2 text-sm text-slate-300">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-400" />
-                No account, no storage
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-400" />
-                Always readable, easy to check
-              </li>
+          <div className="card-elevated text-left">
+            <span className="badge">
+              For Individuals — Free
+            </span>
+            <h3 className="mt-3 text-lg font-semibold">Protect your personal documents in seconds</h3>
+            <ul className="mt-3 space-y-1 text-sm text-muted">
+              <li>• No account, no storage</li>
+              <li>• Always readable, easy to check</li>
             </ul>
-
-            <div className="mt-5">
-              <Link
-                href="/generate"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10"
-              >
-                Start now
-              </Link>
-            </div>
+            <Link href="/generate" className="mt-4 inline-block link-accent">Start now →</Link>
           </div>
 
-          {/* Businesses */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-left backdrop-blur-sm">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1 text-xs text-sky-300">
-              <Briefcase className="h-4 w-4" />
+          {/* Business */}
+          <div className="card-elevated text-left">
+            <span className="badge">
               For Businesses — API & Integration
-            </div>
-
-            <h3 className="text-lg font-semibold text-white">
-              Integrate .MEVE into your workflow
-            </h3>
-            <ul className="mt-3 space-y-2 text-sm text-slate-300">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-400" />
-                Automate large-scale certification
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-400" />
-                API, SDK & dedicated dashboard
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-sky-400" />
-                Trust badge for your customers
-              </li>
+            </span>
+            <h3 className="mt-3 text-lg font-semibold">Automate large-scale certification</h3>
+            <ul className="mt-3 space-y-1 text-sm text-muted">
+              <li>• API, SDK & dashboard</li>
+              <li>• Trust badge for your customers</li>
             </ul>
-
-            <div className="mt-5">
-              <Link
-                href="/pro"
-                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:brightness-110"
-              >
-                Discover Pro
-              </Link>
-            </div>
+            <Link href="/pro" className="mt-4 inline-block link-accent">Discover Pro →</Link>
           </div>
         </div>
       </div>
     </section>
   );
-                }
+}
