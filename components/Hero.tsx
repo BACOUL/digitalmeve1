@@ -1,84 +1,98 @@
 "use client";
 
 import Link from "next/link";
-import { CTAButton } from "@/components/CTAButton";
-// Optional: enable when you want inline demo
-// import FileDropzone from "@/components/FileDropzone";
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden" id="hero">
-      {/* subtle aura (kept very light for perf) */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center">
+      {/* Subtle aura */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 flex items-start justify-center"
+      >
         <div className="mt-16 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl md:h-80 md:w-80" />
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:py-20">
         {/* Headline */}
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+        <h1 className="heading-1">
           <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-            Add invisible proof. Earn visible trust.
+            Invisible proof. Visible trust.
           </span>
         </h1>
 
-        {/* Subheading */}
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-          <span className="font-semibold text-slate-100">.MEVE</span> embeds a timestamped fingerprint into your
-          PDF &amp; DOCX—privacy-by-design and readable anywhere. No account. No storage.
+        {/* Subtitle – no jargon, mentions certificate & privacy */}
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-[var(--fg-muted)]">
+          DigitalMeve adds an invisible proof to your documents and delivers an
+          official certificate. They remain identical, always readable, and easy
+          to check — <span className="font-semibold text-[var(--fg)]">no account, no storage</span>.
         </p>
 
-        {/* Micro-claims */}
-        <p id="hero-claims" className="mx-auto mt-3 max-w-2xl text-sm text-slate-400">
-          Free for individuals · ~2s per file · Works offline
+        {/* Micro-claims (sans “offline”) */}
+        <p
+          id="hero-claims"
+          className="mx-auto mt-3 max-w-2xl text-sm text-[var(--fg-muted)]/80"
+        >
+          Free for individuals · ~2s per file
         </p>
 
         {/* CTAs */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-4" aria-describedby="hero-claims">
-          <Link href="/generate" className="inline-flex">
-            <CTAButton aria-label="Start protecting a document">Start free</CTAButton>
+        <div
+          className="mt-8 flex flex-wrap items-center justify-center gap-4"
+          aria-describedby="hero-claims"
+        >
+          <Link href="/generate" className="btn btn-primary">
+            Get started for free
           </Link>
-          <Link
-            href="/verify"
-            className="inline-flex rounded-2xl border border-white/15 bg-slate-900/70 px-5 py-2.5 text-slate-100 backdrop-blur-md transition hover:border-emerald-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
-            aria-label="Verify a document"
-          >
-            Verify a document
-          </Link>
-          <Link
-            href="/#how-it-works"
-            className="inline-flex rounded-2xl border border-white/10 px-5 py-2.5 text-slate-200 hover:text-white hover:border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40"
-            aria-label="Scroll to how it works"
-          >
-            How it works
+          <Link href="/verify" className="btn btn-neutral">
+            Verify a file
           </Link>
         </div>
 
-        {/* Instant try (lightweight placeholder; wire later) */}
-        <div className="mt-6 text-sm text-slate-400">
-          <Link
-            href="/samples/sample.pdf"
-            className="underline decoration-slate-500 underline-offset-4 hover:text-slate-200"
-            aria-label="Download a sample PDF to try"
-          >
-            Try with a sample PDF
-          </Link>
-          <span className="mx-2">·</span>
-          <Link
-            href="/verify"
-            className="underline decoration-slate-500 underline-offset-4 hover:text-slate-200"
-            aria-label="See verification flow"
-          >
-            See verification
-          </Link>
-        </div>
+        {/* Split cards: Individuals / Business */}
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          {/* Individuals */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 text-left">
+            <span className="badge border-[var(--accent)] text-[var(--accent)]">
+              Individuals — Free forever
+            </span>
+            <h3 className="mt-3 heading-3">Protect your documents in seconds</h3>
+            <ul className="mt-2 space-y-1 text-sm text-[var(--fg-muted)]">
+              <li>• No account, no storage</li>
+              <li>• Files remain readable anywhere</li>
+              <li>• Instant certificate you can share</li>
+            </ul>
+            <div className="mt-4">
+              <Link href="/generate" className="btn btn-accent">
+                Start now
+              </Link>
+            </div>
+          </div>
 
-        {/* Optional inline dropzone demo — enable when ready */}
-        {/*
-        <div className="mt-10">
-          <FileDropzone onSelected={(f) => console.log("Selected:", f)} />
+          {/* Business */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 text-left">
+            <span className="badge border-[var(--cta)] text-[var(--cta)]">
+              Businesses — API & Dashboard
+            </span>
+            <h3 className="mt-3 heading-3">Scale certification with confidence</h3>
+            <ul className="mt-2 space-y-1 text-sm text-[var(--fg-muted)]">
+              <li>• API, SDKs & team dashboard</li>
+              <li>• Bulk workflows & webhooks</li>
+              <li>• Pro trust badge for your brand</li>
+            </ul>
+            <div className="mt-4 flex gap-3">
+              <Link href="/pro" className="btn btn-neutral">
+                Discover Pro
+              </Link>
+              <Link href="/contact" className="btn btn-primary">
+                Contact sales
+              </Link>
+            </div>
+          </div>
         </div>
-        */}
       </div>
     </section>
   );
 }
+
+export default Hero;
