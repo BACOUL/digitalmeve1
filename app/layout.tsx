@@ -1,15 +1,13 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Inter, Sora } from "next/font/google";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
-
-// Polices (variables CSS pour Tailwind: var(--font-inter), var(--font-sora))
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -42,13 +40,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Astuce: ajouter "theme-light" ici pour forcer le thème clair
-    <html lang="en" className={`${inter.variable} ${sora.variable} antialiased`}>
-      {/* Couleurs globales injectées par la charte dans globals.css */}
-      <body
-        className="min-h-screen flex flex-col"
-        style={{ background: "var(--bg)", color: "var(--fg)" }}
-      >
+    <html lang="en" className={`antialiased ${inter.variable} ${sora.variable}`}>
+      {/* sombre par défaut ; pour clair => ajouter className="theme-light" sur <body> */}
+      <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)]">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
