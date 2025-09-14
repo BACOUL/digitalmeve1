@@ -7,7 +7,9 @@ import { Menu, LogIn, UserPlus, LogOut, LayoutDashboard, User2 } from "lucide-re
 import MobileMenu from "./MobileMenu";
 
 export default function Header() {
-  const { data: session } = useSession();
+  // ✅ ne plus déstructurer
+  const sessionState = useSession();
+  const session = sessionState?.data;
   const [open, setOpen] = useState(false);
 
   // ferme le drawer si on change de route via Link
@@ -36,21 +38,11 @@ export default function Header() {
 
           {/* Nav (desktop) */}
           <nav className="ml-2 hidden items-center gap-6 text-sm text-slate-700 md:flex">
-            <Link className="hover:text-slate-900" href="/generate">
-              Generate
-            </Link>
-            <Link className="hover:text-slate-900" href="/verify">
-              Verify
-            </Link>
-            <Link className="hover:text-slate-900" href="/personal">
-              For Individuals
-            </Link>
-            <Link className="hover:text-slate-900" href="/pro">
-              For Business
-            </Link>
-            <Link className="hover:text-slate-900" href="/pricing">
-              Pricing
-            </Link>
+            <Link className="hover:text-slate-900" href="/generate">Generate</Link>
+            <Link className="hover:text-slate-900" href="/verify">Verify</Link>
+            <Link className="hover:text-slate-900" href="/personal">For Individuals</Link>
+            <Link className="hover:text-slate-900" href="/pro">For Business</Link>
+            <Link className="hover:text-slate-900" href="/pricing">Pricing</Link>
           </nav>
 
           <div className="flex-1" />
@@ -75,37 +67,35 @@ export default function Header() {
                 </Link>
               </>
             ) : (
-              <>
-                <div className="hidden items-center gap-3 md:flex">
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-1.5">
-                    <User2 className="h-4 w-4 text-slate-700" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900 leading-tight">
-                        {session.user.email}
-                      </p>
-                      {role && (
-                        <p className="text-xs text-slate-500 leading-tight">{role}</p>
-                      )}
-                    </div>
+              <div className="hidden items-center gap-3 md:flex">
+                <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-1.5">
+                  <User2 className="h-4 w-4 text-slate-700" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900 leading-tight">
+                      {session.user.email}
+                    </p>
+                    {role && (
+                      <p className="text-xs text-slate-500 leading-tight">{role}</p>
+                    )}
                   </div>
-
-                  <Link
-                    href="/dashboard"
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-gray-50"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
-                  </Link>
-
-                  <button
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
                 </div>
-              </>
+
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </div>
             )}
           </div>
 
@@ -124,4 +114,4 @@ export default function Header() {
       <MobileMenu open={open} onClose={() => setOpen(false)} />
     </>
   );
-}
+            }
