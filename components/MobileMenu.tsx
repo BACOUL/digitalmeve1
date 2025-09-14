@@ -1,18 +1,8 @@
-// components/MobileMenu.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import {
-  X,
-  LogIn,
-  UserPlus,
-  LogOut,
-  LayoutDashboard,
-  User2,
-  ChevronDown,
-  Globe,
-} from "lucide-react";
+import { useEffect } from "react";
+import { X, LogIn, UserPlus, LogOut, LayoutDashboard, User2 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
 type Props = { open: boolean; onClose: () => void };
@@ -20,7 +10,7 @@ type Props = { open: boolean; onClose: () => void };
 export default function MobileMenu({ open, onClose }: Props) {
   const { data: session } = useSession();
 
-  // Empêche le scroll derrière le menu (⚠️ cleanup retourne bien void)
+  // Bloque le scroll derrière le menu
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -43,7 +33,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[1000] flex bg-black/30"
+      className="fixed inset-0 z-[1000] flex bg-black/20"
       onClick={onClose}
     >
       {/* Drawer */}
@@ -88,40 +78,33 @@ export default function MobileMenu({ open, onClose }: Props) {
               </Link>
             </div>
 
-            {/* GROUPES + ACCORDÉONS */}
-            <Accordion title="Products" defaultOpen>
+            <Section title="Products">
               <Item href="/generate" onClose={onClose} label="Generate" />
               <Item href="/verify" onClose={onClose} label="Verify" />
-            </Accordion>
+            </Section>
 
-            <Accordion title="Solutions" defaultOpen>
+            <Section title="Solutions">
               <Item href="/personal" onClose={onClose} label="For Individuals" />
               <Item href="/pro" onClose={onClose} label="For Business" />
-            </Accordion>
+            </Section>
 
-            <Accordion title="Resources">
+            <Section title="Resources">
               <Item href="/pricing" onClose={onClose} label="Pricing" />
               <Item href="/developers" onClose={onClose} label="Developers" />
               <Item href="/security" onClose={onClose} label="Security" />
-              {/* Sous-groupe "More" pour garder le menu court */}
-              <Subgroup label="More">
-                <Item href="/status" onClose={onClose} label="Status" />
-                <Item href="/changelog" onClose={onClose} label="Changelog" />
-                {/* Tu pourras ajouter ici: /how-it-works, /formats, /trust-center */}
-              </Subgroup>
-            </Accordion>
+              <Item href="/status" onClose={onClose} label="Status" />
+              <Item href="/changelog" onClose={onClose} label="Changelog" />
+            </Section>
 
-            <Accordion title="Company">
+            <Section title="Company">
               <Item href="/about" onClose={onClose} label="About" />
               <Item href="/contact" onClose={onClose} label="Contact" />
               <Item href="/legal" onClose={onClose} label="Legal" />
-            </Accordion>
+            </Section>
           </nav>
 
-          {/* PIED : langue + compte */}
-          <div className="border-t border-gray-200 p-4 space-y-4">
-            <LanguagePicker />
-
+          {/* Account panel (toujours visible en bas) */}
+          <div className="border-t border-gray-200 p-4">
             {session?.user ? (
               <div className="space-y-3">
                 <div className="rounded-xl border border-gray-200 p-3">
@@ -134,9 +117,7 @@ export default function MobileMenu({ open, onClose }: Props) {
                         {session.user.email}
                       </p>
                       {role && (
-                        <p className="text-xs text-slate-500 leading-tight">
-                          {role}
-                        </p>
+                        <p className="text-xs text-slate-500 leading-tight">{role}</p>
                       )}
                     </div>
                   </div>
@@ -200,58 +181,13 @@ export default function MobileMenu({ open, onClose }: Props) {
   );
 }
 
-/* --------- Composants internes --------- */
-
-function Accordion({
-  title,
-  children,
-  defaultOpen = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-4">
-      <button
-        className="flex w-full items-center justify-between rounded-lg px-1.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-gray-50"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="uppercase tracking-wide text-xs text-slate-500">
-          {title}
-        </span>
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      <div className={open ? "mt-2" : "hidden"}>{children}</div>
-    </div>
-  );
-}
-
-function Subgroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-1 pl-2">
-      <button
-        className="inline-flex items-center gap-2 rounded-md px-1 py-1 text-xs font-medium text-slate-600 hover:text-slate-900"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-        {label}
-      </button>
-      <div className={open ? "mt-1" : "hidden"}>{children}</div>
+    <div className="mb-6">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {title}
+      </p>
+      <ul className="space-y-2">{children}</ul>
     </div>
   );
 }
@@ -267,57 +203,9 @@ function Item({
 }) {
   return (
     <li>
-      <Link
-        href={href}
-        onClick={onClose}
-        className="block py-2 text-[15px] hover:underline underline-offset-4"
-      >
+      <Link href={href} onClick={onClose} className="block py-2 text-[15px]">
         {label}
       </Link>
     </li>
   );
-}
-
-function LanguagePicker() {
-  // Détecte le cookie existant (simple et robuste)
-  const current =
-    typeof document !== "undefined" &&
-    /(?:^|;\s*)dm_lang=(en|fr)/.exec(document.cookie || "")?.[1];
-
-  function setLang(lang: "en" | "fr") {
-    // 1 an
-    document.cookie = `dm_lang=${lang}; Max-Age=31536000; Path=/; SameSite=Lax`;
-    // Recharge la même page (même route) – le middleware/layout peut lire ce cookie
-    window.location.reload();
-  }
-
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2">
-      <div className="flex items-center gap-2 text-sm text-slate-700">
-        <Globe className="h-4 w-4" />
-        Language
-      </div>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setLang("en")}
-          className={`rounded-lg px-2 py-1 text-xs ${
-            current !== "fr" ? "bg-gray-900 text-white" : "ring-1 ring-gray-200"
-          }`}
-          aria-pressed={current !== "fr"}
-        >
-          EN
-        </button>
-        <span className="px-1 text-slate-400">/</span>
-        <button
-          onClick={() => setLang("fr")}
-          className={`rounded-lg px-2 py-1 text-xs ${
-            current === "fr" ? "bg-gray-900 text-white" : "ring-1 ring-gray-200"
-          }`}
-          aria-pressed={current === "fr"}
-        >
-          FR
-        </button>
-      </div>
-    </div>
-  );
-      }
+                    }
