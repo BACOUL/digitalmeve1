@@ -8,7 +8,9 @@ import { useSession, signOut } from "next-auth/react";
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  const session = useSession(); // ✅ plus de déstructuration
+  // ✅ ne plus déstructurer
+  const sessionState = useSession();
+  const session = sessionState?.data;
 
   // Bloque le scroll derrière le menu
   useEffect(() => {
@@ -16,16 +18,16 @@ export default function MobileMenu({ open, onClose }: Props) {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prev; // ✅ cleanup void
     };
   }, [open]);
 
   if (!open) return null;
 
   const role =
-    (session?.data?.user as any)?.role === "BUSINESS"
+    (session?.user as any)?.role === "BUSINESS"
       ? "Business"
-      : (session?.data?.user as any)?.role === "INDIVIDUAL"
+      : (session?.user as any)?.role === "INDIVIDUAL"
       ? "Individual"
       : undefined;
 
@@ -105,7 +107,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
           {/* Account panel (toujours visible en bas) */}
           <div className="border-t border-gray-200 p-4">
-            {session?.data?.user ? (
+            {session?.user ? (
               <div className="space-y-3">
                 <div className="rounded-xl border border-gray-200 p-3">
                   <div className="flex items-center gap-3">
@@ -114,7 +116,7 @@ export default function MobileMenu({ open, onClose }: Props) {
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-900">
-                        {session?.data?.user?.email}
+                        {session.user.email}
                       </p>
                       {role && (
                         <p className="text-xs text-slate-500 leading-tight">{role}</p>
@@ -167,14 +169,8 @@ export default function MobileMenu({ open, onClose }: Props) {
       {/* petite anim CSS */}
       <style jsx global>{`
         @keyframes slideIn {
-          from {
-            transform: translateX(8%);
-            opacity: 0.4;
-          }
-          to {
-            transform: translateX(0%);
-            opacity: 1;
-          }
+          from { transform: translateX(8%); opacity: 0.4; }
+          to { transform: translateX(0%); opacity: 1; }
         }
       `}</style>
     </div>
@@ -193,9 +189,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Item({
-  href,
-  label,
-  onClose,
+  href, label, onClose,
 }: {
   href: string;
   label: string;
@@ -208,4 +202,4 @@ function Item({
       </Link>
     </li>
   );
-                }
+          }
