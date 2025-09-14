@@ -8,7 +8,7 @@ import { useSession, signOut } from "next-auth/react";
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  const { data: session } = useSession();
+  const session = useSession(); // ✅ plus de déstructuration
 
   // Bloque le scroll derrière le menu
   useEffect(() => {
@@ -23,9 +23,9 @@ export default function MobileMenu({ open, onClose }: Props) {
   if (!open) return null;
 
   const role =
-    (session?.user as any)?.role === "BUSINESS"
+    (session?.data?.user as any)?.role === "BUSINESS"
       ? "Business"
-      : (session?.user as any)?.role === "INDIVIDUAL"
+      : (session?.data?.user as any)?.role === "INDIVIDUAL"
       ? "Individual"
       : undefined;
 
@@ -105,7 +105,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
           {/* Account panel (toujours visible en bas) */}
           <div className="border-t border-gray-200 p-4">
-            {session?.user ? (
+            {session?.data?.user ? (
               <div className="space-y-3">
                 <div className="rounded-xl border border-gray-200 p-3">
                   <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export default function MobileMenu({ open, onClose }: Props) {
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-900">
-                        {session.user.email}
+                        {session?.data?.user?.email}
                       </p>
                       {role && (
                         <p className="text-xs text-slate-500 leading-tight">{role}</p>
@@ -208,4 +208,4 @@ function Item({
       </Link>
     </li>
   );
-                    }
+                }
