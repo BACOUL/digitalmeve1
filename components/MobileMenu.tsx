@@ -8,17 +8,15 @@ import { useSession, signOut } from "next-auth/react";
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  // ✅ ne plus déstructurer
   const sessionState = useSession();
   const session = sessionState?.data;
 
-  // Bloque le scroll derrière le menu
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev; // ✅ cleanup void
+      document.body.style.overflow = prev;
     };
   }, [open]);
 
@@ -35,27 +33,27 @@ export default function MobileMenu({ open, onClose }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[1000] flex bg-black/20"
+      className="fixed inset-0 z-[1000] flex bg-black/40"
       onClick={onClose}
     >
       {/* Drawer */}
       <div
         role="document"
-        className="ml-auto h-dvh w-full max-w-sm bg-white outline-none md:rounded-l-2xl md:shadow-2xl animate-[slideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)]"
+        className="ml-auto h-dvh w-full max-w-sm bg-slate-950 outline-none md:rounded-l-2xl md:shadow-2xl animate-[slideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-4">
           <Link href="/" onClick={onClose} className="text-lg font-semibold">
-            <span className="text-emerald-600">Digital</span>
-            <span className="text-sky-600">Meve</span>
+            <span className="text-emerald-400">Digital</span>
+            <span className="text-sky-400">Meve</span>
           </Link>
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800"
           >
-            <X className="h-5 w-5 text-slate-700" />
+            <X className="h-5 w-5 text-slate-200" />
           </button>
         </div>
 
@@ -67,14 +65,14 @@ export default function MobileMenu({ open, onClose }: Props) {
               <Link
                 href="/generate"
                 onClick={onClose}
-                className="text-center rounded-xl bg-emerald-600/90 px-3 py-2.5 text-sm font-medium text-white hover:brightness-105"
+                className="text-center rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white hover:brightness-110"
               >
                 Generate
               </Link>
               <Link
                 href="/verify"
                 onClick={onClose}
-                className="text-center rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                className="text-center rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800"
               >
                 Verify
               </Link>
@@ -105,22 +103,20 @@ export default function MobileMenu({ open, onClose }: Props) {
             </Section>
           </nav>
 
-          {/* Account panel (toujours visible en bas) */}
-          <div className="border-t border-gray-200 p-4">
+          {/* Account panel */}
+          <div className="border-t border-slate-800 p-4">
             {session?.user ? (
               <div className="space-y-3">
-                <div className="rounded-xl border border-gray-200 p-3">
+                <div className="rounded-xl border border-slate-700 p-3 bg-slate-900">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-gray-100">
-                      <User2 className="h-5 w-5 text-slate-700" />
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-slate-800">
+                      <User2 className="h-5 w-5 text-slate-200" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-slate-100">
                         {session.user.email}
                       </p>
-                      {role && (
-                        <p className="text-xs text-slate-500 leading-tight">{role}</p>
-                      )}
+                      {role && <p className="text-xs text-slate-400">{role}</p>}
                     </div>
                   </div>
                 </div>
@@ -128,7 +124,7 @@ export default function MobileMenu({ open, onClose }: Props) {
                 <Link
                   href="/dashboard"
                   onClick={onClose}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
@@ -136,7 +132,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600/20 px-4 py-2 text-sm font-medium text-rose-300 hover:bg-rose-600/30"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out
@@ -147,7 +143,7 @@ export default function MobileMenu({ open, onClose }: Props) {
                 <Link
                   href="/login"
                   onClick={onClose}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
                 >
                   <LogIn className="h-4 w-4" />
                   Login
@@ -166,11 +162,16 @@ export default function MobileMenu({ open, onClose }: Props) {
         </div>
       </div>
 
-      {/* petite anim CSS */}
       <style jsx global>{`
         @keyframes slideIn {
-          from { transform: translateX(8%); opacity: 0.4; }
-          to { transform: translateX(0%); opacity: 1; }
+          from {
+            transform: translateX(8%);
+            opacity: 0.4;
+          }
+          to {
+            transform: translateX(0%);
+            opacity: 1;
+          }
         }
       `}</style>
     </div>
@@ -180,7 +181,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-6">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
         {title}
       </p>
       <ul className="space-y-2">{children}</ul>
@@ -188,18 +189,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Item({
-  href, label, onClose,
-}: {
-  href: string;
-  label: string;
-  onClose: () => void;
-}) {
+function Item({ href, label, onClose }: { href: string; label: string; onClose: () => void }) {
   return (
     <li>
-      <Link href={href} onClick={onClose} className="block py-2 text-[15px]">
+      <Link href={href} onClick={onClose} className="block py-2 text-[15px] text-slate-200 hover:text-white">
         {label}
       </Link>
     </li>
   );
-          }
+}
