@@ -2,46 +2,51 @@
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com").replace(/\/+$/, "");
+  const name = "DigitalMeve — The .MEVE Standard";
+  const short_name = "DigitalMeve";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
 
   return {
-    name: "DigitalMeve — The .MEVE Standard",
-    short_name: "DigitalMeve",
-    description: "Invisible, portable proof embedded in your files — free for individuals.",
-    id: "/",
+    name,
+    short_name,
+    description:
+      "DigitalMeve delivers a simple, universal digital proof — free for individuals.",
+    lang: "en",
+    dir: "ltr",
     start_url: "/",
     scope: "/",
     display: "standalone",
+    orientation: "any",
     background_color: "#0B1220",
     theme_color: "#0B1220",
-    lang: "en",
-    dir: "ltr",
     categories: ["productivity", "utilities", "security"],
+    id: base,
 
     icons: [
-      // Pense à ajouter ces fichiers dans /public/icons/
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
-      // Optionnels si tu veux plus fin :
-      // { src: "/icons/icon-256.png", sizes: "256x256", type: "image/png" },
-      // { src: "/icons/icon-384.png", sizes: "384x384", type: "image/png" },
+      // “any” (classique) + “maskable” (pour adaptive icons)
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-192-maskable.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+
+      // (Optionnels) variantes monochrome si tu veux un rendu pur pour thèmes
+      // { src: "/icons/icon-192-mono.png", sizes: "192x192", type: "image/png", purpose: "monochrome" },
+      // { src: "/icons/icon-512-mono.png", sizes: "512x512", type: "image/png", purpose: "monochrome" },
+    ],
+
+    shortcuts: [
+      { name: "Protect a file", url: "/generate", icons: [{ src: "/icons/shortcut-generate.png", sizes: "96x96", type: "image/png" }] },
+      { name: "Verify a file", url: "/verify", icons: [{ src: "/icons/shortcut-verify.png", sizes: "96x96", type: "image/png" }] },
     ],
 
     screenshots: [
-      // Optionnel mais top pour l’install prompt sur Android/Chrome
-      {
-        src: "/og/og-image.png",
-        sizes: "1200x630",
-        type: "image/png",
-        label: "Protect & verify documents with .MEVE",
-      },
+      // Ajoute ces captures si tu veux optimiser l’install prompt
+      // { src: "/screenshots/home-dark.png", sizes: "1280x720", type: "image/png", form_factor: "wide" },
+      // { src: "/screenshots/home-mobile.png", sizes: "720x1280", type: "image/png", form_factor: "narrow" },
     ],
 
-    // Protocoles éventuels si un jour tu veux capter des liens meve://
-    // protocol_handlers: [{ protocol: "web+meve", url: "/verify?u=%s" }],
-
-    // Rempli si tu ajoutes un mode offline
-    // prefer_related_applications: false,
-    // related_applications: [],
+    // Bonnes pratiques PWA (facultatif mais clean)
+    prefer_related_applications: false,
   };
 }
