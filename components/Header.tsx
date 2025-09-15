@@ -1,14 +1,17 @@
+// components/Header.tsx
 "use client";
 
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+// ✅ Utilise le wrapper safe (évite les erreurs au build/SSG)
+import { useSessionSafe as useSession, signOutSafe as signOut } from "@/lib/safe-auth";
+
 import { Menu, LogIn, UserPlus, LogOut, LayoutDashboard, User2, Globe } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 
 export default function Header() {
-  // ✅ on ne déstructure pas useSession (safe pour SSG/ISR)
+  // ✅ ne pas déstructurer — on lit .data
   const sessionState = useSession();
   const session = sessionState?.data;
 
@@ -191,4 +194,4 @@ export default function Header() {
       <span id="main" className="sr-only" />
     </>
   );
-            }
+          }
