@@ -1,21 +1,18 @@
+// app/(auth)/reset/confirm/page.tsx
 import ResetConfirmClient from "./ResetConfirmClient";
 
-export const dynamic = "force-dynamic"; // évite le SSG pour cette page (safe avec query params)
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type Search = { token?: string; email?: string };
+// searchParams is a Promise in Next 15 server pages
+export default async function Page(props: any) {
+  const sp = (await props.searchParams) as Record<string, string | string[] | undefined>;
 
-export default function Page({
-  searchParams,
-}: {
-  searchParams?: Search;
-}) {
   const token =
-    typeof searchParams?.token === "string" ? searchParams.token : "";
-  const email =
-    typeof searchParams?.email === "string"
-      ? searchParams.email.toLowerCase()
-      : "";
+    typeof sp?.token === "string" ? sp.token : Array.isArray(sp?.token) ? sp?.token[0] ?? "" : "";
+  const emailRaw =
+    typeof sp?.email === "string" ? sp.email : Array.isArray(sp?.email) ? sp?.email[0] ?? "" : "";
+  const email = emailRaw.toLowerCase();
 
   return <ResetConfirmClient token={token} email={email} />;
 }
