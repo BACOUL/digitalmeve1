@@ -1,46 +1,76 @@
 // app/personal/page.tsx
 import Link from "next/link";
-import { CheckCircle2, ShieldCheck, Lock, ArrowRight } from "lucide-react";
+import {
+  CheckCircle2,
+  ShieldCheck,
+  Lock,
+  ArrowRight,
+  BadgeCheck,
+} from "lucide-react";
 
 export default function PersonalPage() {
   return (
-    <main className="min-h-screen bg-white text-gray-900">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
       {/* Hero */}
-      <section className="border-b border-gray-200 bg-gray-50">
+      <section className="border-b border-[var(--border)] bg-[var(--bg)]">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-gray-900">
-            Protect your documents —
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
-              {" "}free forever
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Protect your documents —{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">
+              free forever
             </span>
           </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-            Add an invisible <strong>.MEVE proof</strong> to your files.  
-            No account. No storage. 100% private.
+          <p className="mt-4 max-w-2xl mx-auto text-lg text-[var(--fg-muted)]">
+            Add an invisible <strong>.MEVE</strong> proof to your files. No
+            account. No storage. 100% private.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/generate"
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
+              className="btn btn-primary inline-flex items-center gap-2"
             >
               Get Started Free <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              href="/verify"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-50"
-            >
+            <Link href="/verify" className="btn btn-ghost inline-flex items-center gap-2">
               Verify a Document
             </Link>
+          </div>
+
+          {/* Micro-assurance + samples */}
+          <p className="mt-3 text-sm text-[var(--fg-muted)]">
+            Everything runs locally.{" "}
+            <Link href="/samples" className="underline hover:opacity-90">
+              Try with sample files
+            </Link>
+            .
+          </p>
+
+          {/* Trust badges */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs">
+            <span className="badge">
+              <Lock className="h-4 w-4 text-[var(--accent-1)]" />
+              No storage — runs locally
+            </span>
+            <span className="badge">
+              <ShieldCheck className="h-4 w-4 text-[var(--accent-2)]" />
+              Verifiable anywhere
+            </span>
+            <span className="badge">
+              <CheckCircle2 className="h-4 w-4 text-[var(--accent-1)]" />
+              Free forever
+            </span>
+            <span className="badge">
+              <BadgeCheck className="h-4 w-4 text-[var(--accent-2)]" />
+              Works offline
+            </span>
           </div>
         </div>
       </section>
 
       {/* Steps */}
       <section className="mx-auto max-w-5xl px-4 py-16">
-        <h2 className="text-2xl font-semibold text-center text-gray-900">
-          Three simple steps
-        </h2>
+        <h2 className="text-2xl font-semibold text-center">Three simple steps</h2>
         <ol className="mt-10 grid gap-6 sm:grid-cols-3">
           {[
             {
@@ -59,47 +89,48 @@ export default function PersonalPage() {
               desc: "Anyone can confirm authenticity instantly — anywhere.",
             },
           ].map(({ step, title, desc }) => (
-            <li
-              key={step}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
-            >
-              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-sm font-semibold text-gray-700">
+            <li key={step} className="card p-6">
+              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white/5 text-sm font-semibold">
                 {step}
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-              <p className="mt-2 text-sm text-gray-600">{desc}</p>
+              <h3 className="text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm text-[var(--fg-muted)]">{desc}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      {/* Trust badges */}
-      <section className="mx-auto max-w-5xl px-4 py-12 border-t border-gray-100">
+      {/* Benefits (trust) */}
+      <section className="mx-auto max-w-5xl px-4 py-12 border-t border-[var(--border)]">
         <div className="grid gap-6 sm:grid-cols-3 text-center">
           <div className="flex flex-col items-center">
-            <Lock className="h-8 w-8 text-emerald-600" />
-            <p className="mt-2 text-sm font-medium text-gray-900">No storage</p>
-            <p className="text-xs text-gray-600">Your file never leaves your device.</p>
+            <Lock className="h-8 w-8 text-[var(--accent-1)]" />
+            <p className="mt-2 text-sm font-medium">No storage</p>
+            <p className="text-xs text-[var(--fg-muted)]">
+              Your file never leaves your device.
+            </p>
           </div>
           <div className="flex flex-col items-center">
-            <ShieldCheck className="h-8 w-8 text-sky-600" />
-            <p className="mt-2 text-sm font-medium text-gray-900">Verifiable anywhere</p>
-            <p className="text-xs text-gray-600">Files stay readable and portable.</p>
+            <ShieldCheck className="h-8 w-8 text-[var(--accent-2)]" />
+            <p className="mt-2 text-sm font-medium">Verifiable anywhere</p>
+            <p className="text-xs text-[var(--fg-muted)]">
+              Files stay readable and portable.
+            </p>
           </div>
           <div className="flex flex-col items-center">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-            <p className="mt-2 text-sm font-medium text-gray-900">Free forever</p>
-            <p className="text-xs text-gray-600">Basic proof will always be free.</p>
+            <CheckCircle2 className="h-8 w-8 text-[var(--accent-1)]" />
+            <p className="mt-2 text-sm font-medium">Free forever</p>
+            <p className="text-xs text-[var(--fg-muted)]">
+              Basic proof will always be free.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="mx-auto max-w-5xl px-4 py-16 border-t border-gray-100">
-        <h2 className="text-2xl font-semibold text-center text-gray-900">
-          Plans for individuals
-        </h2>
-        <p className="mt-3 text-center text-gray-600">
+      {/* Pricing - Individuals */}
+      <section className="mx-auto max-w-5xl px-4 py-16 border-t border-[var(--border)]">
+        <h2 className="text-2xl font-semibold text-center">Plans for individuals</h2>
+        <p className="mt-3 text-center text-[var(--fg-muted)]">
           Start free, upgrade anytime for more documents or advanced options.
         </p>
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
@@ -108,11 +139,7 @@ export default function PersonalPage() {
               name: "Free",
               price: "$0",
               desc: "Forever free, perfect for personal use.",
-              features: [
-                "Up to 5 files/day",
-                "Basic .MEVE proof",
-                "No account required",
-              ],
+              features: ["Up to 5 files/day", "Basic .MEVE proof", "No account required"],
               cta: "Get Started",
               href: "/generate",
               highlight: false,
@@ -121,11 +148,7 @@ export default function PersonalPage() {
               name: "Plus",
               price: "$4.99/mo",
               desc: "For power users who need more volume.",
-              features: [
-                "Up to 50 files/day",
-                "Priority verification",
-                "Email support",
-              ],
+              features: ["Up to 50 files/day", "Priority verification", "Email support"],
               cta: "Upgrade",
               href: "/pricing",
               highlight: true,
@@ -134,11 +157,7 @@ export default function PersonalPage() {
               name: "Premium",
               price: "$9.99/mo",
               desc: "For freelancers & professionals.",
-              features: [
-                "Unlimited files",
-                "Advanced proof options",
-                "Priority support",
-              ],
+              features: ["Unlimited files", "Advanced proof options", "Priority support"],
               cta: "Go Premium",
               href: "/pricing",
               highlight: false,
@@ -146,19 +165,24 @@ export default function PersonalPage() {
           ].map(({ name, price, desc, features, cta, href, highlight }) => (
             <div
               key={name}
-              className={`rounded-2xl border p-6 shadow-sm ${
+              className={`relative rounded-2xl border p-6 shadow-sm ${
                 highlight
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-gray-200 bg-white"
+                  ? "border-[var(--accent-1)] bg-[color-mix(in_oklab,white,transparent_92%)]"
+                  : "border-[var(--border)] bg-white/5"
               }`}
             >
-              <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
-              <p className="mt-1 text-3xl font-bold text-gray-900">{price}</p>
-              <p className="mt-2 text-sm text-gray-600">{desc}</p>
-              <ul className="mt-4 space-y-1 text-sm text-gray-700">
+              {highlight && (
+                <span className="absolute -top-3 right-4 inline-flex items-center rounded-full bg-gradient-to-r from-emerald-500 to-sky-500 px-2.5 py-1 text-xs font-medium text-white shadow">
+                  Most popular
+                </span>
+              )}
+              <h3 className="text-lg font-semibold">{name}</h3>
+              <p className="mt-1 text-3xl font-bold">{price}</p>
+              <p className="mt-2 text-sm text-[var(--fg-muted)]">{desc}</p>
+              <ul className="mt-4 space-y-1 text-sm">
                 {features.map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" /> {f}
+                    <CheckCircle2 className="h-4 w-4 text-[var(--accent-1)]" /> {f}
                   </li>
                 ))}
               </ul>
@@ -166,8 +190,8 @@ export default function PersonalPage() {
                 href={href}
                 className={`mt-6 inline-flex w-full justify-center rounded-xl px-4 py-2 text-sm font-medium transition ${
                   highlight
-                    ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                    : "border border-gray-300 text-gray-900 hover:bg-gray-50"
+                    ? "bg-gradient-to-r from-emerald-500 to-sky-500 text-white hover:brightness-105"
+                    : "ring-1 ring-[var(--border)] hover:bg-white/5"
                 }`}
               >
                 {cta}
@@ -178,8 +202,8 @@ export default function PersonalPage() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-5xl px-4 py-16 border-t border-gray-100">
-        <h2 className="text-2xl font-semibold text-gray-900 text-center">FAQ</h2>
+      <section className="mx-auto max-w-5xl px-4 py-16 border-t border-[var(--border)]">
+        <h2 className="text-2xl font-semibold text-center">FAQ</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {[
             {
@@ -199,12 +223,9 @@ export default function PersonalPage() {
               a: "Yes. Subscriptions are flexible and you can cancel whenever you want.",
             },
           ].map(({ q, a }) => (
-            <div
-              key={q}
-              className="rounded-xl border border-gray-200 bg-white p-5"
-            >
-              <h3 className="text-base font-semibold text-gray-900">{q}</h3>
-              <p className="mt-2 text-sm text-gray-600">{a}</p>
+            <div key={q} className="card p-5">
+              <h3 className="text-base font-semibold">{q}</h3>
+              <p className="mt-2 text-sm text-[var(--fg-muted)]">{a}</p>
             </div>
           ))}
         </div>
