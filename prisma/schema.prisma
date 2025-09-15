@@ -1,40 +1,49 @@
 // prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Utilise l’URL Prisma fournie par Neon dans Vercel (POSTGRES_PRISMA_URL)
+  url      = env("POSTGRES_PRISMA_URL")
 }
 
-// --- Utilisateurs ---
+/**
+ * Table User
+ * - Correspond à la table "User"
+ * - createdAt/updatedAt mappés sur createdat/updatedat
+ * - role est un texte (INDIVIDUAL | BUSINESS) avec un CHECK côté DB si tu veux
+ */
 model User {
-  id              Int       @id @default(autoincrement())
-  email           String    @unique
-  password        String
-  role            String    @default("INDIVIDUAL")
-  createdAt       DateTime  @default(now()) @map("createdat")
-  updatedAt       DateTime  @default(now()) @updatedAt @map("updatedat")
-  emailVerifiedAt DateTime? @map("emailverifiedat")
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("INDIVIDUAL")
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @updatedAt @map("updatedat")
 
   @@map("User")
 }
 
-// --- Tokens de vérification / reset ---
-enum VerificationTokenType {
-  email_verification
-  password_reset
-}
-
+/**
+ * Table VerificationToken
+ * - Stocke les tokens de vérification email
+ * - Index pour email, type et expiration
+ */
 model VerificationToken {
-  id        String                @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   email     String
-  token     String                @unique
-  type      VerificationTokenType
-  expiresAt DateTime
+  token     String   @unique
+  type      String   // ex: "email_verification"
+  expiresAt DateTime @map("expires_at")
   ip        String?
-  createdAt DateTime              @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([email, type])
+  @@index([email])
+  @@index([type])
+  @@index([expiresAt])
+
+  @@map("VerificationToken")
 }
