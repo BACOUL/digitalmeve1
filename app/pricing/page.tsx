@@ -13,6 +13,8 @@ import {
   Layers,
   HelpCircle,
   Star,
+  Upload,
+  Fingerprint,
 } from "lucide-react";
 
 /** ---------------------------
@@ -33,21 +35,34 @@ type Plan = {
 
 const INDIVIDUALS: Plan[] = [
   {
-    id: "free-individual",
+    id: "free",
     label: "Free",
     priceMonthly: 0,
-    priceYearly: 0,
-    tagline: "Universal trust — at zero cost",
+    priceYearly: 0, // on garde 0 pour ignorer le toggle ici
+    tagline: "Forever free, perfect for personal use.",
     ctaHref: "/generate",
-    ctaLabel: "Start free",
-    features: [
-      "Unlimited personal use",
-      "Built-in proof (PDF, DOCX, PNG soon)",
-      "No account, no storage",
-      "Local SHA-256 fingerprinting",
-      "Human-readable certificate (.html)",
-    ],
-    limitNotes: ["Max 10 MB per file", "Fair-usage: 5 files/day"],
+    ctaLabel: "Get Started",
+    features: ["Up to 5 files/day", "Basic .MEVE proof", "No account required"],
+  },
+  {
+    id: "plus",
+    label: "Plus",
+    priceMonthly: 4.99,
+    priceYearly: 4.99,
+    tagline: "For power users who need more volume.",
+    ctaHref: "/contact",
+    ctaLabel: "Upgrade",
+    features: ["Up to 50 files/day", "Priority verification", "Email support"],
+  },
+  {
+    id: "premium",
+    label: "Premium",
+    priceMonthly: 9.99,
+    priceYearly: 9.99,
+    tagline: "For freelancers & professionals.",
+    ctaHref: "/contact",
+    ctaLabel: "Go Premium",
+    features: ["Unlimited files", "Advanced proof options", "Priority support"],
   },
 ];
 
@@ -115,7 +130,8 @@ function formatPriceUSD(amount: number) {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: amount < 10 ? 2 : 0,
     }).format(amount);
   } catch {
     return `$${amount}`;
@@ -136,29 +152,28 @@ export default function PricingPage() {
   }, [yearly]);
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-800">
-      {/* Hero Pricing */}
-      <section className="relative border-b border-gray-200 bg-gradient-to-r from-emerald-50 via-white to-sky-50">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center">
-          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            Proof of trust,{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
-              for everyone.
+    <main className="relative min-h-screen bg-[#0a1320] text-white">
+      {/* Hero Pricing (light headline kept subtle for contrast) */}
+      <section className="relative border-b border-white/10 bg-gradient-to-r from-emerald-500/5 via-white/0 to-sky-500/5">
+        <div className="mx-auto max-w-6xl px-4 py-16 text-center">
+          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
+            Invisible proof.{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">
+              Visible trust.
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-            Free for individuals. Powerful plans for teams & enterprises — with
-            APIs, dashboards, and global compliance.
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-white/70">
+            DigitalMeve adds an invisible proof to your documents and delivers
+            an official certificate. They remain identical, always readable, and
+            easy to check — no account, no storage.
           </p>
 
           {/* Toggle */}
-          <div className="mt-10 inline-flex items-center gap-3 rounded-full border border-gray-200 bg-white/70 backdrop-blur px-3 py-2 shadow-sm">
+          <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 backdrop-blur px-3 py-2 shadow-sm">
             <button
               onClick={() => setYearly(false)}
               className={`rounded-full px-3 py-1 text-sm transition ${
-                !yearly
-                  ? "bg-emerald-500 text-white shadow"
-                  : "text-gray-600 hover:text-gray-900"
+                !yearly ? "bg-emerald-500 text-white shadow" : "text-white/80 hover:text-white"
               }`}
             >
               Monthly
@@ -166,67 +181,90 @@ export default function PricingPage() {
             <button
               onClick={() => setYearly(true)}
               className={`rounded-full px-3 py-1 text-sm transition ${
-                yearly
-                  ? "bg-emerald-500 text-white shadow"
-                  : "text-gray-600 hover:text-gray-900"
+                yearly ? "bg-emerald-500 text-white shadow" : "text-white/80 hover:text-white"
               }`}
             >
-              Yearly <span className="ml-1 text-emerald-600">– save 20%</span>
+              Yearly <span className="ml-1 text-emerald-300">– save 20%</span>
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-gray-500">
-            Prices in USD. Taxes/VAT may apply.
-          </p>
+          <p className="mt-3 text-xs text-white/50">Prices in USD. Taxes/VAT may apply.</p>
         </div>
       </section>
 
-      {/* Individuals */}
+      {/* Individuals (dark block per brand) */}
       <section id="individuals" className="mx-auto max-w-6xl px-4 py-16">
-        <div className="flex items-center justify-center gap-2">
-          <Users className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-3xl font-semibold text-gray-900">
-            For Individuals
-          </h2>
-        </div>
-        <p className="mt-2 text-center text-gray-600">
-          Protect your documents in seconds — free, private, forever.
-        </p>
+        <div className="rounded-3xl bg-[#0d1726] ring-1 ring-white/10 p-6 sm:p-10">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-emerald-500/20 to-sky-500/20 px-3 py-1 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                Digital<span className="text-sky-300">Meve</span>
+              </span>
+            </div>
+            <Link
+              href="/generate"
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+            >
+              Get Started Free <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
 
-        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {INDIVIDUALS.map((p) => (
-            <PlanCard key={p.id} plan={p} yearly={yearly} />
-          ))}
-
-          {/* Why free card */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow hover:shadow-lg transition">
-            <h3 className="text-lg font-semibold text-gray-900">Why free?</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Trust should be universal. DigitalMeve computes a local
-              fingerprint and embeds a marker — your file stays private,
-              portable, and verifiable.
+          <div className="mt-8 text-center">
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+              Protect your documents — <span className="text-emerald-300">free forever</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/70">
+              Add an invisible <span className="font-semibold text-emerald-200">.MEVE</span> proof to your files. No account. No storage. 100% private.
             </p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
-                No accounts, no storage
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
-                Verifiable anywhere
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
-                Human-readable certificate
-              </li>
-            </ul>
-            <div className="mt-4">
+
+            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/generate"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
               >
-                Get started <ArrowRight className="h-4 w-4" />
+                Get Started Free <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link
+                href="/verify"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/15 ring-1 ring-white/15"
+              >
+                Verify a Document
+              </Link>
+            </div>
+
+            {/* Badges */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-white/10">
+                <ShieldCheck className="h-4 w-4 text-emerald-300" /> No storage
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-white/10">
+                <Layers className="h-4 w-4 text-sky-300" /> Verifiable anywhere
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-white/10">
+                <Zap className="h-4 w-4 text-amber-300" /> Free forever
+              </span>
+            </div>
+          </div>
+
+          {/* Three simple steps */}
+          <div className="mt-12">
+            <h3 className="text-xl font-semibold text-white/90 text-center">Three simple steps</h3>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <Step number="1" title="Upload" icon={<Upload className="h-5 w-5" />} desc="Drop your file (PDF, DOCX, PNG soon). Nothing is stored." />
+              <Step number="2" title="Generate" icon={<Fingerprint className="h-5 w-5" />} desc="We compute a SHA-256 fingerprint and embed a .MEVE proof." />
+              <Step number="3" title="Verify" desc="Anyone can confirm authenticity instantly — anywhere." />
+            </div>
+          </div>
+
+          {/* Plans for individuals */}
+          <div className="mt-12">
+            <h3 className="text-xl font-semibold text-white/90 text-center">Plans for individuals</h3>
+            <p className="mt-1 text-center text-white/70">Start free, upgrade anytime for more documents or advanced options.</p>
+
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {INDIVIDUALS.map((p) => (
+                <PlanCard key={p.id} plan={p} yearly={false} />
+              ))}
             </div>
           </div>
         </div>
@@ -235,12 +273,11 @@ export default function PricingPage() {
       {/* Business */}
       <section id="business" className="mx-auto max-w-6xl px-4 py-16">
         <div className="flex items-center justify-center gap-2">
-          <Briefcase className="h-6 w-6 text-sky-600" />
-          <h2 className="text-3xl font-semibold text-gray-900">For Business</h2>
+          <Briefcase className="h-6 w-6 text-sky-300" />
+          <h2 className="text-3xl font-semibold text-white">For Business</h2>
         </div>
-        <p className="mt-2 text-center text-gray-600">
-          API and dashboard to certify & verify at scale — with enterprise-grade
-          support.
+        <p className="mt-2 text-center text-white/70">
+          API and dashboard to certify & verify at scale — with enterprise-grade support.
         </p>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-3">
@@ -257,17 +294,17 @@ export default function PricingPage() {
         {/* Reasons */}
         <div className="mt-16 grid gap-6 sm:grid-cols-3">
           <Feature
-            icon={<ShieldCheck className="h-6 w-6 text-emerald-600" />}
+            icon={<ShieldCheck className="h-6 w-6 text-emerald-300" />}
             title="Built-in, not intrusive"
             desc="Proof lives inside the file, keeping documents readable and portable."
           />
           <Feature
-            icon={<Layers className="h-6 w-6 text-sky-600" />}
+            icon={<Layers className="h-6 w-6 text-sky-300" />}
             title="Easy integration"
             desc="Clean APIs, webhooks, and bulk tools to fit your workflow."
           />
           <Feature
-            icon={<Zap className="h-6 w-6 text-amber-500" />}
+            icon={<Zap className="h-6 w-6 text-amber-300" />}
             title="Fast & private"
             desc="Local hashing in the browser; no upload of your content."
           />
@@ -282,7 +319,7 @@ export default function PricingPage() {
         <div className="mt-12 flex flex-col gap-3 sm:flex-row justify-center">
           <Link
             href="/developers"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-sky-300 ring-1 ring-sky-500/30 hover:bg-sky-500/10"
           >
             Explore docs
             <ArrowRight className="h-4 w-4" />
@@ -300,8 +337,8 @@ export default function PricingPage() {
       {/* FAQ */}
       <section className="mx-auto max-w-6xl px-4 py-20">
         <div className="flex items-center justify-center gap-2">
-          <HelpCircle className="h-6 w-6 text-gray-500" />
-          <h2 className="text-3xl font-semibold text-gray-900">FAQ</h2>
+          <HelpCircle className="h-6 w-6 text-white/60" />
+          <h2 className="text-3xl font-semibold text-white">FAQ</h2>
         </div>
 
         <div className="mt-8 grid gap-8 md:grid-cols-2">
@@ -366,13 +403,9 @@ function PlanCard({
           <p className="text-3xl font-semibold text-gray-900">{displayPrice}</p>
         ) : (
           <div className="flex items-end gap-1">
-            <p className="text-3xl font-semibold text-gray-900">
-              {displayPrice}
-            </p>
+            <p className="text-3xl font-semibold text-gray-900">{displayPrice}</p>
             <span className="pb-1 text-sm text-gray-500">/mo</span>
-            {yearly && (
-              <span className="pb-1 text-xs text-emerald-600">billed yearly</span>
-            )}
+            {yearly && <span className="pb-1 text-xs text-emerald-600">billed yearly</span>}
           </div>
         )}
       </div>
@@ -380,9 +413,7 @@ function PlanCard({
       <Link
         href={plan.ctaHref}
         className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
-          isFree
-            ? "bg-emerald-500 text-white hover:bg-emerald-600"
-            : "bg-sky-600 text-white hover:bg-sky-700"
+          isFree ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-sky-600 text-white hover:bg-sky-700"
         }`}
         aria-label={`${plan.ctaLabel} — ${plan.label}`}
       >
@@ -413,80 +444,62 @@ function PlanCard({
   );
 }
 
-function Feature({
-  icon,
+function Step({
+  number,
   title,
   desc,
+  icon,
 }: {
-  icon: ReactNode;
+  number: string;
   title: string;
   desc: string;
+  icon?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+    <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5 text-white">
       <div className="flex items-center gap-2">
-        {icon}
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-sm font-semibold ring-1 ring-white/20">
+          {number}
+        </span>
+        <h4 className="text-base font-semibold">{title}</h4>
+        {icon ? <span className="ml-auto opacity-80">{icon}</span> : null}
       </div>
-      <p className="mt-2 text-sm text-gray-600">{desc}</p>
+      <p className="mt-2 text-sm text-white/70">{desc}</p>
+    </div>
+  );
+}
+
+function Feature({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm hover:shadow-md transition">
+      <div className="flex items-center gap-2 text-white">
+        {icon}
+        <h3 className="text-base font-semibold">{title}</h3>
+      </div>
+      <p className="mt-2 text-sm text-white/70">{desc}</p>
     </div>
   );
 }
 
 function QA({ q, a }: { q: string; a: string }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-      <h3 className="text-base font-semibold text-gray-900">{q}</h3>
-      <p className="mt-2 text-sm text-gray-600">{a}</p>
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm hover:shadow-md transition">
+      <h3 className="text-base font-semibold text-white">{q}</h3>
+      <p className="mt-2 text-sm text-white/70">{a}</p>
     </div>
   );
 }
 
 function ComparisonTable({ yearly }: { yearly: boolean }) {
-  const rows: Array<{
-    feature: string;
-    starter: boolean | string;
-    growth: boolean | string;
-    enterprise: boolean | string;
-  }> = [
+  const rows = [
     { feature: "API & SDKs", starter: true, growth: true, enterprise: true },
-    {
-      feature: "Dashboard & team roles",
-      starter: "Basic",
-      growth: "Advanced",
-      enterprise: "Custom",
-    },
-    {
-      feature: "Rate limits / concurrency",
-      starter: "Standard",
-      growth: "Higher",
-      enterprise: "Custom",
-    },
-    {
-      feature: "Bulk verification tools",
-      starter: false,
-      growth: true,
-      enterprise: true,
-    },
-    {
-      feature: "Webhooks & audit logs",
-      starter: false,
-      growth: true,
-      enterprise: true,
-    },
+    { feature: "Dashboard & team roles", starter: "Basic", growth: "Advanced", enterprise: "Custom" },
+    { feature: "Rate limits / concurrency", starter: "Standard", growth: "Higher", enterprise: "Custom" },
+    { feature: "Bulk verification tools", starter: false, growth: true, enterprise: true },
+    { feature: "Webhooks & audit logs", starter: false, growth: true, enterprise: true },
     { feature: "Support", starter: "Email", growth: "Priority", enterprise: "Dedicated" },
-    {
-      feature: "Security & compliance",
-      starter: "Shared",
-      growth: "Shared",
-      enterprise: "Custom SLAs, DPA, SSO/SCIM",
-    },
-    {
-      feature: "Deployment options",
-      starter: "Cloud",
-      growth: "Cloud",
-      enterprise: "On-prem / region pinning",
-    },
+    { feature: "Security & compliance", starter: "Shared", growth: "Shared", enterprise: "Custom SLAs, DPA, SSO/SCIM" },
+    { feature: "Deployment options", starter: "Cloud", growth: "Cloud", enterprise: "On-prem / region pinning" },
   ];
 
   const headerPrices = BUSINESS.map((p) => {
@@ -499,34 +512,34 @@ function ComparisonTable({ yearly }: { yearly: boolean }) {
       return val ? (
         <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-label="Included" />
       ) : (
-        <XCircle className="h-5 w-5 text-gray-300" aria-label="Not included" />
+        <XCircle className="h-5 w-5 text-gray-400" aria-label="Not included" />
       );
     }
-    return <span className="text-sm text-gray-700">{val}</span>;
+    return <span className="text-sm text-white/90">{val}</span>;
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-gray-200 text-left">
-        <thead className="bg-gray-50">
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm">
+      <table className="min-w-full divide-y divide-white/10 text-left">
+        <thead className="bg-white/5">
           <tr>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-white/70">
               Features
             </th>
             {BUSINESS.map((p, i) => (
               <th key={p.id} className="px-4 py-3">
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-900">{p.label}</span>
-                  <span className="text-xs text-gray-500">{headerPrices[i]}</span>
+                  <span className="text-sm font-semibold text-white">{p.label}</span>
+                  <span className="text-xs text-white/70">{headerPrices[i]}</span>
                 </div>
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-white/10">
           {rows.map((r, idx) => (
-            <tr key={idx} className="hover:bg-gray-50/50">
-              <td className="px-4 py-3 text-sm font-medium text-gray-900">{r.feature}</td>
+            <tr key={idx} className="hover:bg-white/5">
+              <td className="px-4 py-3 text-sm font-medium text-white">{r.feature}</td>
               <td className="px-4 py-3">{renderCell(r.starter)}</td>
               <td className="px-4 py-3">{renderCell(r.growth)}</td>
               <td className="px-4 py-3">{renderCell(r.enterprise)}</td>
@@ -534,10 +547,9 @@ function ComparisonTable({ yearly }: { yearly: boolean }) {
           ))}
         </tbody>
       </table>
-      <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
-        Prices shown {yearly ? "per month (billed yearly)" : "per month"}. Contact us for
-        custom volume pricing.
+      <div className="border-t border-white/10 bg-white/5 px-4 py-3 text-xs text-white/60">
+        Prices shown {yearly ? "per month (billed yearly)" : "per month"}. Contact us for custom volume pricing.
       </div>
     </div>
   );
-}
+        }
