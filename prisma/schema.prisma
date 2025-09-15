@@ -6,13 +6,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Utilise l’URL Prisma fournie par Neon dans Vercel (POSTGRES_PRISMA_URL)
+  // Utilise la variable Vercel/Neon POSTGRES_PRISMA_URL
   url      = env("POSTGRES_PRISMA_URL")
 }
 
-// Table User
-// - createdAt/updatedAt mappés sur createdat/updatedat
-// - role est du texte (INDIVIDUAL | BUSINESS)
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -24,14 +21,11 @@ model User {
   @@map("User")
 }
 
-// Table VerificationToken
-// - stocke les tokens de vérification email
-// - index pour email, type et expiration
 model VerificationToken {
   id        Int      @id @default(autoincrement())
   email     String
   token     String   @unique
-  type      String   // ex: "email_verification"
+  type      String
   expiresAt DateTime @map("expires_at")
   ip        String?
   createdAt DateTime @default(now()) @map("created_at")
