@@ -1,7 +1,7 @@
 // app/login/page.tsx
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -16,6 +16,14 @@ import {
 import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
   const search = useSearchParams();
   const callbackUrl = useMemo(() => search.get("callbackUrl") || "/", [search]);
 
@@ -60,7 +68,6 @@ export default function LoginPage() {
 
   // Aide: détecte Caps Lock sur le champ mot de passe
   function onPwKeyEvent(e: React.KeyboardEvent<HTMLInputElement>) {
-    // Chrome/Firefox: getModifierState
     const hasCaps = (e as any).getModifierState?.("CapsLock");
     if (typeof hasCaps === "boolean") setCaps(hasCaps);
   }
@@ -186,7 +193,10 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-sm text-[var(--fg-muted)]">
             No account?{" "}
-            <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-[var(--accent-1)] hover:underline">
+            <Link
+              href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+              className="text-[var(--accent-1)] hover:underline"
+            >
               Create one
             </Link>
             .
@@ -200,4 +210,4 @@ export default function LoginPage() {
       </section>
     </main>
   );
-          }
+                }
