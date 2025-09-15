@@ -30,7 +30,7 @@ enum VerificationTokenType {
 model VerificationToken {
   id        String                @id @default(cuid())
   email     String
-  token     String                @unique        // (clair pour simplicité)
+  token     String                @unique
   type      VerificationTokenType
   expiresAt DateTime
   ip        String?
