@@ -8,28 +8,35 @@ export const metadata: Metadata = {
     "Confirm your email to activate your DigitalMeve account and keep your organization secure.",
 };
 
-// Force dynamic pour éviter les tentatives de pré-rendu figé sur un token variable
 export const dynamic = "force-dynamic";
 
-export default function VerifyEmailPage({
+type VerifySearchParams = {
+  token?: string;
+  email?: string;
+  status?: "ok" | "expired" | "invalid";
+};
+
+export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: { token?: string; email?: string; status?: "ok" | "expired" | "invalid" };
+  // Next 15: searchParams peut être un Promise
+  searchParams: Promise<VerifySearchParams> | VerifySearchParams;
 }) {
-  const token = searchParams?.token;
-  const email = searchParams?.email;
-  const status = searchParams?.status;
+  const sp: VerifySearchParams =
+    typeof (searchParams as any)?.then === "function"
+      ? await (searchParams as Promise<VerifySearchParams>)
+      : (searchParams as VerifySearchParams);
 
-  // Etat dérivé simple pour le rendu
+  const token = sp?.token;
+  const email = sp?.email;
+  const status = sp?.status;
   const hasToken = typeof token === "string" && token.length > 0;
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <section className="mx-auto max-w-lg px-6 py-20">
         <header className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Verify your email
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Verify your email</h1>
           <p className="mt-3 text-slate-300">
             {email ? (
               <>We sent a secure link to <span className="font-medium text-white">{email}</span>.</>
@@ -39,28 +46,13 @@ export default function VerifyEmailPage({
           </p>
         </header>
 
-        {/* Cartes d’état */}
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          {/* Cas 1 : retour explicite du statut depuis l’API/edge */}
-          {status === "ok" && (
-            <SuccessCard />
-          )}
+          {status === "ok" && <SuccessCard />}
+          {status === "expired" && <ExpiredCard email={email} />}
+          {status === "invalid" && <InvalidCard />}
 
-          {status === "expired" && (
-            <ExpiredCard email={email} />
-          )}
-
-          {status === "invalid" && (
-            <InvalidCard />
-          )}
-
-          {/* Cas 2 : lien initial avec token en query, pas encore soumis */}
           {!status && hasToken && (
-            <form
-              method="POST"
-              action="/api/auth/verify-email"
-              className="space-y-4"
-            >
+            <form method="POST" action="/api/auth/verify-email" className="space-y-4">
               <input type="hidden" name="token" value={token} />
               <button
                 type="submit"
@@ -75,10 +67,7 @@ export default function VerifyEmailPage({
             </form>
           )}
 
-          {/* Cas 3 : pas de token ni de statut — instructions */}
-          {!status && !hasToken && (
-            <NoTokenCard />
-          )}
+          {!status && !hasToken && <NoTokenCard />}
         </div>
 
         <p className="mt-6 text-center text-sm text-slate-400">
@@ -97,7 +86,7 @@ export default function VerifyEmailPage({
   );
 }
 
-/* ---------- UI Partials (server components, pas de hooks) ---------- */
+/* ---------- UI Partials ---------- */
 
 function SuccessCard() {
   return (
@@ -203,4 +192,4 @@ function NoTokenCard() {
       </p>
     </div>
   );
-          }
+}
