@@ -1,26 +1,24 @@
+// components/MobileMenu.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
-import { X, LogIn, UserPlus, LogOut, LayoutDashboard, User2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import {
+  X,
+  LogIn,
+  UserPlus,
+  LogOut,
+  LayoutDashboard,
+  User2,
+} from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  const sessionState = useSession();
-  const session = sessionState?.data;
-
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
-
-  if (!open) return null;
+  const { data: session } = useSession();
+  const pathname = usePathname();
 
   const role =
     (session?.user as any)?.role === "BUSINESS"
@@ -29,18 +27,144 @@ export default function MobileMenu({ open, onClose }: Props) {
       ? "Individual"
       : undefined;
 
+  // Refs pour accessibilité / interactions
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const firstFocusRef = useRef<HTMLButtonElement | null>(null);
+  const lastFocusRef = useRef<HTMLAnchorElement | null>(null);
+
+  // Swipe-to-close
+  const startX = useRef<number | null>(null);
+  const deltaX = useRef(0);
+
+  // Lock scroll + focus trap + ESC
+  useEffect(() => {
+    if (!open) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Focus le menu et premier focusable
+    const to = window.setTimeout(() => {
+      (firstFocusRef.current ?? panelRef.current)?.focus();
+    }, 0);
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === "Tab") {
+        // Focus trap
+        const focusable = getFocusable(panelRef.current);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            (last as HTMLElement).focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            (first as HTMLElement).focus();
+          }
+        }
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.clearTimeout(to);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  // Fermeture swipe (glisser → droite)
+  function onTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    startX.current = e.touches[0].clientX;
+    deltaX.current = 0;
+  }
+  function onTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+    if (startX.current == null) return;
+    deltaX.current = e.touches[0].clientX - startX.current;
+    // translate le panneau pour feedback (limité à 0..80px)
+    if (panelRef.current && deltaX.current > 0) {
+      const t = Math.min(80, deltaX.current);
+      panelRef.current.style.transform = `translateX(${t}px)`;
+    }
+  }
+  function onTouchEnd() {
+    if (panelRef.current) {
+      panelRef.current.style.transform = "";
+    }
+    if (deltaX.current > 60) {
+      onClose();
+    }
+    startX.current = null;
+    deltaX.current = 0;
+  }
+
+  // Items
+  const products = useMemo(
+    () => [
+      { href: "/generate", label: "Generate" },
+      { href: "/verify", label: "Verify" },
+    ],
+    []
+  );
+  const solutions = useMemo(
+    () => [
+      { href: "/personal", label: "For Individuals" },
+      { href: "/pro", label: "For Business" },
+    ],
+    []
+  );
+  const resources = useMemo(
+    () => [
+      { href: "/pricing", label: "Pricing" },
+      { href: "/developers", label: "Developers" },
+      { href: "/security", label: "Security" },
+      { href: "/status", label: "Status" },
+      { href: "/changelog", label: "Changelog" },
+    ],
+    []
+  );
+  const company = useMemo(
+    () => [
+      { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
+      { href: "/legal", label: "Legal" },
+    ],
+    []
+  );
+
+  if (!open) return null;
+
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[1000] flex bg-black/40"
+      aria-labelledby="mobilemenu-title"
+      className="fixed inset-0 z-[1000] flex bg-black/40 backdrop-blur-[2px]"
       onClick={onClose}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
-      {/* Drawer */}
+      {/* Panel */}
       <div
+        ref={panelRef}
         role="document"
-        className="ml-auto h-dvh w-full max-w-sm bg-slate-950 outline-none md:rounded-l-2xl md:shadow-2xl animate-[slideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)]"
+        className="ml-auto flex h-dvh w-full max-w-sm flex-col bg-slate-950 outline-none md:rounded-l-2xl md:shadow-2xl animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] focus-visible:ring-2 focus-visible:ring-emerald-400/40"
         onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
       >
         {/* Top bar */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-4">
@@ -49,9 +173,10 @@ export default function MobileMenu({ open, onClose }: Props) {
             <span className="text-sky-400">Meve</span>
           </Link>
           <button
+            ref={firstFocusRef}
             onClick={onClose}
             aria-label="Close menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40"
           >
             <X className="h-5 w-5 text-slate-200" />
           </button>
@@ -60,8 +185,12 @@ export default function MobileMenu({ open, onClose }: Props) {
         {/* Content */}
         <div className="flex h-[calc(100dvh-4rem)] flex-col">
           <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-6">
+            <h2 id="mobilemenu-title" className="sr-only">
+              Main navigation
+            </h2>
+
             {/* CTA rapides */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="mb-6 grid grid-cols-2 gap-3">
               <Link
                 href="/generate"
                 onClick={onClose}
@@ -79,27 +208,51 @@ export default function MobileMenu({ open, onClose }: Props) {
             </div>
 
             <Section title="Products">
-              <Item href="/generate" onClose={onClose} label="Generate" />
-              <Item href="/verify" onClose={onClose} label="Verify" />
+              {products.map((it) => (
+                <Item
+                  key={it.href}
+                  href={it.href}
+                  label={it.label}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
+              ))}
             </Section>
 
             <Section title="Solutions">
-              <Item href="/personal" onClose={onClose} label="For Individuals" />
-              <Item href="/pro" onClose={onClose} label="For Business" />
+              {solutions.map((it) => (
+                <Item
+                  key={it.href}
+                  href={it.href}
+                  label={it.label}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
+              ))}
             </Section>
 
             <Section title="Resources">
-              <Item href="/pricing" onClose={onClose} label="Pricing" />
-              <Item href="/developers" onClose={onClose} label="Developers" />
-              <Item href="/security" onClose={onClose} label="Security" />
-              <Item href="/status" onClose={onClose} label="Status" />
-              <Item href="/changelog" onClose={onClose} label="Changelog" />
+              {resources.map((it) => (
+                <Item
+                  key={it.href}
+                  href={it.href}
+                  label={it.label}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
+              ))}
             </Section>
 
             <Section title="Company">
-              <Item href="/about" onClose={onClose} label="About" />
-              <Item href="/contact" onClose={onClose} label="Contact" />
-              <Item href="/legal" onClose={onClose} label="Legal" />
+              {company.map((it) => (
+                <Item
+                  key={it.href}
+                  href={it.href}
+                  label={it.label}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
+              ))}
             </Section>
           </nav>
 
@@ -107,7 +260,7 @@ export default function MobileMenu({ open, onClose }: Props) {
           <div className="border-t border-slate-800 p-4">
             {session?.user ? (
               <div className="space-y-3">
-                <div className="rounded-xl border border-slate-700 p-3 bg-slate-900">
+                <div className="rounded-xl border border-slate-700 bg-slate-900 p-3">
                   <div className="flex items-center gap-3">
                     <div className="grid h-9 w-9 place-items-center rounded-full bg-slate-800">
                       <User2 className="h-5 w-5 text-slate-200" />
@@ -131,8 +284,9 @@ export default function MobileMenu({ open, onClose }: Props) {
                 </Link>
 
                 <button
+                  ref={lastFocusRef}
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600/20 px-4 py-2 text-sm font-medium text-rose-300 hover:bg-rose-600/30"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600/20 px-4 py-2 text-sm font-medium text-rose-300 hover:bg-rose-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out
@@ -163,7 +317,7 @@ export default function MobileMenu({ open, onClose }: Props) {
       </div>
 
       <style jsx global>{`
-        @keyframes slideIn {
+        @keyframes mmSlideIn {
           from {
             transform: translateX(8%);
             opacity: 0.4;
@@ -173,10 +327,17 @@ export default function MobileMenu({ open, onClose }: Props) {
             opacity: 1;
           }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] {
+            animation: none !important;
+          }
+        }
       `}</style>
     </div>
   );
 }
+
+/* ---------- Subcomponents ---------- */
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -189,12 +350,59 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Item({ href, label, onClose }: { href: string; label: string; onClose: () => void }) {
+function Item({
+  href,
+  label,
+  onClose,
+  active,
+}: {
+  href: string;
+  label: string;
+  onClose: () => void;
+  active?: boolean;
+}) {
   return (
     <li>
-      <Link href={href} onClick={onClose} className="block py-2 text-[15px] text-slate-200 hover:text-white">
+      <Link
+        href={href}
+        onClick={onClose}
+        className={[
+          "block rounded-lg px-2 py-2 text-[15px] transition",
+          active
+            ? "bg-slate-900 text-white"
+            : "text-slate-200 hover:bg-slate-900 hover:text-white",
+        ].join(" ")}
+        aria-current={active ? "page" : undefined}
+      >
         {label}
       </Link>
     </li>
   );
 }
+
+/* ---------- Utils ---------- */
+
+function getFocusable(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  const selectors = [
+    "a[href]",
+    "button",
+    "input",
+    "select",
+    "textarea",
+    "[tabindex]:not([tabindex='-1'])",
+  ];
+  const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
+  return nodes.filter(
+    (el) =>
+      !el.hasAttribute("disabled") &&
+      !el.getAttribute("aria-hidden") &&
+      el.tabIndex !== -1
+  );
+}
+
+function isActive(pathname: string | null, href: string) {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+            }
