@@ -5,11 +5,12 @@
   "engines": { "node": "20.x" },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run migrate:deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "echo \"(tests ajoutés plus tard)\" && exit 0",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
