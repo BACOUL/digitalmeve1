@@ -2,12 +2,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter, Sora } from "next/font/google";
-import dynamic from "next/dynamic";
 import Script from "next/script";
 
-// ⬇️ Import dynamique: évite d'embarquer next-auth côté serveur pendant le prerender
-const Header = dynamic(() => import("@/components/Header"), { ssr: false });
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
+// ⬇️ Import direct des Client Components
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ClientOnly from "@/components/ClientOnly";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
@@ -40,11 +40,10 @@ export const metadata: Metadata = {
   },
   applicationName: "DigitalMeve",
   referrer: "strict-origin-when-cross-origin",
-  // (Optionnel) tu peux aussi utiliser la clé dédiée: themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0B1220" }]
   other: { "theme-color": "#0B1220" },
 };
 
-// Script d'init du thème (dark par défaut) injecté AVANT l'hydratation pour éviter le flash
+// Script d'init du thème (dark par défaut) injecté AVANT le paint
 const THEME_INIT = `
 try {
   var ls = typeof window !== 'undefined' ? window.localStorage : null;
@@ -70,14 +69,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
-      {/* Injecté "beforeInteractive": exécuté avant le premier paint */}
-      <Script id="dm-theme-init" strategy="beforeInteractive">{THEME_INIT}</Script>
+      {/* Exécuté avant le premier paint pour éviter le FOUC */}
+      <Script id="dm-theme-init" strategy="beforeInteractive">
+        {THEME_INIT}
+      </Script>
 
       <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)]">
-        {/* Header/Footer client-only pour éviter les erreurs de prerender liées à next-auth */}
-        <Header />
+        {/* ⬇️ Header/Footer ne montent qu'au client, donc pas de clash avec next-auth au prerender */}
+        <ClientOnly>
+          <Header />
+        </ClientOnly>
+
         <main className="flex-1">{children}</main>
-        <Footer />
+
+        <ClientOnly>
+          <Footer />
+        </ClientOnly>
+
         {/* <div aria-hidden className="noise"></div> */}
       </body>
     </html>
