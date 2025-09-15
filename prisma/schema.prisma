@@ -10,12 +10,9 @@ datasource db {
   url      = env("POSTGRES_PRISMA_URL")
 }
 
-/**
- * Table User
- * - Correspond à la table "User"
- * - createdAt/updatedAt mappés sur createdat/updatedat
- * - role est un texte (INDIVIDUAL | BUSINESS) avec un CHECK côté DB si tu veux
- */
+// Table User
+// - createdAt/updatedAt mappés sur createdat/updatedat
+// - role est du texte (INDIVIDUAL | BUSINESS)
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -27,11 +24,9 @@ model User {
   @@map("User")
 }
 
-/**
- * Table VerificationToken
- * - Stocke les tokens de vérification email
- * - Index pour email, type et expiration
- */
+// Table VerificationToken
+// - stocke les tokens de vérification email
+// - index pour email, type et expiration
 model VerificationToken {
   id        Int      @id @default(autoincrement())
   email     String
