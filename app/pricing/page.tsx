@@ -21,8 +21,8 @@ import {
 type Plan = {
   id: string;
   label: string;
-  priceMonthly: number;   // prix / mois (facturé mensuel)
-  priceYearly: number;    // prix / mois équivalent, facturé annuel
+  priceMonthly: number;
+  priceYearly: number;
   badge?: string;
   tagline: string;
   ctaHref: string;
@@ -37,12 +37,12 @@ const INDIVIDUALS: Plan[] = [
     label: "Free",
     priceMonthly: 0,
     priceYearly: 0,
-    tagline: "For everyone — forever",
+    tagline: "Universal trust — at zero cost",
     ctaHref: "/generate",
     ctaLabel: "Start free",
     features: [
       "Unlimited personal use",
-      "Built-in proof (PDF, DOCX beta, PNG soon)",
+      "Built-in proof (PDF, DOCX, PNG soon)",
       "No account, no storage",
       "Local SHA-256 fingerprinting",
       "Human-readable certificate (.html)",
@@ -56,10 +56,10 @@ const BUSINESS: Plan[] = [
     id: "starter",
     label: "Starter",
     priceMonthly: 19,
-    priceYearly: 15, // affiché si Yearly = true (equiv /mo)
-    tagline: "Solo / small teams",
+    priceYearly: 15,
+    tagline: "For solo professionals & small teams",
     ctaHref: "/contact",
-    ctaLabel: "Talk to us",
+    ctaLabel: "Get Starter",
     features: [
       "Dashboard (teams & usage)",
       "API/SDK access",
@@ -67,17 +67,17 @@ const BUSINESS: Plan[] = [
       "Basic rate limits",
       "Email support",
     ],
-    limitNotes: ["Reasonable monthly volume", "Contact for exact quotas"],
+    limitNotes: ["Reasonable monthly volume", "Contact for quotas"],
   },
   {
     id: "growth",
     label: "Growth",
     priceMonthly: 79,
     priceYearly: 65,
-    badge: "Popular",
+    badge: "Most Popular",
     tagline: "Scale with confidence",
     ctaHref: "/contact",
-    ctaLabel: "Request access",
+    ctaLabel: "Upgrade now",
     features: [
       "Everything in Starter",
       "Higher limits & concurrency",
@@ -92,14 +92,14 @@ const BUSINESS: Plan[] = [
     label: "Enterprise",
     priceMonthly: 0,
     priceYearly: 0,
-    tagline: "Security & compliance",
+    tagline: "Compliance, security & scale",
     ctaHref: "/contact",
     ctaLabel: "Contact sales",
     features: [
       "Custom SLAs & DPA",
       "SAML/SSO, SCIM",
-      "On-prem / region pinning (roadmap)",
-      "Security reviews & support",
+      "On-prem / region pinning",
+      "Security reviews & dedicated support",
       "Roadmap alignment",
     ],
     limitNotes: ["Custom pricing", "PO/Procurement support"],
@@ -112,7 +112,11 @@ const BUSINESS: Plan[] = [
 function formatPriceUSD(amount: number) {
   if (amount <= 0) return "Free";
   try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(amount);
   } catch {
     return `$${amount}`;
   }
@@ -124,7 +128,6 @@ function formatPriceUSD(amount: number) {
 export default function PricingPage() {
   const [yearly, setYearly] = useState(true);
 
-  // Plans business avec affichage /mo équivalent si yearly = true
   const business = useMemo(() => {
     if (!yearly) return BUSINESS;
     return BUSINESS.map((p) =>
@@ -135,78 +138,75 @@ export default function PricingPage() {
   }, [yearly]);
 
   return (
-    <main className="min-h-screen bg-white text-gray-800">
+    <main className="relative min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-800">
       {/* Hero Pricing */}
-      <section className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl text-gray-900">
-              Simple pricing.{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
-                Built for everyone.
-              </span>
-            </h1>
-            <p className="mt-4 text-lg text-gray-600">
-              Free for individuals. Flexible plans for businesses integrating{" "}
-              <span className="font-semibold text-gray-800">.MEVE</span> at scale — with APIs, dashboard, and support.
-            </p>
-          </div>
+      <section className="relative border-b border-gray-200 bg-gradient-to-r from-emerald-50 via-white to-sky-50">
+        <div className="mx-auto max-w-6xl px-4 py-20 text-center">
+          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+            Proof of trust,{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
+              for everyone.
+            </span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
+            Free for individuals. Powerful plans for teams & enterprises —
+            with APIs, dashboards, and global compliance.
+          </p>
 
           {/* Toggle */}
-          <div
-            className="mt-8 inline-flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-3 py-2"
-            role="tablist"
-            aria-label="Billing cycle"
-          >
+          <div className="mt-10 inline-flex items-center gap-3 rounded-full border border-gray-200 bg-white/70 backdrop-blur px-3 py-2 shadow-sm">
             <button
-              role="tab"
-              aria-selected={!yearly}
               onClick={() => setYearly(false)}
               className={`rounded-full px-3 py-1 text-sm transition ${
-                !yearly ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-800"
+                !yearly
+                  ? "bg-emerald-500 text-white shadow"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               Monthly
             </button>
             <button
-              role="tab"
-              aria-selected={yearly}
               onClick={() => setYearly(true)}
               className={`rounded-full px-3 py-1 text-sm transition ${
-                yearly ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-800"
+                yearly
+                  ? "bg-emerald-500 text-white shadow"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Yearly <span className="text-emerald-600">– save up to 20%</span>
+              Yearly <span className="ml-1 text-emerald-600">– save 20%</span>
             </button>
           </div>
 
           <p className="mt-3 text-xs text-gray-500">
-            Prices shown in USD. Taxes/VAT may apply at checkout.
+            Prices in USD. Taxes/VAT may apply.
           </p>
         </div>
       </section>
 
       {/* Individuals */}
-      <section id="individuals" className="mx-auto max-w-6xl px-4 py-14">
-        <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-emerald-600" />
-          <h2 className="text-2xl font-semibold text-gray-900">For Individuals</h2>
+      <section id="individuals" className="mx-auto max-w-6xl px-4 py-16">
+        <div className="flex items-center justify-center gap-2">
+          <Users className="h-6 w-6 text-emerald-600" />
+          <h2 className="text-3xl font-semibold text-gray-900">
+            For Individuals
+          </h2>
         </div>
-        <p className="mt-2 text-gray-600">
-          Protect your documents in seconds — for free, forever.
+        <p className="mt-2 text-center text-gray-600">
+          Protect your documents in seconds — free, private, forever.
         </p>
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {INDIVIDUALS.map((p) => (
             <PlanCard key={p.id} plan={p} yearly={yearly} />
           ))}
 
           {/* Why free card */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Why is it free?</h3>
-            <p className="mt-2 text-gray-600 text-sm">
-              A basic layer of trust for documents should be universal. DigitalMeve computes a local fingerprint and embeds
-              a lightweight marker — your file stays private and fully readable.
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow hover:shadow-lg transition">
+            <h3 className="text-lg font-semibold text-gray-900">Why free?</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Trust should be universal. DigitalMeve computes a local
+              fingerprint and embeds a marker — your file stays private,
+              portable, and verifiable.
             </p>
             <ul className="mt-4 space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2">
@@ -225,7 +225,7 @@ export default function PricingPage() {
             <div className="mt-4">
               <Link
                 href="/generate"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition"
               >
                 Get started <ArrowRight className="h-4 w-4" />
               </Link>
@@ -235,47 +235,52 @@ export default function PricingPage() {
       </section>
 
       {/* Business */}
-      <section id="business" className="mx-auto max-w-6xl px-4 pb-6">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-sky-600" />
-          <h2 className="text-2xl font-semibold text-gray-900">For Business</h2>
+      <section id="business" className="mx-auto max-w-6xl px-4 py-16">
+        <div className="flex items-center justify-center gap-2">
+          <Briefcase className="h-6 w-6 text-sky-600" />
+          <h2 className="text-3xl font-semibold text-gray-900">For Business</h2>
         </div>
-        <p className="mt-2 text-gray-600">
-          API and dashboard to certify and verify at scale — with support and controls.
+        <p className="mt-2 text-center text-gray-600">
+          API and dashboard to certify & verify at scale — with enterprise-grade support.
         </p>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="mt-10 grid gap-8 lg:grid-cols-3">
           {business.map((p) => (
-            <PlanCard key={p.id} plan={p} yearly={yearly} highlight={p.badge === "Popular"} />
+            <PlanCard
+              key={p.id}
+              plan={p}
+              yearly={yearly}
+              highlight={p.badge === "Most Popular"}
+            />
           ))}
         </div>
 
-        {/* Reasons to believe */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+        {/* Reasons */}
+        <div className="mt-16 grid gap-6 sm:grid-cols-3">
           <Feature
-            icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}
+            icon={<ShieldCheck className="h-6 w-6 text-emerald-600" />}
             title="Built-in, not intrusive"
-            desc="Proof lives inside the file (PDF/DOCX), keeping documents readable and portable."
+            desc="Proof lives inside the file, keeping documents readable and portable."
           />
           <Feature
-            icon={<Layers className="h-5 w-5 text-sky-600" />}
+            icon={<Layers className="h-6 w-6 text-sky-600" />}
             title="Easy integration"
-            desc="Clean API/SDKs, webhooks, and bulk tools to fit your workflow."
+            desc="Clean APIs, webhooks, and bulk tools to fit your workflow."
           />
           <Feature
-            icon={<Zap className="h-5 w-5 text-amber-500" />}
+            icon={<Zap className="h-6 w-6 text-amber-500" />}
             title="Fast & private"
-            desc="Local hashing in the browser; no upload of your content for personal use."
+            desc="Local hashing in the browser; no upload of your content."
           />
         </div>
 
-        {/* Comparison table (big clarity win) */}
-        <div className="mt-12">
+        {/* Comparison */}
+        <div className="mt-16">
           <ComparisonTable yearly={yearly} />
         </div>
 
-        {/* CTA bar */}
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+        {/* CTA */}
+        <div className="mt-12 flex flex-col gap-3 sm:flex-row justify-center">
           <Link
             href="/developers"
             className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50"
@@ -294,28 +299,28 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-6xl px-4 pb-20">
-        <div className="flex items-center gap-2">
-          <HelpCircle className="h-5 w-5 text-gray-500" />
-          <h2 className="text-2xl font-semibold text-gray-900">FAQ</h2>
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <div className="flex items-center justify-center gap-2">
+          <HelpCircle className="h-6 w-6 text-gray-500" />
+          <h2 className="text-3xl font-semibold text-gray-900">FAQ</h2>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-8 md:grid-cols-2">
           <QA
-            q="What exactly is the .MEVE marker?"
-            a="A small, built-in proof (date, time, and SHA-256 fingerprint) embedded inside your file — keeping it readable and portable."
+            q="What is the .MEVE marker?"
+            a="A built-in proof (date, time, and SHA-256 fingerprint) embedded inside your file — keeping it readable and portable."
           />
           <QA
             q="Do you store my documents?"
-            a="No. For individuals, everything runs locally in your browser. For business API, you choose what to send (hash-only or files)."
+            a="No. For individuals, everything runs locally in your browser. For businesses, you choose what to send (hash-only or files)."
           />
           <QA
             q="Can anyone verify my file?"
-            a="Yes. The .MEVE file remains a valid PDF/DOCX and can be checked on our Verify page or with open tooling."
+            a="Yes. The .MEVE file remains a valid PDF/DOCX and can be checked anywhere — with open tools or our Verify page."
           />
           <QA
             q="What if the document changes?"
-            a="Even a one-byte change will alter the fingerprint. Verification will show it’s been tampered."
+            a="Even a single-byte change alters the fingerprint. Verification will show it’s been tampered."
           />
         </div>
       </section>
@@ -326,7 +331,6 @@ export default function PricingPage() {
 /** ---------------------------
  * Components
  * -------------------------- */
-
 function PlanCard({
   plan,
   yearly,
@@ -337,18 +341,17 @@ function PlanCard({
   highlight?: boolean;
 }) {
   const isFree = plan.priceMonthly === 0 && plan.priceYearly === 0;
-  const displayPrice = isFree ? "Free" : formatPriceUSD(plan.priceMonthly); // déjà ajusté via parent si yearly=true
+  const displayPrice = isFree ? "Free" : formatPriceUSD(plan.priceMonthly);
 
   return (
     <div
-      className={[
-        "relative rounded-2xl border bg-white p-6 shadow-sm",
-        highlight ? "border-sky-300" : "border-gray-200",
-      ].join(" ")}
+      className={`relative rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow-lg ${
+        highlight ? "border-sky-400 ring-2 ring-sky-200" : "border-gray-200"
+      }`}
       aria-labelledby={`${plan.id}-label`}
     >
       {plan.badge && (
-        <div className="absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full bg-sky-600 px-2.5 py-1 text-xs font-medium text-white">
+        <div className="absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 px-2.5 py-1 text-xs font-medium text-white shadow">
           <Star className="h-3.5 w-3.5" />
           {plan.badge}
         </div>
@@ -364,21 +367,24 @@ function PlanCard({
           <p className="text-3xl font-semibold text-gray-900">{displayPrice}</p>
         ) : (
           <div className="flex items-end gap-1">
-            <p className="text-3xl font-semibold text-gray-900">{displayPrice}</p>
+            <p className="text-3xl font-semibold text-gray-900">
+              {displayPrice}
+            </p>
             <span className="pb-1 text-sm text-gray-500">/mo</span>
-            {yearly && <span className="pb-1 text-xs text-emerald-600">billed yearly</span>}
+            {yearly && (
+              <span className="pb-1 text-xs text-emerald-600">billed yearly</span>
+            )}
           </div>
         )}
       </div>
 
       <Link
         href={plan.ctaHref}
-        className={[
-          "mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition",
+        className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
           isFree
             ? "bg-emerald-500 text-white hover:bg-emerald-600"
-            : "bg-sky-600 text-white hover:bg-sky-700",
-        ].join(" ")}
+            : "bg-sky-600 text-white hover:bg-sky-700"
+        }`}
         aria-label={`${plan.ctaLabel} — ${plan.label}`}
       >
         {plan.ctaLabel}
@@ -410,11 +416,8 @@ function PlanCard({
 
 function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-      </div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+      <div className="flex items-center gap-2">{icon}<h3 className="text-base font-semibold text-gray-900">{title}</h3></div>
       <p className="mt-2 text-sm text-gray-600">{desc}</p>
     </div>
   );
@@ -422,14 +425,13 @@ function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; 
 
 function QA({ q, a }: { q: string; a: string }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition">
       <h3 className="text-base font-semibold text-gray-900">{q}</h3>
       <p className="mt-2 text-sm text-gray-600">{a}</p>
     </div>
   );
 }
 
-/** Comparison table: clarifie les différences clé entre plans Business */
 function ComparisonTable({ yearly }: { yearly: boolean }) {
   const rows = [
     { feature: "API & SDKs", starter: true, growth: true, enterprise: true },
@@ -439,60 +441,8 @@ function ComparisonTable({ yearly }: { yearly: boolean }) {
     { feature: "Webhooks & audit logs", starter: false, growth: true, enterprise: true },
     { feature: "Support", starter: "Email", growth: "Priority", enterprise: "Dedicated" },
     { feature: "Security & compliance", starter: "Shared", growth: "Shared", enterprise: "Custom SLAs, DPA, SSO/SCIM" },
-    { feature: "Deployment options", starter: "Cloud", growth: "Cloud", enterprise: "On-prem / region pinning (roadmap)" },
+    { feature: "Deployment options", starter: "Cloud", growth: "Cloud", enterprise: "On-prem / region pinning" },
   ];
 
   const headerPrices = BUSINESS.map((p) =>
-    p.id === "enterprise"
-      ? "Custom"
-      : yearly
-      ? formatPriceUSD(p.priceYearly) + "/mo*"
-      : formatPriceUSD(p.priceMonthly) + "/mo"
-  );
-
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
-      <table className="w-full text-left text-sm text-gray-800">
-        <thead className="whitespace-nowrap bg-gray-50 text-gray-900">
-          <tr>
-            <th className="px-4 py-3">Feature</th>
-            <th className="px-4 py-3">Starter <span className="ml-2 text-xs text-gray-500">{headerPrices[0]}</span></th>
-            <th className="px-4 py-3">Growth <span className="ml-2 text-xs text-gray-500">{headerPrices[1]}</span></th>
-            <th className="px-4 py-3">Enterprise <span className="ml-2 text-xs text-gray-500">{headerPrices[2]}</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.feature} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-              <td className="px-4 py-3 font-medium">{r.feature}</td>
-              <td className="px-4 py-3">{renderCell(r.starter)}</td>
-              <td className="px-4 py-3">{renderCell(r.growth)}</td>
-              <td className="px-4 py-3">{renderCell(r.enterprise)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex items-center justify-between px-4 py-3 text-xs text-gray-500">
-        <span>* Yearly shows equivalent /mo price, billed annually.</span>
-        <Link href="/contact" className="inline-flex items-center gap-1 text-sky-700 hover:underline">
-          Need a custom quote? <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function renderCell(val: boolean | string) {
-  if (typeof val === "boolean") {
-    return val ? (
-      <span className="inline-flex items-center gap-1 text-emerald-600">
-        <CheckCircle2 className="h-4 w-4" /> Included
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1 text-gray-400">
-        <XCircle className="h-4 w-4" /> —
-      </span>
-    );
-  }
-  return <span className="text-gray-700">{val}</span>;
-    }
+    p.id
