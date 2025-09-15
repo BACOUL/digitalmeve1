@@ -8,16 +8,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// IMPORTANT : correspond exactement à ta table "User"
-// - createdAt/updatedAt sont mappés à createdat/updatedat
-// - role est du texte (INDIVIDUAL | BUSINESS) avec un CHECK en base
+// --- Utilisateurs ---
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  role      String   @default("INDIVIDUAL")
-  createdAt DateTime @default(now()) @map("createdat")
-  updatedAt DateTime @default(now()) @updatedAt @map("updatedat")
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  password        String
+  role            String    @default("INDIVIDUAL")
+  createdAt       DateTime  @default(now()) @map("createdat")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updatedat")
+  emailVerifiedAt DateTime? @map("emailverifiedat")
 
   @@map("User")
+}
+
+// --- Tokens de vérification / reset ---
+enum VerificationTokenType {
+  email_verification
+  password_reset
+}
+
+model VerificationToken {
+  id        String                @id @default(cuid())
+  email     String
+  token     String                @unique        // (clair pour simplicité)
+  type      VerificationTokenType
+  expiresAt DateTime
+  ip        String?
+  createdAt DateTime              @default(now())
+
+  @@index([email, type])
 }
