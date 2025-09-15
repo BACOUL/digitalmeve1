@@ -1,17 +1,45 @@
 // lib/safe-auth.ts
-// Soft wrappers pour éviter les crashes en SSG/prerender
-type UseSessionResult = { data: any; status?: "authenticated" | "unauthenticated" | "loading" };
+"use client";
 
-let mod: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  mod = require("next-auth/react");
-} catch {
-  // noop (build / prerender)
+import * as React from "react";
+
+// lazy import pour éviter tout chargement côté serveur
+let nextAuth: typeof import("next-auth/react") | null = null;
+function getNextAuth() {
+  if (!nextAuth) {
+    try {
+      nextAuth = require("next-auth/react");
+    } catch {
+      nextAuth = null;
+    }
+  }
+  return nextAuth;
 }
 
-export const useSessionSafe: () => UseSessionResult =
-  mod?.useSession ?? (() => ({ data: null, status: "unauthenticated" }));
+// Hook safe: ne JAMAIS déstructurer ce retour côté appelant
+export function useSessionSafe() {
+  const na = getNextAuth();
+  // Si indisponible (build/prerender), on retourne un faux objet stable
+  if (!na) {
+    return {
+      data: undefined,
+      status: "unauthenticated",
+      update: async () => null,
+    } as const;
+  }
+  // Ne pas déstructurer pour éviter les cas undefined
+  return na.useSession();
+}
 
-export const signOutSafe: (args?: any) => Promise<void> | void =
-  mod?.signOut ?? (async () => {});
+export async function signOutSafe(opts?: Parameters<NonNullable<typeof nextAuth>["signOut"]>[0]) {
+  const na = getNextAuth();
+  if (!na) return;
+  return na.signOut?.(opts as any);
+}
+
+export async function signInSafe(...args: any[]) {
+  const na = getNextAuth();
+  if (!na) return { error: "next-auth not available" };
+  // @ts-ignore
+  return na.signIn?.(...args);
+}
