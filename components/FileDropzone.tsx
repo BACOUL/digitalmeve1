@@ -1,7 +1,14 @@
 // components/FileDropzone.tsx
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type LabelHTMLAttributes, // ⟵ ajout pour typer les props de <label>
+} from "react";
 import { Upload, X, AlertTriangle } from "lucide-react";
 
 type Props = {
@@ -15,7 +22,7 @@ type Props = {
   disabled?: boolean;
   /** Valide le type du fichier via accept + extension. Par défaut true (sûr). */
   strictTypeCheck?: boolean;
-};
+} & LabelHTMLAttributes<HTMLLabelElement>; // ⟵ permet role, tabIndex, aria-*, className, etc.
 
 const DEFAULT_ACCEPT = [
   ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp",
@@ -41,6 +48,7 @@ export default function FileDropzone({
   hint = "Drag & drop or tap to select. Max {SIZE} MB.",
   disabled = false,
   strictTypeCheck = true,
+  ...rest // ⟵ récupère role, tabIndex, aria-*, className, data-*, etc.
 }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -201,10 +209,12 @@ export default function FileDropzone({
           "block cursor-pointer rounded-2xl border bg-white px-5 py-6 text-center transition",
           disabled ? "cursor-not-allowed opacity-60" : "hover:bg-slate-50",
           dragOver ? "ring-2 ring-emerald-400/60 border-emerald-300" : "border-slate-300",
+          rest.className || "", // ⟵ fusionne className externe
         ].join(" ")}
         aria-label="File dropzone"
         aria-disabled={disabled || undefined}
         aria-describedby={`${inputId}-help ${error ? `${inputId}-error` : ""}`.trim()}
+        {...rest} // ⟵ propage role, tabIndex personnalisé, aria-*, data-*, etc.
       >
         <input
           id={inputId}
@@ -255,8 +265,9 @@ export default function FileDropzone({
         id={`${inputId}-error`}
         role="alert"
         aria-live="assertive"
-        className={["flex items-center gap-2 rounded-lg border px-3 py-2 text-xs",
-          error ? "border-amber-300 bg-amber-50 text-amber-800" : "hidden"
+        className={[
+          "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+          error ? "border-amber-300 bg-amber-50 text-amber-800" : "hidden",
         ].join(" ")}
       >
         <AlertTriangle className="h-4 w-4" />
@@ -274,4 +285,4 @@ function formatBytes(bytes: number) {
   if (mb < 1024) return `${mb.toFixed(2)} MB`;
   const gb = mb / 1024;
   return `${gb.toFixed(2)} GB`;
-}
+      }
