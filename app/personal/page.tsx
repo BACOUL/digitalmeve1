@@ -94,28 +94,121 @@ export default function PersonalPage() {
         </div>
       </section>
 
-      {/* FAQ light */}
-      <section className="mx-auto max-w-5xl px-4 py-16">
+      {/* Pricing */}
+      <section className="mx-auto max-w-5xl px-4 py-16 border-t border-gray-100">
+        <h2 className="text-2xl font-semibold text-center text-gray-900">
+          Plans for individuals
+        </h2>
+        <p className="mt-3 text-center text-gray-600">
+          Start free, upgrade anytime for more documents or advanced options.
+        </p>
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {[
+            {
+              name: "Free",
+              price: "$0",
+              desc: "Forever free, perfect for personal use.",
+              features: [
+                "Up to 5 files/day",
+                "Basic .MEVE proof",
+                "No account required",
+              ],
+              cta: "Get Started",
+              href: "/generate",
+              highlight: false,
+            },
+            {
+              name: "Plus",
+              price: "$4.99/mo",
+              desc: "For power users who need more volume.",
+              features: [
+                "Up to 50 files/day",
+                "Priority verification",
+                "Email support",
+              ],
+              cta: "Upgrade",
+              href: "/pricing",
+              highlight: true,
+            },
+            {
+              name: "Premium",
+              price: "$9.99/mo",
+              desc: "For freelancers & professionals.",
+              features: [
+                "Unlimited files",
+                "Advanced proof options",
+                "Priority support",
+              ],
+              cta: "Go Premium",
+              href: "/pricing",
+              highlight: false,
+            },
+          ].map(({ name, price, desc, features, cta, href, highlight }) => (
+            <div
+              key={name}
+              className={`rounded-2xl border p-6 shadow-sm ${
+                highlight
+                  ? "border-emerald-500 bg-emerald-50"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
+              <p className="mt-1 text-3xl font-bold text-gray-900">{price}</p>
+              <p className="mt-2 text-sm text-gray-600">{desc}</p>
+              <ul className="mt-4 space-y-1 text-sm text-gray-700">
+                {features.map((f) => (
+                  <li key={f} className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={href}
+                className={`mt-6 inline-flex w-full justify-center rounded-xl px-4 py-2 text-sm font-medium transition ${
+                  highlight
+                    ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                    : "border border-gray-300 text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                {cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="mx-auto max-w-5xl px-4 py-16 border-t border-gray-100">
         <h2 className="text-2xl font-semibold text-gray-900 text-center">FAQ</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h3 className="text-base font-semibold text-gray-900">
-              Do I need an account?
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              No. Everything runs locally in your browser — no signup, no login.
-            </p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h3 className="text-base font-semibold text-gray-900">
-              Can my file be read normally?
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Yes. Your PDF/DOCX remains fully compatible, with a lightweight .MEVE proof inside.
-            </p>
-          </div>
+          {[
+            {
+              q: "Do I need an account?",
+              a: "No. Everything runs locally in your browser — no signup, no login.",
+            },
+            {
+              q: "Can my file be read normally?",
+              a: "Yes. Your PDF/DOCX remains fully compatible, with a lightweight .MEVE proof inside.",
+            },
+            {
+              q: "What happens if I reach my daily limit?",
+              a: "You can upgrade to Plus or Premium for higher limits and extra features.",
+            },
+            {
+              q: "Can I cancel anytime?",
+              a: "Yes. Subscriptions are flexible and you can cancel whenever you want.",
+            },
+          ].map(({ q, a }) => (
+            <div
+              key={q}
+              className="rounded-xl border border-gray-200 bg-white p-5"
+            >
+              <h3 className="text-base font-semibold text-gray-900">{q}</h3>
+              <p className="mt-2 text-sm text-gray-600">{a}</p>
+            </div>
+          ))}
         </div>
       </section>
     </main>
   );
-}
+      }
