@@ -1,3 +1,4 @@
+// app/developers/page.tsx
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
@@ -17,6 +18,12 @@ import {
   FileCheck2,
 } from "lucide-react";
 
+export const metadata = {
+  title: "Developers — DigitalMeve",
+  description:
+    "Protect and verify documents at scale with the DigitalMeve API. Lightweight proofs, clean endpoints, privacy-by-design.",
+};
+
 /** Developers Docs — DigitalMeve (.MEVE) */
 export default function DevelopersPage() {
   const sections = useMemo(
@@ -33,32 +40,26 @@ export default function DevelopersPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white text-gray-800">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
       {/* Header */}
-      <section className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+      <section className="border-b border-[var(--border)]">
+        <div className="container-max px-4 py-14 sm:py-20">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl text-gray-900">
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
               Developers{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">
                 .MEVE Docs
               </span>
             </h1>
-            <p className="mt-4 text-lg text-gray-600">
-              Protect and verify documents at scale. Clean REST API, lightweight proofs, privacy-by-design.
+            <p className="mt-4 sub">
+              Protect and verify documents at scale. Clean REST API, lightweight proofs, privacy by design.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/generate"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-              >
-                Try in browser <ArrowRight className="h-4 w-4" />
+              <Link href="/generate" className="btn btn-primary-strong btn-glow">
+                Try in browser <ArrowRight className="h-5 w-5" aria-hidden />
               </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50"
-              >
-                Get API access <ArrowRight className="h-4 w-4" />
+              <Link href="/contact" className="btn-outline">
+                Get API access <ArrowRight className="h-5 w-5" aria-hidden />
               </Link>
             </div>
           </div>
@@ -69,22 +70,22 @@ export default function DevelopersPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 hover:bg-white"
+                className="group inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[color-mix(in oklab,var(--bg),white 2%)] px-3 py-2 text-sm hover:bg-[color-mix(in oklab,var(--bg),white 6%)]"
               >
                 {s.icon}
-                <span className="group-hover:text-gray-900">{s.label}</span>
+                <span className="text-[var(--fg-muted)] group-hover:text-[var(--fg)]">{s.label}</span>
               </a>
             ))}
           </nav>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="container-max px-4 py-10">
         {/* Quickstart */}
-        <Section id="quickstart" title="Quickstart" icon={<BookOpen className="h-5 w-5 text-emerald-600" />}>
-          <p className="text-gray-600">
-            The <span className="font-semibold text-gray-800">.MEVE</span> proof embeds a timestamped fingerprint
-            inside a standard file (PDF/DOCX). Files remain fully readable and portable. Start with a sandbox key and
+        <Section id="quickstart" title="Quickstart" icon={<BookOpen className="h-5 w-5 text-[var(--accent-1)]" />}>
+          <p className="text-[var(--fg-muted)]">
+            The <span className="font-semibold text-[var(--fg)]">.MEVE</span> proof embeds a timestamped fingerprint
+            inside a standard file (PDF / DOCX). Files remain fully readable and portable. Start with a sandbox key and
             protect your first document in minutes.
           </p>
 
@@ -102,14 +103,18 @@ export default function DevelopersPage() {
             <CodeBlock
               label="JavaScript — Verify"
               lang="js"
-              code={`import fetch from "node-fetch";
+              code={`import fs from "node:fs";
+import FormData from "form-data";
+import fetch from "node-fetch";
+
+const form = new FormData();
+form.append("file", fs.createReadStream("protected.meve.pdf"));
 
 const res = await fetch("https://api.digitalmeve.com/v1/verify", {
   method: "POST",
   headers: { Authorization: \`Bearer \${process.env.MEVE_API_KEY}\` },
-  body: createFormData({ file: fs.createReadStream("protected.meve.pdf") })
+  body: form
 });
-
 const result = await res.json();
 console.log(result.valid, result.fingerprint, result.timestamp);`}
             />
@@ -128,38 +133,42 @@ print(r.json())`}
             />
           </div>
 
-          <div className="mt-4 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-[var(--fg-muted)]">
             Need a sandbox key?{" "}
-            <Link href="/contact" className="text-sky-700 hover:underline">
+            <Link href="/contact" className="link">
               Request access →
             </Link>
           </div>
         </Section>
 
         {/* Auth */}
-        <Section id="auth" title="Authentication" icon={<KeyRound className="h-5 w-5 text-emerald-600" />}>
-          <ul className="list-disc pl-5 text-gray-700 space-y-2">
-            <li>Use <code className="font-mono text-sm text-gray-800">Authorization: Bearer &lt;API_KEY&gt;</code>.</li>
+        <Section id="auth" title="Authentication" icon={<KeyRound className="h-5 w-5 text-[var(--accent-1)]" />}>
+          <ul className="list-disc pl-5 text-[var(--fg-muted)] space-y-2">
+            <li>
+              Use <code className="font-mono text-sm text-[var(--fg)]">Authorization: Bearer &lt;API_KEY&gt;</code>.
+            </li>
             <li>Rotate keys regularly. Keep them out of client-side code.</li>
             <li>Sandbox and production keys are distinct.</li>
           </ul>
         </Section>
 
         {/* Endpoints */}
-        <Section id="endpoints" title="Endpoints" icon={<ServerCog className="h-5 w-5 text-emerald-600" />}>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h3 className="text-base font-semibold text-gray-900">POST /v1/proof — Protect a document</h3>
-            <p className="mt-2 text-sm text-gray-600">
+        <Section id="endpoints" title="Endpoints" icon={<ServerCog className="h-5 w-5 text-[var(--accent-1)]" />}>
+          <div className="card p-5">
+            <h3 className="text-base font-semibold">POST /v1/proof — Protect a document</h3>
+            <p className="mt-2 text-sm text-[var(--fg-muted)]">
               Returns a <span className="font-mono">.meve.pdf</span> or a standalone JSON proof.
             </p>
-            <ul className="mt-3 text-sm text-gray-700 space-y-1">
+            <ul className="mt-3 text-sm text-[var(--fg-muted)] space-y-1">
               <li>
                 <b>Body (multipart/form-data)</b> — <code className="font-mono">file</code> (required),{" "}
                 <code className="font-mono">issuer</code> (optional),{" "}
                 <code className="font-mono">metadata</code> (JSON, optional),{" "}
                 <code className="font-mono">mode</code> = <code>embed|json</code> (default <code>embed</code>).
               </li>
-              <li><b>Response</b> — <i>binary</i> (<code>.meve.pdf</code>) or <i>application/json</i> (proof).</li>
+              <li>
+                <b>Response</b> — <i>binary</i> (<code>.meve.pdf</code>) or <i>application/json</i> (proof).
+              </li>
             </ul>
             <CodeBlock
               className="mt-4"
@@ -174,9 +183,9 @@ print(r.json())`}
             />
           </div>
 
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5">
-            <h3 className="text-base font-semibold text-gray-900">POST /v1/verify — Verify a document</h3>
-            <p className="mt-2 text-sm text-gray-600">Checks existence, integrity and authenticity.</p>
+          <div className="mt-6 card p-5">
+            <h3 className="text-base font-semibold">POST /v1/verify — Verify a document</h3>
+            <p className="mt-2 text-sm text-[var(--fg-muted)]">Checks existence, integrity and authenticity.</p>
             <CodeBlock
               className="mt-4"
               lang="bash"
@@ -184,8 +193,8 @@ print(r.json())`}
   -H "Authorization: Bearer $MEVE_API_KEY" \\
   -F "file=@protected.meve.pdf"`}
             />
-            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
-              <p className="font-mono">200 OK</p>
+            <div className="mt-3 rounded-lg bg-[color-mix(in oklab,var(--bg),white 6%)] p-3 text-xs">
+              <p className="font-mono text-[var(--fg-muted)]">200 OK</p>
               <pre className="mt-2 overflow-x-auto">{`{
   "valid": true,
   "fingerprint": "sha256-9f7a…c2",
@@ -197,28 +206,30 @@ print(r.json())`}
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5">
-            <h3 className="text-base font-semibold text-gray-900">GET /v1/status — API status</h3>
-            <p className="mt-2 text-sm text-gray-600">Service health & current version.</p>
-            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
-              <p className="font-mono">200 OK</p>
+          <div className="mt-6 card p-5">
+            <h3 className="text-base font-semibold">GET /v1/status — API status</h3>
+            <p className="mt-2 text-sm text-[var(--fg-muted)]">Service health & current version.</p>
+            <div className="mt-3 rounded-lg bg-[color-mix(in oklab,var(--bg),white 6%)] p-3 text-xs">
+              <p className="font-mono text-[var(--fg-muted)]">200 OK</p>
               <pre className="mt-2 overflow-x-auto">{`{"status":"ok","uptime":"99.99%","version":"2025.9.0"}`}</pre>
             </div>
           </div>
         </Section>
 
         {/* Webhooks */}
-        <Section id="webhooks" title="Webhooks" icon={<Webhook className="h-5 w-5 text-emerald-600" />}>
-          <p className="text-gray-600">
+        <Section id="webhooks" title="Webhooks" icon={<Webhook className="h-5 w-5 text-[var(--accent-1)]" />}>
+          <p className="text-[var(--fg-muted)]">
             Receive events for asynchronous processing (e.g., bulk verification). We sign payloads with an HMAC secret.
           </p>
-          <ul className="mt-3 list-disc pl-5 text-sm text-gray-700 space-y-1">
-            <li>Header <code className="font-mono">X-Meve-Signature</code> contains a timestamp and signature.</li>
+          <ul className="mt-3 list-disc pl-5 text-sm text-[var(--fg-muted)] space-y-1">
+            <li>
+              Header <code className="font-mono">X-Meve-Signature</code> contains a timestamp and signature.
+            </li>
             <li>Compute HMAC-SHA256 over the raw body with your webhook secret; compare in constant time.</li>
           </ul>
-          <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5">
-            <h4 className="font-semibold text-gray-900">Event: <span className="font-mono">verify.completed</span></h4>
-            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
+          <div className="mt-4 card p-5">
+            <h4 className="font-semibold">Event: <span className="font-mono">verify.completed</span></h4>
+            <div className="mt-3 rounded-lg bg-[color-mix(in oklab,var(--bg),white 6%)] p-3 text-xs">
               <pre className="overflow-x-auto">{`{
   "id":"evt_01H...",
   "type":"verify.completed",
@@ -235,8 +246,8 @@ print(r.json())`}
         </Section>
 
         {/* SDKs & Snippets */}
-        <Section id="sdks" title="SDKs & Snippets" icon={<Terminal className="h-5 w-5 text-emerald-600" />}>
-          <p className="text-gray-600">Use our REST API directly or the lightweight SDK clients.</p>
+        <Section id="sdks" title="SDKs & Snippets" icon={<Terminal className="h-5 w-5 text-[var(--accent-1)]" />}>
+          <p className="text-[var(--fg-muted)]">Use our REST API directly or the lightweight SDK clients.</p>
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
             <CodeBlock
               label="Node.js (fetch)"
@@ -283,11 +294,11 @@ open("doc.meve.pdf","wb").write(r.content)`}
         </Section>
 
         {/* Errors & Limits */}
-        <Section id="errors" title="Errors & Limits" icon={<Info className="h-5 w-5 text-emerald-600" />}>
+        <Section id="errors" title="Errors & Limits" icon={<Info className="h-5 w-5 text-[var(--accent-1)]" />}>
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 bg-white p-5">
-              <h3 className="text-base font-semibold text-gray-900">Error model</h3>
-              <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
+            <div className="card p-5">
+              <h3 className="text-base font-semibold">Error model</h3>
+              <div className="mt-3 rounded-lg bg-[color-mix(in oklab,var(--bg),white 6%)] p-3 text-xs">
                 <pre className="overflow-x-auto">{`{
   "error": {
     "type": "invalid_request",
@@ -297,60 +308,59 @@ open("doc.meve.pdf","wb").write(r.content)`}
   }
 }`}</pre>
               </div>
-              <ul className="mt-3 text-sm text-gray-700 space-y-1">
-                <li><span className="font-mono">400</span> invalid request · <span className="font-mono">401</span> unauthorized · <span className="font-mono">429</span> rate limited · <span className="font-mono">5xx</span> server.</li>
+              <ul className="mt-3 text-sm text-[var(--fg-muted)] space-y-1">
+                <li>
+                  <span className="font-mono">400</span> invalid request ·{" "}
+                  <span className="font-mono">401</span> unauthorized ·{" "}
+                  <span className="font-mono">429</span> rate limited ·{" "}
+                  <span className="font-mono">5xx</span> server.
+                </li>
               </ul>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-5">
-              <h3 className="text-base font-semibold text-gray-900">Rate limits</h3>
-              <ul className="mt-3 text-sm text-gray-700 space-y-1">
+            <div className="card p-5">
+              <h3 className="text-base font-semibold">Rate limits</h3>
+              <ul className="mt-3 text-sm text-[var(--fg-muted)] space-y-1">
                 <li>Starter: standard limits suitable for pilots.</li>
                 <li>Growth: higher limits and concurrency.</li>
                 <li>Enterprise: custom SLAs and quotas.</li>
               </ul>
-              <p className="mt-2 text-xs text-gray-500">Actual quotas are shown in your dashboard.</p>
+              <p className="mt-2 text-xs text-[var(--fg-muted)]">Actual quotas are shown in your dashboard.</p>
             </div>
           </div>
         </Section>
 
         {/* Security model */}
-        <Section id="security" title="Security model" icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}>
-          <ul className="list-disc pl-5 text-gray-700 space-y-2">
+        <Section id="security" title="Security model" icon={<ShieldCheck className="h-5 w-5 text-[var(--accent-1)]" />}>
+          <ul className="list-disc pl-5 text-[var(--fg-muted)] space-y-2">
             <li>
-              <span className="font-semibold">Privacy-by-design:</span> individuals run fully in-browser; no file upload
-              to our servers for personal use.
+              <span className="font-semibold text-[var(--fg)]">Privacy by design:</span> individuals run fully in-browser;
+              no file upload to our servers for personal use.
             </li>
             <li>
-              <span className="font-semibold">Built-in proof:</span> the marker lives inside the file; documents remain
-              readable and portable (PDF/DOCX).
+              <span className="font-semibold text-[var(--fg)]">Built-in proof:</span> the marker lives inside the file;
+              documents remain readable and portable (PDF / DOCX).
             </li>
             <li>
-              <span className="font-semibold">Verification anywhere:</span> check on our Verify page or with open tooling;
-              even offline with local hashing.
+              <span className="font-semibold text-[var(--fg)]">Verification anywhere:</span> check on our Verify page or
+              with open tooling; even offline with local hashing.
             </li>
             <li>
-              <span className="font-semibold">Integrity:</span> any single-byte change alters the fingerprint and fails
-              verification.
+              <span className="font-semibold text-[var(--fg)]">Integrity:</span> any single-byte change alters the
+              fingerprint and fails verification.
             </li>
             <li>
-              <span className="font-semibold">Enterprise controls:</span> SLAs/DPA, SSO/SCIM, region pinning/on-prem (roadmap).
+              <span className="font-semibold text-[var(--fg)]">Enterprise controls:</span> SLAs / DPA, SSO / SCIM, region
+              pinning / on-prem (roadmap).
             </li>
           </ul>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/verify"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              <FileCheck2 className="h-4 w-4" />
+            <Link href="/verify" className="btn">
+              <FileCheck2 className="h-4 w-4 text-[var(--accent-1)]" />
               Verify a file
             </Link>
-            <Link
-              href="/security"
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50"
-            >
-              Security & Compliance
-              <ArrowRight className="h-4 w-4" />
+            <Link href="/security" className="btn-outline">
+              Security & Compliance <ArrowRight className="h-5 w-5" aria-hidden />
             </Link>
           </div>
         </Section>
@@ -373,10 +383,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 py-10">
+    <section id={id} className="scroll-mt-24 py-10 section-dark">
       <div className="mb-4 flex items-center gap-2">
         {icon}
-        <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-2xl font-semibold">{title}</h2>
       </div>
       <div className="space-y-4">{children}</div>
     </section>
@@ -406,24 +416,26 @@ function CodeBlock({
   }, [code]);
 
   return (
-    <div className={`relative rounded-xl border border-gray-200 bg-white p-0.5 ${className || ""}`}>
-      <div className="flex items-center justify-between rounded-t-[11px] bg-gray-50 px-3 py-2">
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <span className="rounded bg-white px-2 py-0.5 font-mono text-[10px] ring-1 ring-gray-200">{lang}</span>
-          {label && <span className="text-gray-700">{label}</span>}
+    <div className={`relative rounded-xl border border-[var(--border)] bg-[var(--bg)] p-0.5 ${className || ""}`}>
+      <div className="flex items-center justify-between rounded-t-[11px] bg-[color-mix(in oklab,var(--bg),white 6%)] px-3 py-2">
+        <div className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
+          <span className="rounded bg-[var(--bg)] px-2 py-0.5 font-mono text-[10px] ring-1 ring-[var(--border)]">
+            {lang}
+          </span>
+          {label && <span className="">{label}</span>}
         </div>
         <button
           onClick={onCopy}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-white"
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-[var(--fg)] ring-1 ring-[var(--border)] hover:bg-[color-mix(in oklab,var(--bg),white 4%)]"
           aria-label="Copy code"
         >
-          {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? <Check className="h-3.5 w-3.5 text-[var(--accent-1)]" /> : <Copy className="h-3.5 w-3.5" />}
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="overflow-x-auto p-3 text-xs leading-relaxed text-gray-800">
+      <pre className="overflow-x-auto p-3 text-xs leading-relaxed">
         <code>{code}</code>
       </pre>
     </div>
   );
-      }
+            }
