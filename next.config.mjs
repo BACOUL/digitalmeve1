@@ -1,49 +1,48 @@
 /** @type {import('next').NextConfig} */
 
-// On considère production si Vercel/Node en "production"
+// ------------ ENV ------------
 const isProd = process.env.NODE_ENV === "production";
+const hasSentry = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-// Domaines externes (ajuste selon ton stack)
-const SENTRY_JS = "https://browser.sentry-cdn.com";
-const SENTRY_INGEST = "https://o450.ingest.sentry.io https://o450*.ingest.sentry.io https://sentry.io";
-const IMG_WHITELIST = "https://images.unsplash.com"; // exemple si tu en utilises
+// Domaines externes utiles (ajuste si besoin)
+const IMG_WHITELIST = [
+  "https://images.unsplash.com", // exemple
+  // Ajoute ici tes autres domaines d’images si nécessaire
+];
 
-// CSP PROD (sans inline/eval côté scripts)
-const cspProd = [
+// Si Sentry activé, on autorise les domaines d’ingest + CDN
+const SENTRY_SCRIPT = "https://browser.sentry-cdn.com";
+const SENTRY_INGEST =
+  "https://o450.ingest.sentry.io https://o450*.ingest.sentry.io https://sentry.io";
+
+// ------------ CSP ------------
+/**
+ * Remarques importantes :
+ * - On autorise 'unsafe-inline' en `script-src` : Next injecte des scripts inline pour l'hydratation.
+ *   (alternative avancée : nonces/hashes — mais plus complexe à mettre en place partout)
+ * - On autorise `blob:` pour les scripts/workers (Next 15 & web workers).
+ * - On ouvre `connect-src` vers `https:` et `wss:` (SSE/WebSocket, Sentry, API externes).
+ */
+const cspParts = [
   "default-src 'self'",
-  // plus d'inline : on a déplacé le script thème en /js/theme-init.js
-  `script-src 'self' ${SENTRY_JS}`,
-  // Tailwind/Next peuvent injecter des styles => on garde 'unsafe-inline' pour STYLE UNIQUEMENT
+  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} blob:${hasSentry ? " " + SENTRY_SCRIPT : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${IMG_WHITELIST}`,
+  `img-src 'self' data: blob:${IMG_WHITELIST.length ? " " + IMG_WHITELIST.join(" ") : ""}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${SENTRY_INGEST}`,
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
+  `connect-src 'self' https: wss:${hasSentry ? " " + SENTRY_INGEST : ""}`,
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
-].join("; ");
-
-// CSP DEV (on tolère 'unsafe-eval' pour le tooling Next/React en local)
-const cspDev = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "connect-src 'self' http://localhost:* ws://localhost:* https:",
-  "frame-ancestors 'none'",
+  "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "object-src 'none'",
-  "media-src 'self' blob:",
-  "worker-src 'self' blob:",
-].join("; ");
+  "frame-ancestors 'none'",
+];
 
+const csp = cspParts.join("; ");
+
+// ------------ Security Headers ------------
 const securityHeaders = [
-  // HSTS seulement en prod (sinon gênant en local ou preview custom)
+  // HSTS uniquement en prod
   isProd && {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
@@ -78,28 +77,24 @@ const securityHeaders = [
   },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-site" },
-  // ⚠️ CSP finale
-  { key: "Content-Security-Policy", value: isProd ? cspProd : cspDev },
+  { key: "Content-Security-Policy", value: csp },
 ].filter(Boolean);
 
+// ------------ Next config ------------
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
-  // Si tu veux garder <Image /> sans optimisation côté Vercel :
+  // Laisse simple pour l’instant ; si tu veux le loader <Image />, retire `unoptimized`
   images: { unoptimized: true },
-  // Sinon, commente la ligne au-dessus et configure tes remotePatterns :
-  // images: {
-  //   remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
-  // },
 
-  // Sourcemaps prod (utile pour Sentry/diagnostic)
+  // Utile pour Sentry et debug de prod
   productionBrowserSourceMaps: true,
 
   async headers() {
     return [
       {
-        // On sert les headers sur tout (hors assets Next qui gèrent déjà bien leurs headers)
+        // On applique ces headers partout (y compris app/route)
         source: "/:path*",
         headers: securityHeaders,
       },
