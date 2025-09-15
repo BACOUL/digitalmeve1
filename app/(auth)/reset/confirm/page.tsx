@@ -11,7 +11,7 @@ export default function ResetConfirmPage() {
   const email = (sp.get("email") || "").toLowerCase();
 
   const [password, setPassword] = useState("");
-  const [password2, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
 
   const [state, setState] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export default function ResetConfirmPage() {
       setState("done");
       setMessage("Your password has been updated. You can now sign in.");
       setPassword("");
-      setPassword("");
+      setPassword2("");
     } catch (err: any) {
       setState("error");
       setMessage(err.message ?? "Something went wrong");
@@ -91,7 +91,7 @@ export default function ResetConfirmPage() {
                 required
                 minLength={8}
                 value={password2}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword2(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="********"
               />
@@ -126,4 +126,4 @@ export default function ResetConfirmPage() {
       </section>
     </main>
   );
-              }
+        }
