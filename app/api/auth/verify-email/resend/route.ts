@@ -1,20 +1,23 @@
 // app/api/auth/verify-email/resend/route.ts
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
+// IMPORTANT: utiliser "crypto" (Node.js runtime), pas "node:crypto"
+import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
+
+export const runtime = "nodejs";
 
 const prisma = new PrismaClient();
 
 /**
- * ENV attendues :
- * - RESEND_API_KEY                (clé API Resend)
+ * Expected ENV:
+ * - RESEND_API_KEY                (Resend API key)
  * - EMAIL_FROM                    (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
  * - NEXT_PUBLIC_APP_URL           (ex: 'https://digitalmeve.com')
  *
  * Notes:
- * - Réponse toujours 200 pour éviter l’énumération d’emails.
- * - On invalide les anciens tokens de vérification pour cet email.
- * - Expiration du token: 60 minutes.
+ * - Always respond 200 to avoid email enumeration.
+ * - Invalidate previous verification tokens for the email.
+ * - Token expiration: 60 minutes.
  */
 
 export async function POST(req: Request) {
@@ -23,58 +26,57 @@ export async function POST(req: Request) {
     let email = "";
 
     if (contentType.includes("application/json")) {
-      const body = await req.json().catch(() => ({}));
+      const body = await req.json().catch(() => ({} as any));
       email = (body?.email || "").toString().trim().toLowerCase();
     } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
       email = String(form.get("email") || "").trim().toLowerCase();
     } else {
-      // tentative simple: on essaie quand même JSON
-      const body = await req.json().catch(() => ({}));
+      // Fallback: try JSON anyway
+      const body = await req.json().catch(() => ({} as any));
       email = (body?.email || "").toString().trim().toLowerCase();
     }
 
-    // Validation minimale de l'email
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+    // Minimal email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email)) {
-      // On renvoie 200 + message générique pour ne rien révéler
       return NextResponse.json(
         { ok: true, message: "If the address exists, a verification email will be sent." },
-        { status: 200 }
+        { status: 200, headers: nocacheHeaders() }
       );
     }
 
-    // Récupère l’IP pour logs (best-effort)
+    // Best-effort client IP for logs/rate limiting
     const ip =
       (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
 
-    // Vérifie si l'utilisateur existe — ne JAMAIS révéler le résultat
+    // Look up user — NEVER reveal the result
+    // ⚠️ We only select existing fields from your Prisma model.
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, emailVerifiedAt: true },
+      select: { id: true }, // <-- remove non-existent fields like emailVerifiedAt
     });
 
-    // Toujours répondre 200 même si l'utilisateur n'existe pas
+    // Always respond 200 even if user does not exist
     if (!user) {
       return NextResponse.json(
         { ok: true, message: "If the address exists, a verification email will be sent." },
-        { status: 200 }
+        { status: 200, headers: nocacheHeaders() }
       );
     }
 
-    // Invalide les précédents tokens de vérification pour cet email
+    // Invalidate previous verification tokens for this email
     await prisma.verificationToken.deleteMany({
       where: { email, type: "email_verification" },
     });
 
-    // Génère un nouveau token (base64url) + hashable si besoin
+    // Generate a fresh token (base64url)
     const tokenRaw = crypto.randomBytes(32).toString("base64url");
 
-    // Stocke le token (en clair ici pour simplicité; en prod, vous pouvez stocker un hash)
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 min
+    // Store token in DB (plaintext for simplicity; consider hashing in prod)
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 minutes
     await prisma.verificationToken.create({
       data: {
         email,
@@ -86,24 +88,22 @@ export async function POST(req: Request) {
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
-    const verifyUrl = new URL(`${appUrl}/verify-email`);
+    const verifyUrl = new URL(`${appUrl.replace(/\/$/, "")}/verify-email`);
     verifyUrl.searchParams.set("token", tokenRaw);
     verifyUrl.searchParams.set("email", email);
 
-    // Envoi email via Resend
+    // Send email via Resend
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const EMAIL_FROM = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
 
     if (!RESEND_API_KEY) {
-      // On log côté serveur; on répond quand même 200 pour ne rien révéler
       console.error("Missing RESEND_API_KEY — email not sent");
       return NextResponse.json(
         { ok: true, message: "If the address exists, a verification email will be sent." },
-        { status: 200 }
+        { status: 200, headers: nocacheHeaders() }
       );
     }
 
-    // Appel Resend (HTTP direct pour éviter dépendance SDK)
     const html = renderVerifyEmailHTML({
       verifyUrl: verifyUrl.toString(),
       email,
@@ -128,28 +128,27 @@ export async function POST(req: Request) {
     if (!sendRes.ok) {
       const errText = await sendRes.text().catch(() => "");
       console.error("Resend error:", sendRes.status, errText);
-      // Toujours réponse 200 (pas d’info leak)
+      // Still return 200 to avoid info leaks
       return NextResponse.json(
         { ok: true, message: "If the address exists, a verification email will be sent." },
-        { status: 200 }
+        { status: 200, headers: nocacheHeaders() }
       );
     }
 
     return NextResponse.json(
       { ok: true, message: "If the address exists, a verification email will be sent." },
-      { status: 200 }
+      { status: 200, headers: nocacheHeaders() }
     );
   } catch (err) {
     console.error("verify-email/resend error:", err);
-    // Réponse générique
     return NextResponse.json(
       { ok: true, message: "If the address exists, a verification email will be sent." },
-      { status: 200 }
+      { status: 200, headers: nocacheHeaders() }
     );
   }
 }
 
-/** -------- Email HTML (dark, conforme à notre charte) -------- */
+/** -------- Email HTML (dark, gradient CTA, consistent with brand) -------- */
 function renderVerifyEmailHTML({
   verifyUrl,
   email,
@@ -209,4 +208,11 @@ function escapeHtml(input: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-                               }
+}
+
+function nocacheHeaders() {
+  return {
+    "Cache-Control": "no-store, max-age=0",
+    Pragma: "no-cache",
+  };
+}
