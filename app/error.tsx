@@ -1,11 +1,11 @@
+// app/error.tsx
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
-import Link from "next/link";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { useEffect } from "react";
+import Link from "next/link";
+import { RefreshCw, Home, Bug } from "lucide-react";
 
-export default function GlobalError({
+export default function Error({
   error,
   reset,
 }: {
@@ -13,44 +13,67 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
-    // eslint-disable-next-line no-console
-    console.error(error);
+    // Log local + envoi best-effort au backend (sans bloquer l’UI)
+    // Pas de dépendance à Sentry — safe en build.
+    try {
+      // eslint-disable-next-line no-console
+      console.error("Route error boundary:", error);
+
+      const payload = {
+        message: error?.message ?? "unknown",
+        stack: error?.stack ?? null,
+        digest: (error as any)?.digest ?? null,
+        at: typeof window !== "undefined" ? window.location.href : null,
+      };
+
+      fetch("/api/errlog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      /* no-op */
+    }
   }, [error]);
 
   return (
-    <html>
-      <body className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            Unexpected error
-          </div>
-          <h1 className="mt-4 text-3xl font-extrabold">Something went wrong</h1>
-          <p className="mt-2 text-[var(--fg-muted)]">
-            Our team has been notified. You can retry or go back home.
-          </p>
+    <div className="min-h-[60vh] bg-[var(--bg)] text-[var(--fg)]">
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/15">
+          <Bug className="h-6 w-6 text-rose-300" />
+        </div>
+        <h1 className="mt-4 text-2xl font-bold">Oups — quelque chose s’est mal passé</h1>
+        <p className="mt-2 text-[var(--fg-muted)]">
+          L’erreur a été enregistrée. Vous pouvez réessayer ou revenir à l’accueil.
+        </p>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => reset()}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/15"
-            >
-              <RefreshCw className="h-4 w-4" /> Try again
-            </button>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10"
-            >
-              <Home className="h-4 w-4" /> Home
-            </Link>
-          </div>
+        {/* Détails (dev-friendly, masqués en prod si besoin) */}
+        {process.env.NODE_ENV !== "production" && (
+          <pre className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-white/5 p-3 text-left text-xs text-[var(--fg)]">
+            {error?.message}
+            {"\n"}
+            {error?.stack}
+          </pre>
+        )}
 
-          {process.env.NODE_ENV !== "production" && (
-            <p className="mt-4 text-xs text-slate-500">Digest: {error.digest}</p>
-          )}
-        </main>
-      </body>
-    </html>
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <button
+            onClick={() => reset()}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Réessayer
+          </button>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-sky-400"
+          >
+            <Home className="h-4 w-4" />
+            Accueil
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
