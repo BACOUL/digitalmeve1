@@ -1,72 +1,86 @@
 // app/api/auth/verify-email/resend/route.ts
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 /**
- * ENV:
- *  - RESEND_API_KEY
- *  - EMAIL_FROM                  ex: 'DigitalMeve <no-reply@digitalmeve.com>'
- *  - NEXT_PUBLIC_APP_URL         ex: 'https://digitalmeve.com'
+ * ENV attendues :
+ * - RESEND_API_KEY
+ * - EMAIL_FROM                      (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
+ * - NEXT_PUBLIC_APP_URL             (ex: 'https://digitalmeve.com')
  *
- * Toujours 200 (pas d'info leak).
+ * Notes:
+ * - Toujours répondre 200 pour éviter l’énumération d’emails.
+ * - Invalide les anciens tokens pour cet email.
+ * - Expiration du token : 60 minutes.
  */
+
 export async function POST(req: Request) {
   try {
-    const ct = req.headers.get("content-type") || "";
+    const contentType = req.headers.get("content-type") || "";
     let email = "";
 
-    if (ct.includes("application/json")) {
+    if (contentType.includes("application/json")) {
       const body = await req.json().catch(() => ({}));
       email = (body?.email || "").toString().trim().toLowerCase();
-    } else if (ct.includes("application/x-www-form-urlencoded")) {
+    } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
       email = String(form.get("email") || "").trim().toLowerCase();
     } else {
+      // fallback : tenter JSON
       const body = await req.json().catch(() => ({}));
       email = (body?.email || "").toString().trim().toLowerCase();
     }
 
+    // Validation minimale de l'email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email)) {
-      return NextResponse.json({ ok: true }, { status: 200 });
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
+    // IP best-effort (utile en logs)
     const ip =
       (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
 
+    // Vérifie si l'utilisateur existe (ne pas révéler le résultat)
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, emailVerifiedAt: true }
+      select: { id: true }, // <-- plus de emailVerifiedAt ici
     });
 
-    if (!user || user.emailVerifiedAt) {
-      return NextResponse.json({ ok: true }, { status: 200 });
+    // Toujours répondre 200 même si l'utilisateur n'existe pas
+    if (!user) {
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
-    // Invalider d'anciens tokens
+    // Invalide les précédents tokens pour cet email
     await prisma.verificationToken.deleteMany({
-      where: { email, type: "email_verification" }
+      where: { email, type: "email_verification" },
     });
 
-    // Nouveau token (clair pour simplicité)
+    // Génère un nouveau token (base64url)
     const tokenRaw = crypto.randomBytes(32).toString("base64url");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 min
 
+    // Stockage (ici en clair; en prod vous pouvez stocker un hash)
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 min
     await prisma.verificationToken.create({
       data: {
         email,
         token: tokenRaw,
         type: "email_verification",
         expiresAt,
-        ip
-      }
+        ip,
+      },
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
@@ -79,46 +93,63 @@ export async function POST(req: Request) {
 
     if (!RESEND_API_KEY) {
       console.error("Missing RESEND_API_KEY — email not sent");
-      return NextResponse.json({ ok: true }, { status: 200 });
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
+    // Email HTML
     const html = renderVerifyEmailHTML({
       verifyUrl: verifyUrl.toString(),
       email,
-      appName: "DigitalMeve"
+      appName: "DigitalMeve",
     });
 
+    // Envoi via Resend (sans SDK)
     const sendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         from: EMAIL_FROM,
         to: [email],
         subject: "Confirm your email",
         html,
-        text: `Confirm your email: ${verifyUrl.toString()}`
-      })
+        text: `Confirm your email: ${verifyUrl.toString()}`,
+      }),
     });
 
     if (!sendRes.ok) {
       const errText = await sendRes.text().catch(() => "");
       console.error("Resend error:", sendRes.status, errText);
+      // Toujours 200 pour ne rien révéler
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: "If the address exists, a verification email will be sent." },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("verify-email/resend error:", err);
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: "If the address exists, a verification email will be sent." },
+      { status: 200 }
+    );
   }
 }
 
+/** -------- Email HTML (dark) -------- */
 function renderVerifyEmailHTML({
   verifyUrl,
   email,
-  appName
+  appName,
 }: {
   verifyUrl: string;
   email: string;
@@ -174,4 +205,4 @@ function escapeHtml(input: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-        }
+}
