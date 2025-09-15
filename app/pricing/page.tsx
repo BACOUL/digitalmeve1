@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, ReactNode } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -131,9 +131,7 @@ export default function PricingPage() {
   const business = useMemo(() => {
     if (!yearly) return BUSINESS;
     return BUSINESS.map((p) =>
-      p.priceMonthly && p.priceYearly
-        ? { ...p, priceMonthly: p.priceYearly }
-        : p
+      p.priceMonthly && p.priceYearly ? { ...p, priceMonthly: p.priceYearly } : p
     );
   }, [yearly]);
 
@@ -149,8 +147,8 @@ export default function PricingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-            Free for individuals. Powerful plans for teams & enterprises —
-            with APIs, dashboards, and global compliance.
+            Free for individuals. Powerful plans for teams & enterprises — with
+            APIs, dashboards, and global compliance.
           </p>
 
           {/* Toggle */}
@@ -241,7 +239,8 @@ export default function PricingPage() {
           <h2 className="text-3xl font-semibold text-gray-900">For Business</h2>
         </div>
         <p className="mt-2 text-center text-gray-600">
-          API and dashboard to certify & verify at scale — with enterprise-grade support.
+          API and dashboard to certify & verify at scale — with enterprise-grade
+          support.
         </p>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-3">
@@ -414,10 +413,21 @@ function PlanCard({
   );
 }
 
-function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function Feature({
+  icon,
+  title,
+  desc,
+}: {
+  icon: ReactNode;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-      <div className="flex items-center gap-2">{icon}<h3 className="text-base font-semibold text-gray-900">{title}</h3></div>
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+      </div>
       <p className="mt-2 text-sm text-gray-600">{desc}</p>
     </div>
   );
@@ -433,16 +443,101 @@ function QA({ q, a }: { q: string; a: string }) {
 }
 
 function ComparisonTable({ yearly }: { yearly: boolean }) {
-  const rows = [
+  const rows: Array<{
+    feature: string;
+    starter: boolean | string;
+    growth: boolean | string;
+    enterprise: boolean | string;
+  }> = [
     { feature: "API & SDKs", starter: true, growth: true, enterprise: true },
-    { feature: "Dashboard & team roles", starter: "Basic", growth: "Advanced", enterprise: "Custom" },
-    { feature: "Rate limits / concurrency", starter: "Standard", growth: "Higher", enterprise: "Custom" },
-    { feature: "Bulk verification tools", starter: false, growth: true, enterprise: true },
-    { feature: "Webhooks & audit logs", starter: false, growth: true, enterprise: true },
+    {
+      feature: "Dashboard & team roles",
+      starter: "Basic",
+      growth: "Advanced",
+      enterprise: "Custom",
+    },
+    {
+      feature: "Rate limits / concurrency",
+      starter: "Standard",
+      growth: "Higher",
+      enterprise: "Custom",
+    },
+    {
+      feature: "Bulk verification tools",
+      starter: false,
+      growth: true,
+      enterprise: true,
+    },
+    {
+      feature: "Webhooks & audit logs",
+      starter: false,
+      growth: true,
+      enterprise: true,
+    },
     { feature: "Support", starter: "Email", growth: "Priority", enterprise: "Dedicated" },
-    { feature: "Security & compliance", starter: "Shared", growth: "Shared", enterprise: "Custom SLAs, DPA, SSO/SCIM" },
-    { feature: "Deployment options", starter: "Cloud", growth: "Cloud", enterprise: "On-prem / region pinning" },
+    {
+      feature: "Security & compliance",
+      starter: "Shared",
+      growth: "Shared",
+      enterprise: "Custom SLAs, DPA, SSO/SCIM",
+    },
+    {
+      feature: "Deployment options",
+      starter: "Cloud",
+      growth: "Cloud",
+      enterprise: "On-prem / region pinning",
+    },
   ];
 
-  const headerPrices = BUSINESS.map((p) =>
-    p.id
+  const headerPrices = BUSINESS.map((p) => {
+    const perMonth = yearly ? p.priceYearly : p.priceMonthly;
+    return perMonth <= 0 ? "Custom" : formatPriceUSD(perMonth) + "/mo";
+  });
+
+  const renderCell = (val: boolean | string) => {
+    if (typeof val === "boolean") {
+      return val ? (
+        <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-label="Included" />
+      ) : (
+        <XCircle className="h-5 w-5 text-gray-300" aria-label="Not included" />
+      );
+    }
+    return <span className="text-sm text-gray-700">{val}</span>;
+  };
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-full divide-y divide-gray-200 text-left">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+              Features
+            </th>
+            {BUSINESS.map((p, i) => (
+              <th key={p.id} className="px-4 py-3">
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-900">{p.label}</span>
+                  <span className="text-xs text-gray-500">{headerPrices[i]}</span>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((r, idx) => (
+            <tr key={idx} className="hover:bg-gray-50/50">
+              <td className="px-4 py-3 text-sm font-medium text-gray-900">{r.feature}</td>
+              <td className="px-4 py-3">{renderCell(r.starter)}</td>
+              <td className="px-4 py-3">{renderCell(r.growth)}</td>
+              <td className="px-4 py-3">{renderCell(r.enterprise)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
+        Prices shown {yearly ? "per month (billed yearly)" : "per month"}. Contact us for
+        custom volume pricing.
+      </div>
+    </div>
+  );
+}
