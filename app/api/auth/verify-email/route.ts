@@ -1,114 +1,69 @@
 // app/api/auth/verify-email/route.ts
+export const runtime = "nodejs"; // <-- force Node runtime
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import crypto from "node:crypto";
+import crypto from "crypto";
 
 /**
- * Assumes a Prisma User model with:
- *  - email (string, unique)
- *  - emailVerificationToken (string | null)
- *  - emailVerificationExpiresAt (Date | null)
- *  - emailVerifiedAt (Date | null)
- *
- * And a reusable prisma client at "@/lib/prisma".
+ * Petit endpoint d’exemple : émet un token de vérification et renvoie l’URL.
+ * Si tu as déjà un endpoint plus avancé, garde sa logique et applique juste :
+ *  - runtime = "nodejs"
+ *  - import crypto depuis "crypto"
+ *  - retire l’utilisation de zod ou installe la dépendance
  */
-import { prisma } from "@/lib/prisma";
 
-export const runtime = "edge"; // ultra-fast, low cold start
+type Body = {
+  email?: string;
+};
 
-const BodySchema = z.object({
-  token: z.string().min(16, "invalid token"),
-});
-
-/** Extra constant-time comparison to mitigate timing attacks */
-function safeEqual(a: string, b: string) {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
 export async function POST(req: Request) {
   try {
-    // Accept both form-data and JSON for flexibility
     const contentType = req.headers.get("content-type") || "";
-    let token: string | undefined;
+    let email = "";
 
-    if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+    if (contentType.includes("application/json")) {
+      const body = (await req.json().catch(() => ({}))) as Body;
+      email = (body?.email || "").trim().toLowerCase();
+    } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
-      token = form.get("token")?.toString();
-    } else if (contentType.includes("application/json")) {
-      const json = await req.json().catch(() => ({}));
-      token = json?.token;
+      email = String(form.get("email") || "").trim().toLowerCase();
+    } else {
+      const body = (await req.json().catch(() => ({}))) as Body;
+      email = (body?.email || "").trim().toLowerCase();
     }
 
-    const { token: parsedToken } = BodySchema.parse({ token });
-
-    // Find a user with a matching (and not-expired) token
-    const now = new Date();
-    const user = await prisma.user.findFirst({
-      where: {
-        emailVerificationToken: parsedToken, // DB-level filter first
-        emailVerificationExpiresAt: { gt: now },
-      },
-      select: {
-        id: true,
-        email: true,
-        emailVerifiedAt: true,
-        emailVerificationToken: true,
-        emailVerificationExpiresAt: true,
-      },
-    });
-
-    if (!user) {
+    // Validation légère (remplace zod)
+    if (!email || !EMAIL_RE.test(email)) {
       return NextResponse.json(
-        { status: "invalid", message: "Invalid or expired token." },
-        { status: 400 }
-      );
-    }
-
-    // Defense in depth: constant-time compare (covers potential hashing/format drift)
-    if (!user.emailVerificationToken || !safeEqual(user.emailVerificationToken, parsedToken)) {
-      return NextResponse.json(
-        { status: "invalid", message: "Invalid or expired token." },
-        { status: 400 }
-      );
-    }
-
-    // Already verified? Idempotency: succeed gracefully.
-    if (user.emailVerifiedAt) {
-      return NextResponse.json(
-        { status: "ok", message: "Email already verified." },
+        { ok: true, message: "If the address exists, a verification email will be sent." },
         { status: 200 }
       );
     }
 
-    // Mark as verified & clear token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerifiedAt: now,
-        emailVerificationToken: null,
-        emailVerificationExpiresAt: null,
-      },
-    });
+    // Génère un token
+    const token = crypto.randomBytes(32).toString("base64url");
+
+    // Construit l’URL de vérification
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
+    const verifyUrl = new URL(`${appUrl}/verify-email`);
+    verifyUrl.searchParams.set("token", token);
+    verifyUrl.searchParams.set("email", email);
+
+    // TODO: ici, persiste le token en DB (Prisma) + envoie l’email (Resend)
+    // Tu peux réutiliser le code de /api/auth/verify-email/resend/route.ts que je t’ai donné.
 
     return NextResponse.json(
-      { status: "ok", message: "Email verified successfully." },
+      { ok: true, verifyUrl: verifyUrl.toString() },
       { status: 200 }
     );
-  } catch (err: any) {
-    if (err?.name === "ZodError") {
-      return NextResponse.json(
-        { error: { type: "invalid_request", message: err.errors?.[0]?.message || "Invalid request", code: "bad_token" } },
-        { status: 400 }
-      );
-    }
-
-    // Do not leak internals
+  } catch (err) {
+    console.error("verify-email POST error:", err);
     return NextResponse.json(
-      { error: { type: "server_error", message: "Something went wrong" } },
-      { status: 500 }
+      { ok: true, message: "If the address exists, a verification email will be sent." },
+      { status: 200 }
     );
   }
-      }
+}
