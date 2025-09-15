@@ -1,19 +1,91 @@
-<!doctype html>
-<html>
-  <body style="background:#0b1220;color:#e6f1ff;font-family:Inter,system-ui,Arial,sans-serif;padding:24px">
-    <table role="presentation" width="100%" style="max-width:560px;margin:auto;background:#0f172a;border:1px solid #1f2a44;border-radius:16px;padding:24px">
-      <tr><td>
-        <h1 style="margin:0 0 8px 0;font-size:20px;color:#fff">Reset your password</h1>
-        <p style="margin:0 0 16px 0;color:#9fb3c8">
-          Someone requested a password reset for your DigitalMeve account.
+// app/(auth)/reset/page.tsx
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
+export default function ResetPage() {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) return;
+
+    setState("sending");
+    setMessage(null);
+
+    try {
+      // Pointage vers ton endpoint d’envoi de lien
+      const res = await fetch("/api/auth/reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Unable to send reset email");
+      }
+
+      setState("sent");
+      setMessage("If the address exists, a secure reset link has been sent.");
+      setEmail("");
+    } catch (err: any) {
+      setState("error");
+      setMessage(err.message ?? "Something went wrong");
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <section className="mx-auto max-w-md px-6 py-20">
+        <h1 className="text-3xl font-semibold tracking-tight">Reset your password</h1>
+        <p className="mt-2 text-slate-300">
+          Enter your email. We’ll send you a secure link to create a new password.
         </p>
-        <p>
-          <a href="{{tokenUrl}}" style="display:inline-block;background:#10b981;color:#fff;text-decoration:none;padding:10px 16px;border-radius:12px;font-weight:600">
-            Set a new password
-          </a>
+
+        <form onSubmit={onSubmit} className="mt-8 space-y-4">
+          <label className="block">
+            <span className="text-sm text-slate-300">Email</span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="you@company.com"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={state === "sending"}
+            className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {state === "sending" ? "Sending…" : "Send reset link"}
+          </button>
+
+          {message && (
+            <div
+              className={`rounded-lg px-3 py-2 text-sm ${
+                state === "error" ? "bg-red-500/10 text-red-200" : "bg-emerald-500/10 text-emerald-200"
+              }`}
+            >
+              {message}
+            </div>
+          )}
+        </form>
+
+        <p className="mt-6 text-sm text-slate-400">
+          Remembered your password?{" "}
+          <Link href="/signin" className="text-emerald-400 underline underline-offset-4">
+            Sign in
+          </Link>
         </p>
-        <p style="margin-top:16px;font-size:12px;color:#7f93a8">This link expires in 30 minutes. If it wasn’t you, you can ignore this email.</p>
-      </td></tr>
-    </table>
-  </body>
-</html>
+      </section>
+    </main>
+  );
+}
