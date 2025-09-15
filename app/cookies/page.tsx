@@ -18,109 +18,124 @@ export const metadata: Metadata = {
 
 export default function CookiesPage() {
   return (
-    <main className="min-h-screen bg-white text-gray-800">
-      {/* Hero */}
-      <section className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-18">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl text-gray-900">
-            Cookie Policy{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-sky-500">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
+      {/* HEADER */}
+      <section className="border-b border-[var(--border)]">
+        <div className="container-max px-4 py-12">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Cookie Policy
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">
               DigitalMeve
             </span>
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-gray-600">
-            We keep cookies to the strict minimum needed for a fast and private
-            experience.
+          <p className="mt-2 sub max-w-2xl">
+            We keep cookies to the strict minimum needed for a fast, private experience.
           </p>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-1 text-xs text-[var(--fg-muted)]">
             Last updated: {new Date().toLocaleDateString()}
           </p>
         </div>
       </section>
 
-      {/* Content */}
-      <section className="mx-auto max-w-6xl px-4 py-12">
-        <div className="prose prose-gray max-w-none">
-          <h2 className="text-2xl font-semibold text-gray-900">What we use</h2>
-          <p className="text-gray-700">
-            DigitalMeve uses only essential cookies and privacy-friendly
-            telemetry. We do <strong>not</strong> store your files on our
-            servers and we do <strong>not</strong> use advertising cookies.
-          </p>
+      {/* SUMMARY */}
+      <section className="section-dark">
+        <div className="container-max px-4">
+          <div className="card p-6">
+            <h2 className="h2">At a glance</h2>
+            <ul className="mt-3 list-disc pl-5 text-sm text-[var(--fg-muted)] space-y-1">
+              <li>No advertising or cross-site tracking cookies.</li>
+              <li>No file contents ever leave your device (generation and checks run locally).</li>
+              <li>Only essential cookies for quota & preferences. Analytics is cookieless.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-          <h3 className="text-lg font-semibold text-gray-900 mt-8">
-            Essential cookies
-          </h3>
-          <ul className="list-disc pl-6 text-gray-700">
-            <li>
-              <span className="font-medium text-gray-900">
-                Rate-limit/session:
-              </span>{" "}
-              to enforce free-tier limits (e.g., 5 files/day) using IP + a small
-              cookie. No personal profile is created.
-            </li>
-            <li>
-              <span className="font-medium text-gray-900">Preferences:</span>{" "}
-              basic UI choices (language toggle EN/FR when available).
-            </li>
-          </ul>
+      {/* DETAILS */}
+      <section className="section-dark">
+        <div className="container-max px-4 grid gap-6 lg:grid-cols-2">
+          {/* Essential cookies */}
+          <div className="card p-6">
+            <h3 className="h2">Essential cookies</h3>
+            <p className="mt-2 text-[var(--fg-muted)]">
+              These are required for core features to work and cannot be turned off in-app.
+            </p>
 
-          <h3 className="text-lg font-semibold text-gray-900 mt-8">
-            Analytics (cookieless)
-          </h3>
-          <p className="text-gray-700">
-            We use{" "}
-            <a
-              href="https://plausible.io/data-policy"
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-emerald-300 hover:text-gray-900"
-            >
-              Plausible
-            </a>{" "}
-            for aggregated usage metrics without cookies and without tracking
-            across sites.
-          </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-[var(--fg-muted)] border-b border-[var(--border)]">
+                  <tr>
+                    <th className="py-2 pr-3">Name</th>
+                    <th className="py-2 pr-3">Purpose</th>
+                    <th className="py-2">Retention</th>
+                  </tr>
+                </thead>
+                <tbody className="align-top">
+                  <tr className="border-b border-[var(--border)]">
+                    <td className="py-3 pr-3 font-medium">dm_quota</td>
+                    <td className="py-3 pr-3">
+                      Enforces free-tier rate limits (e.g., daily usage). No personal profile is created.
+                    </td>
+                    <td className="py-3">Up to 24h (rolling)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-3 font-medium">dm_pref_lang</td>
+                    <td className="py-3 pr-3">
+                      Stores your language preference (EN/FR) when available.
+                    </td>
+                    <td className="py-3">Until cleared</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-          <h3 className="text-lg font-semibold text-gray-900 mt-8">
-            Error monitoring
-          </h3>
-          <p className="text-gray-700">
-            We use Sentry to monitor errors and improve reliability. Payloads
-            are minimized and exclude file contents.
-          </p>
+          {/* Analytics & Reliability */}
+          <div className="card p-6">
+            <h3 className="h2">Analytics & reliability</h3>
+            <h4 className="mt-2 font-semibold">Cookieless analytics</h4>
+            <p className="mt-1 text-sm text-[var(--fg-muted)]">
+              We use{" "}
+              <a
+                href="https://plausible.io/data-policy"
+                target="_blank"
+                rel="noreferrer"
+                className="link"
+              >
+                Plausible
+              </a>{" "}
+              for aggregated usage metrics — no cookies, no cross-site tracking.
+            </p>
 
-          <h3 className="text-lg font-semibold text-gray-900 mt-8">
-            Managing cookies
-          </h3>
-          <p className="text-gray-700">
-            You can clear or block cookies at the browser level. Some essential
-            features (like free-tier limits) may require a basic cookie to work
-            as intended.
-          </p>
+            <h4 className="mt-4 font-semibold">Error monitoring</h4>
+            <p className="mt-1 text-sm text-[var(--fg-muted)]">
+              We use Sentry to monitor errors and improve reliability. Event payloads are minimized and
+              exclude file contents.
+            </p>
+          </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/privacy"
-              className="inline-flex items-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2 text-sm hover:bg-gray-50 transition"
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="/terms"
-              className="inline-flex items-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2 text-sm hover:bg-gray-50 transition"
-            >
-              Terms of Service
-            </Link>
-            <Link
-              href="/security"
-              className="inline-flex items-center gap-2 rounded-xl ring-1 ring-gray-200 px-4 py-2 text-sm hover:bg-gray-50 transition"
-            >
-              Security
-            </Link>
+          {/* Managing cookies */}
+          <div className="card p-6 lg:col-span-2">
+            <h3 className="h2">Managing cookies</h3>
+            <p className="mt-2 text-[var(--fg-muted)]">
+              You can clear or block cookies at the browser level. Some essential features
+              (like free-tier limits) may require a basic cookie to work as intended.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/privacy" className="btn-outline">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="btn-outline">
+                Terms of Service
+              </Link>
+              <Link href="/security" className="btn-outline">
+                Security
+              </Link>
+            </div>
           </div>
         </div>
       </section>
     </main>
   );
-      }
+}
