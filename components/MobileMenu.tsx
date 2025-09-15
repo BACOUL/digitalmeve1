@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
   X,
@@ -31,7 +31,8 @@ export default function MobileMenu({ open, onClose }: Props) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const firstFocusRef = useRef<HTMLButtonElement | null>(null);
-  const lastFocusRef = useRef<HTMLAnchorElement | null>(null);
+  // ✅ Corrigé: cette ref est utilisée sur un <button>
+  const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
   // Swipe-to-close
   const startX = useRef<number | null>(null);
@@ -405,4 +406,4 @@ function isActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-            }
+    }
