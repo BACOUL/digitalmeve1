@@ -1,59 +1,51 @@
-// app/debug/sentry/page.tsx
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
-import { useState } from "react";
+import Link from "next/link";
 
 export default function DebugSentryPage() {
-  const [done, setDone] = useState(false);
+  const throwClientError = () => {
+    // erreur volontaire
+    // @ts-expect-error
+    myUndefinedFunction();
+  };
 
-  function throwClientError() {
-    // Ceci déclenchera l’Error Boundary et Sentry côté client
-    throw new Error("Client-side test error from /debug/sentry");
-  }
+  const captureMessage = () => {
+    Sentry.captureMessage("Test message from /debug-sentry");
+    alert("Message capturé → check Sentry Issues dans 10-30s.");
+  };
 
-  async function captureMessage() {
-    Sentry.captureMessage("Client-side test message from /debug/sentry", "info");
-    setDone(true);
-  }
+  const checkSDK = () => {
+    const client = Sentry.getCurrentHub().getClient();
+    const dsn = (client as any)?._options?.dsn;
+    console.log("[Sentry] client =", client);
+    console.log("[Sentry] dsn =", dsn);
+    alert(dsn ? `SDK OK ✅\nDSN: ${dsn}` : "SDK non initialisé ❌ (DSN manquant au build ?)");
+  };
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
-      <section className="container-max px-4 py-12 space-y-6">
-        <h1 className="h2">Debug Sentry</h1>
-        <p className="sub">Déclenche un évènement côté client pour vérifier Sentry.</p>
+    <main className="container-max px-4 py-10">
+      <h1 className="h1">Debug Sentry</h1>
+      <p className="sub mt-2">Déclenche un évènement côté client et vérifie l’initialisation.</p>
 
-        <div className="flex gap-3">
-          <button
-            onClick={throwClientError}
-            className="btn btn-primary-strong"
-          >
-            Throw client error
-          </button>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button className="btn btn-primary-strong" onClick={throwClientError}>
+          Throw client error
+        </button>
+        <button className="btn-outline" onClick={captureMessage}>
+          Capture message
+        </button>
+        <button className="btn" onClick={checkSDK}>
+          Check SDK (affiche DSN)
+        </button>
+      </div>
 
-          <button
-            onClick={captureMessage}
-            className="btn-outline"
-          >
-            Capture message
-          </button>
-        </div>
-
-        {done && (
-          <p className="text-sm text-[var(--fg-muted)]">
-            Message capturé ! Vérifie ton projet Sentry.
-          </p>
-        )}
-
-        <div className="mt-6">
-          <a
-            href="/api/sentry"
-            className="link"
-          >
-            Tester l’erreur serveur (/api/sentry)
-          </a>
-        </div>
-      </section>
+      <p className="mt-6">
+        Tester l’erreur serveur :{" "}
+        <Link className="link" href="/api/sentry">
+          /api/sentry
+        </Link>
+      </p>
     </main>
   );
 }
