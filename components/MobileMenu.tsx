@@ -12,12 +12,27 @@ import {
   LayoutDashboard,
   User2,
 } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+
+/**
+ * ✅ Soft import de next-auth/react pour éviter le crash au prerender.
+ * - En SSG, le module peut ne pas être initialisé : on fournit des fallbacks no-op.
+ */
+let nextAuthMod: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  nextAuthMod = require("next-auth/react");
+} catch {
+  // no-op (build/prerender)
+}
+const useSessionSafe: () => { data: any; status?: string } =
+  nextAuthMod?.useSession ?? (() => ({ data: null, status: "unauthenticated" }));
+const signOutSafe: (args?: any) => void =
+  nextAuthMod?.signOut ?? (() => {});
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  const { data: session } = useSession();
+  const { data: session } = useSessionSafe();
   const pathname = usePathname();
 
   const role =
@@ -27,11 +42,10 @@ export default function MobileMenu({ open, onClose }: Props) {
       ? "Individual"
       : undefined;
 
-  // Refs pour accessibilité / interactions
+  // Refs accessibilité / interactions
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const firstFocusRef = useRef<HTMLButtonElement | null>(null);
-  // ✅ Corrigé: cette ref est utilisée sur un <button>
   const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
   // Swipe-to-close
@@ -45,7 +59,6 @@ export default function MobileMenu({ open, onClose }: Props) {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Focus le menu et premier focusable
     const to = window.setTimeout(() => {
       (firstFocusRef.current ?? panelRef.current)?.focus();
     }, 0);
@@ -57,7 +70,6 @@ export default function MobileMenu({ open, onClose }: Props) {
         return;
       }
       if (e.key === "Tab") {
-        // Focus trap
         const focusable = getFocusable(panelRef.current);
         if (focusable.length === 0) return;
         const first = focusable[0];
@@ -86,7 +98,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, [open, onClose]);
 
-  // Fermeture swipe (glisser → droite)
+  // Gestuelle (glisser → droite)
   function onTouchStart(e: React.TouchEvent<HTMLDivElement>) {
     startX.current = e.touches[0].clientX;
     deltaX.current = 0;
@@ -94,19 +106,14 @@ export default function MobileMenu({ open, onClose }: Props) {
   function onTouchMove(e: React.TouchEvent<HTMLDivElement>) {
     if (startX.current == null) return;
     deltaX.current = e.touches[0].clientX - startX.current;
-    // translate le panneau pour feedback (limité à 0..80px)
     if (panelRef.current && deltaX.current > 0) {
       const t = Math.min(80, deltaX.current);
       panelRef.current.style.transform = `translateX(${t}px)`;
     }
   }
   function onTouchEnd() {
-    if (panelRef.current) {
-      panelRef.current.style.transform = "";
-    }
-    if (deltaX.current > 60) {
-      onClose();
-    }
+    if (panelRef.current) panelRef.current.style.transform = "";
+    if (deltaX.current > 60) onClose();
     startX.current = null;
     deltaX.current = 0;
   }
@@ -286,7 +293,7 @@ export default function MobileMenu({ open, onClose }: Props) {
 
                 <button
                   ref={lastFocusRef}
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => signOutSafe({ callbackUrl: "/" })}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600/20 px-4 py-2 text-sm font-medium text-rose-300 hover:bg-rose-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40"
                 >
                   <LogOut className="h-4 w-4" />
@@ -406,4 +413,4 @@ function isActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-    }
+        }
