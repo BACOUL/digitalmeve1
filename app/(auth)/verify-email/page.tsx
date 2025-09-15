@@ -10,26 +10,25 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-type VerifySearchParams = {
-  token?: string;
-  email?: string;
-  status?: "ok" | "expired" | "invalid";
-};
+type VerifyStatus = "ok" | "expired" | "invalid";
+type RawSearchParams = Record<string, string | string[] | undefined>;
+
+function pickString(v: string | string[] | undefined) {
+  return Array.isArray(v) ? v[0] : v;
+}
 
 export default async function VerifyEmailPage({
+  // Next 15: searchParams is optional and provided as a Promise
   searchParams,
 }: {
-  // Next 15: searchParams peut être un Promise
-  searchParams: Promise<VerifySearchParams> | VerifySearchParams;
+  searchParams?: Promise<RawSearchParams>;
 }) {
-  const sp: VerifySearchParams =
-    typeof (searchParams as any)?.then === "function"
-      ? await (searchParams as Promise<VerifySearchParams>)
-      : (searchParams as VerifySearchParams);
+  const raw: RawSearchParams =
+    (await (searchParams ?? Promise.resolve({} as RawSearchParams))) || {};
 
-  const token = sp?.token;
-  const email = sp?.email;
-  const status = sp?.status;
+  const token = pickString(raw.token);
+  const email = pickString(raw.email);
+  const status = pickString(raw.status) as VerifyStatus | undefined;
   const hasToken = typeof token === "string" && token.length > 0;
 
   return (
@@ -192,4 +191,4 @@ function NoTokenCard() {
       </p>
     </div>
   );
-}
+    }
