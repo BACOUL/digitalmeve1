@@ -1,6 +1,7 @@
+// app/status/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -11,85 +12,186 @@ import {
   Cloud,
   Globe2,
   Timer,
+  RefreshCcw,
 } from "lucide-react";
+
+/* ---------------- Types ---------------- */
 
 type ApiStatus = {
   status: "ok" | "degraded" | "down";
-  uptime: string;
-  version: string;
-  region?: string;
+  uptime: string;     // e.g. "99.98%"
+  version: string;    // e.g. "1.2.3"
+  region?: string;    // e.g. "eu-west-1"
 };
+
+/* -------------- Helpers (latency) -------------- */
+
+function percentile(values: number[], p: number) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1));
+  return Math.round(sorted[idx]);
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit & { timeoutMs?: number } = {}) {
+  const { timeoutMs = 4000, ...rest } = init;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(input, { ...rest, signal: ctrl.signal, cache: "no-store" });
+    return res;
+  } finally {
+    clearTimeout(to);
+  }
+}
+
+async function measureStatus(): Promise<{
+  api: ApiStatus | null;
+  pings: number[];
+  error: string | null;
+}> {
+  const attempts = 5;
+  const pings: number[] = [];
+  let api: ApiStatus | null = null;
+  let error: string | null = null;
+
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const t0 = performance.now();
+      const res = await fetchWithTimeout("/api/status", { timeoutMs: 4000 });
+      const t1 = performance.now();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as ApiStatus;
+      api = data;
+      pings.push(Math.max(0, t1 - t0));
+    } catch (e: any) {
+      error = e?.name === "AbortError" ? "Timeout" : e?.message || "Network error";
+      // on enregistre un ping “raté” symbolique pour ne pas fausser le visuel
+      pings.push(4000);
+    }
+  }
+  return { api, pings, error };
+}
+
+/* ---------------- Page ---------------- */
 
 export default function StatusPage() {
   const [api, setApi] = useState<ApiStatus | null>(null);
-  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [pings, setPings] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [busy, setBusy] = useState(false);
 
-  // Ping the API status endpoint
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const t0 = performance.now();
-        const res = await fetch("/api/status", { cache: "no-store" });
-        const t1 = performance.now();
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as ApiStatus;
-        if (!cancelled) {
-          setApi(data);
-          setLatencyMs(Math.round(t1 - t0));
-        }
-      } catch (e: any) {
-        if (!cancelled) {
-          setError(e?.message || "Unable to reach /api/status");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const intervalRef = useRef<number | null>(null);
+
+  const metrics = useMemo(() => {
+    const p50 = percentile(pings, 50);
+    const p95 = percentile(pings, 95);
+    return { p50, p95, samples: pings.length };
+  }, [pings]);
 
   const overall: { label: string; tone: "ok" | "warn" | "down" } = useMemo(() => {
-    if (!api) return { label: "Checking…", tone: "warn" };
-    if (api.status === "ok") return { label: "All systems nominal", tone: "ok" };
-    if (api.status === "degraded") return { label: "Partial degradation", tone: "warn" };
+    if (!api && !error) return { label: "Checking…", tone: "warn" };
+    if (api?.status === "ok") return { label: "All systems nominal", tone: "ok" };
+    if (api?.status === "degraded") return { label: "Partial degradation", tone: "warn" };
     return { label: "Service disruption", tone: "down" };
-  }, [api]);
+  }, [api, error]);
+
+  async function refreshOnce() {
+    setBusy(true);
+    const { api: a, pings: ps, error: err } = await measureStatus();
+    setApi(a);
+    setPings(ps);
+    setError(err && !a ? err : null); // si on a des données API, on n’affiche pas l’erreur
+    setBusy(false);
+  }
+
+  useEffect(() => {
+    // premier check
+    refreshOnce();
+  }, []);
+
+  useEffect(() => {
+    if (!autoRefresh) {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+    // refresh toutes les 30s
+    intervalRef.current = window.setInterval(() => {
+      refreshOnce();
+    }, 30000) as unknown as number;
+
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [autoRefresh]);
 
   return (
-    <main className="min-h-screen bg-white text-gray-800">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
+      {/* SR live */}
+      <p className="sr-only" aria-live="polite">
+        {busy ? "Checking status…" : error ? `Error: ${error}` : `Status: ${overall.label}`}
+      </p>
+
       {/* HERO */}
-      <section className="border-b border-gray-200 bg-white">
+      <section className="border-b border-[var(--border)] bg-[var(--bg)]">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="flex items-center gap-3">
-            <Activity className="h-6 w-6 text-emerald-600" />
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl text-gray-900">
+            <Activity className="h-6 w-6 text-[var(--accent-1)]" />
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
               Status
             </h1>
           </div>
-          <p className="mt-4 max-w-3xl text-lg text-gray-600">
+          <p className="mt-4 max-w-3xl text-lg text-[var(--fg-muted)]">
             Live service health for DigitalMeve — API, web app, and verification.
           </p>
 
-          {/* Overall badge */}
-          <div className="mt-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm ring-1 ring-gray-200">
-            <StatusDot tone={overall.tone} />
-            <span className="font-medium">{overall.label}</span>
+          {/* Overall badge + controls */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm ring-1 ring-[var(--border)]">
+              <StatusDot tone={overall.tone} />
+              <span className="font-medium">{overall.label}</span>
+            </span>
+
+            <button
+              onClick={refreshOnce}
+              disabled={busy}
+              className="btn btn-ghost inline-flex items-center gap-2"
+              aria-disabled={busy}
+            >
+              <RefreshCcw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+              {busy ? "Refreshing…" : "Refresh now"}
+            </button>
+
+            <label className="inline-flex select-none items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--accent-1)]"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+              />
+              Auto-refresh (30s)
+            </label>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/developers#endpoints"
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50"
+              className="btn btn-ghost inline-flex items-center gap-2"
             >
               API endpoints <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/security"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="btn inline-flex items-center gap-2 bg-slate-900 text-white hover:bg-slate-800"
             >
-              Security & trust <ArrowRight className="h-4 w-4" />
+              Security &amp; trust <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -100,39 +202,41 @@ export default function StatusPage() {
         <div className="grid gap-6 md:grid-cols-3">
           <HealthCard
             title="Web App"
-            desc="App shell and static assets via Vercel edge."
+            desc="App shell and static assets via edge."
             healthy
-            icon={<Cloud className="h-5 w-5 text-emerald-600" />}
+            icon={<Cloud className="h-5 w-5 text-[var(--accent-1)]" />}
           />
           <HealthCard
             title="API"
-            desc={`Health, version & latency from /api/status.`}
+            desc="Health, version & latency from /api/status."
             healthy={api?.status === "ok"}
             warning={api?.status === "degraded" || (!api && !error)}
             down={api?.status === "down" || !!error}
             meta={[
               api?.version ? `v${api.version}` : undefined,
-              typeof latencyMs === "number" ? `${latencyMs} ms` : undefined,
+              metrics.p50 != null ? `p50 ${metrics.p50} ms` : undefined,
+              metrics.p95 != null ? `p95 ${metrics.p95} ms` : undefined,
               api?.region ? `region ${api.region}` : undefined,
+              api?.uptime ? `uptime ${api.uptime}` : undefined,
             ].filter(Boolean) as string[]}
-            icon={<Server className="h-5 w-5 text-emerald-600" />}
+            icon={<Server className="h-5 w-5 text-[var(--accent-2)]" />}
           />
           <HealthCard
             title="Verification"
             desc="Hashing & proof checks (online/offline)."
             healthy
-            icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+            icon={<CheckCircle2 className="h-5 w-5 text-[var(--accent-1)]" />}
           />
         </div>
       </section>
 
       {/* REGIONS */}
       <section className="mx-auto max-w-6xl px-4 py-6">
-        <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-          <Globe2 className="h-5 w-5 text-sky-600" />
+        <h2 className="text-2xl font-semibold flex items-center gap-2">
+          <Globe2 className="h-5 w-5 text-[var(--accent-2)]" />
           Regions
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-[var(--fg-muted)]">
           We deploy on global edge. API currently runs in a primary EU region with automatic failover (roadmap).
         </p>
 
@@ -143,43 +247,43 @@ export default function StatusPage() {
         </div>
       </section>
 
-      {/* INCIDENTS (placeholder, ready to wire) */}
+      {/* INCIDENTS */}
       <section className="mx-auto max-w-6xl px-4 py-10">
-        <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-2xl font-semibold flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-amber-600" />
-          Incidents & maintenance
+          Incidents &amp; maintenance
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-[var(--fg-muted)]">
           No active incidents. Planned maintenance will be announced here.
         </p>
 
-        <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
-          <p className="text-gray-800 font-medium">Past 90 days</p>
-          <ul className="mt-3 list-disc pl-5 space-y-1">
-            <li className="text-gray-500">No incidents reported.</li>
+        <div className="mt-4 card p-5 text-sm">
+          <p className="font-medium">Past 90 days</p>
+          <ul className="mt-3 list-disc pl-5 space-y-1 text-[var(--fg-muted)]">
+            <li>No incidents reported.</li>
           </ul>
         </div>
       </section>
 
       {/* SUBSCRIBE */}
       <section className="mx-auto max-w-6xl px-4 py-10">
-        <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-          <Timer className="h-5 w-5 text-emerald-600" />
+        <h2 className="text-2xl font-semibold flex items-center gap-2">
+          <Timer className="h-5 w-5 text-[var(--accent-1)]" />
           Subscribe to updates
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-[var(--fg-muted)]">
           Get notified about incidents and maintenance windows.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <a
             href="mailto:status@digitalmeve.com"
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            className="btn inline-flex items-center gap-2 bg-slate-900 text-white hover:bg-slate-800"
           >
             status@digitalmeve.com
           </a>
           <Link
             href="/developers#status"
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50"
+            className="btn btn-ghost inline-flex items-center gap-2"
           >
             API status endpoint <ArrowRight className="h-4 w-4" />
           </Link>
@@ -218,37 +322,51 @@ function HealthCard({
   down?: boolean;
   meta?: string[];
 }) {
-  let tone = "text-gray-700 ring-gray-200";
-  if (healthy) tone = "text-emerald-700 ring-emerald-200";
-  if (warning) tone = "text-amber-700 ring-amber-200";
-  if (down) tone = "text-rose-700 ring-rose-200";
+  let tone = "ring-[var(--border)]";
+  let label = (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fg-muted)]">
+      <Activity className="h-4 w-4" /> Checking…
+    </span>
+  );
+  if (healthy) {
+    tone = "ring-emerald-200";
+    label = (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+        <CheckCircle2 className="h-4 w-4" /> Operational
+      </span>
+    );
+  }
+  if (warning && !down && !healthy) {
+    tone = "ring-amber-200";
+    label = (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+        <Activity className="h-4 w-4" /> Investigating
+      </span>
+    );
+  }
+  if (down) {
+    tone = "ring-rose-200";
+    label = (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-700">
+        <AlertTriangle className="h-4 w-4" /> Outage
+      </span>
+    );
+  }
 
   return (
-    <div className={`rounded-2xl bg-white p-5 ring-1 ${tone}`}>
+    <div className={`card p-5 ring-1 ${tone}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {icon}
-          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-base font-semibold">{title}</h3>
         </div>
-        {healthy ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-            <CheckCircle2 className="h-4 w-4" /> Operational
-          </span>
-        ) : down ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-700">
-            <AlertTriangle className="h-4 w-4" /> Outage
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
-            <Activity className="h-4 w-4" /> Checking…
-          </span>
-        )}
+        {label}
       </div>
-      <p className="mt-2 text-sm text-gray-700">{desc}</p>
+      <p className="mt-2 text-sm text-[var(--fg-muted)]">{desc}</p>
       {meta.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+        <ul className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--fg-muted)]">
           {meta.map((m) => (
-            <li key={m} className="rounded-full bg-gray-50 px-2.5 py-1 ring-1 ring-gray-200">
+            <li key={m} className="rounded-full bg-white/5 px-2.5 py-1 ring-1 ring-[var(--border)]">
               {m}
             </li>
           ))}
@@ -260,9 +378,9 @@ function HealthCard({
 
 function RegionChip({ name, status }: { name: string; status: "ok" | "warn" | "down" }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-      <span className="text-sm font-medium text-gray-900">{name}</span>
+    <div className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-white/5 px-4 py-3">
+      <span className="text-sm font-medium">{name}</span>
       <StatusDot tone={status === "ok" ? "ok" : status === "warn" ? "warn" : "down"} />
     </div>
   );
-}
+            }
