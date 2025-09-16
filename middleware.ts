@@ -6,29 +6,38 @@ const isProd = process.env.NODE_ENV === "production";
 const enableCspReportOnly =
   process.env.NEXT_PUBLIC_CSP_REPORT_ONLY === "1" ||
   process.env.NEXT_PUBLIC_CSP_REPORT_ONLY === "true";
+const hasSentry = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-// Construit une URL absolue pour les endpoints de reporting
+const SENTRY_INGEST = [
+  "https://*.ingest.sentry.io",
+  "https://*.ingest.de.sentry.io",
+  "https://sentry.io",
+].join(" ");
+
 function absoluteUrl(req: NextRequest, path: string) {
-  const origin = req.nextUrl.origin; // ex: https://digitalmeve.com
-  return `${origin}${path}`;
+  return `${req.nextUrl.origin}${path}`;
 }
 
 export const config = {
-  // On applique partout sauf assets statiques Next et fichiers publics lourds
+  // On applique partout sauf assets statiques / fichiers publics / endpoint de report
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|og/|icons/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|og/|icons/|api/csp-report).*)",
   ],
 };
 
 export function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
-  // --- Identifiant de requête (utile pour corréler logs/erreurs) ---
-  const requestId = crypto.randomUUID();
+  // --- Request ID (réutilise si fourni en amont) ---
+  const upstreamId = req.headers.get("x-request-id");
+  const requestId =
+    upstreamId ||
+    (typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2));
   res.headers.set("X-Request-ID", requestId);
 
   // --- Security Headers (socle) ---
-  // HSTS uniquement en prod (évite de "locker" les environnements locaux)
   if (isProd) {
     res.headers.set(
       "Strict-Transport-Security",
@@ -39,13 +48,11 @@ export function middleware(req: NextRequest) {
   res.headers.set("X-DNS-Prefetch-Control", "on");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("X-Content-Type-Options", "nosniff");
-  res.headers.set("X-XSS-Protection", "0"); // obsolète mais évite double traitement
+  res.headers.set("X-XSS-Protection", "0");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  // COOP/Corp/Corb (déjà en grande partie via next.config, on double au cas où)
-  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  // Si tu passes en COEP=require-corp, le site doit être 100% compatible (risque de casser des intégrations)
-  // res.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+  // ✅ OAuth / popups-friendly
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 
   res.headers.set(
@@ -76,10 +83,10 @@ export function middleware(req: NextRequest) {
     ].join(", ")
   );
 
-  // --- CSP Report-Only (optionnel, activable via NEXT_PUBLIC_CSP_REPORT_ONLY=1) ---
+  // --- CSP Report-Only (observabilité sans blocage) ---
   if (enableCspReportOnly) {
     const reportingEndpoint = absoluteUrl(req, "/api/csp-report");
-    // Report-To (legacy) + Reporting-Endpoints (nouveau)
+
     res.headers.set(
       "Report-To",
       JSON.stringify({
@@ -90,14 +97,20 @@ export function middleware(req: NextRequest) {
     );
     res.headers.set("Reporting-Endpoints", `csp-endpoint="${reportingEndpoint}"`);
 
-    // Version "light" pour capter les violations sans bloquer (le blocage dur se fait via next.config.mjs → CSP)
+    const connectSrc = [
+      "connect-src 'self' https:",
+      hasSentry ? SENTRY_INGEST : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     const cspReportOnly = [
       "default-src 'self'",
       "script-src 'self'",
-      "style-src 'self' 'unsafe-inline'", // toléré pour Tailwind/inline styles
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https:",
+      connectSrc,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -107,12 +120,10 @@ export function middleware(req: NextRequest) {
       "report-to csp-endpoint",
     ].join("; ");
 
-    // On n’écrase PAS la vraie CSP posée par next.config.mjs : ici c’est *Report-Only* pour observabilité
     res.headers.set("Content-Security-Policy-Report-Only", cspReportOnly);
   }
 
-  // --- Exceptions d'iframe si besoin ---
-  // Exemple: autoriser l’embed de /status (widget) dans la même origine
+  // --- Exception d'iframe si besoin ---
   if (req.nextUrl.pathname.startsWith("/status")) {
     res.headers.set("X-Frame-Options", "SAMEORIGIN");
   }
