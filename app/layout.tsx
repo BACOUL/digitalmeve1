@@ -1,5 +1,5 @@
 // app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Inter, Sora } from "next/font/google";
 import Script from "next/script";
@@ -15,6 +15,17 @@ const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap"
 // Base URL (sans slash final)
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com").replace(/\/+$/, "");
 
+/** Viewport (mobile + zoom) */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0B1220" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+  ],
+};
+
 // Métadonnées
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -23,8 +34,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
     languages: {
-      "en": `${siteUrl}/?lang=en`,
-      "fr": `${siteUrl}/?lang=fr`,
+      en: `${siteUrl}/?lang=en`,
+      fr: `${siteUrl}/?lang=fr`,
     },
   },
   openGraph: {
@@ -87,7 +98,6 @@ const ORG_JSONLD = {
   legalName: "DigitalMeve",
   logo: `${siteUrl}/og/og-image.png`,
   sameAs: [
-    // Renseigne quand tu auras les liens officiels :
     // "https://x.com/…",
     // "https://www.linkedin.com/company/…",
     // "https://github.com/…"
@@ -108,13 +118,12 @@ const ORG_JSONLD = {
   ],
 };
 
-// JSON-LD WebSite (+ SearchAction si tu ajoutes une page /search)
+// JSON-LD WebSite (+ SearchAction si /search)
 const WEBSITE_JSONLD = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   url: siteUrl,
   name: "DigitalMeve",
-  // Décommente si tu implémentes /search
   // potentialAction: {
   //   "@type": "SearchAction",
   //   target: `${siteUrl}/search?q={query}`,
@@ -135,8 +144,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {THEME_INIT}
       </Script>
 
-      {/* JSON-LD SEO (Organization + WebSite). Google accepte dans le <body>. */}
       <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)]">
+        {/* Skip-link accessibilité */}
+        <a href="#main" className="skip-link">Aller au contenu</a>
+
+        {/* JSON-LD SEO (Organization + WebSite) */}
         <Script
           id="ld-org"
           type="application/ld+json"
