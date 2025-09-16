@@ -1,76 +1,50 @@
-import { NextRequest } from "next/server";
+// app/api/errlog/route.ts
+import type { NextRequest } from "next/server";
 
-export const runtime = "edge"; // rapide & scalable
+export const runtime = "edge"; // compatible Vercel Edge
 
-// Petite fonction de redaction pour éviter tout PII accidentel
-function sanitize(input: unknown) {
-  try {
-    const obj = typeof input === "string" ? JSON.parse(input) : input;
-    if (!obj || typeof obj !== "object") return obj;
-
-    const clone: Record<string, unknown> = { ...(obj as any) };
-    const lowerKeys = Object.keys(clone).map((k) => k.toLowerCase());
-
-    // champs potentiellement sensibles
-    const suspect = ["email", "password", "token", "authorization", "cookie"];
-    for (const key of Object.keys(clone)) {
-      if (suspect.includes(key.toLowerCase())) {
-        clone[key] = "[redacted]";
-      }
-    }
-
-    // tronque stack/strings trop longues
-    if (typeof clone.stack === "string" && clone.stack.length > 5000) {
-      clone.stack = clone.stack.slice(0, 5000) + "…[truncated]";
-    }
-    if (typeof clone.message === "string" && clone.message.length > 2000) {
-      clone.message = clone.message.slice(0, 2000) + "…[truncated]";
-    }
-    return clone;
-  } catch {
-    return { note: "sanitize-failed" };
-  }
-}
+type ErrLogPayload = {
+  message?: string;
+  stack?: string | null;
+  digest?: string | null;
+  at?: string | null;
+  extra?: Record<string, unknown>;
+};
 
 export async function POST(req: NextRequest) {
-  // Rate-limit léger (5 req / 10s / IP) — best-effort en Edge
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.ip ||
-    "0.0.0.0";
-  const key = `errlog:${ip}:${Math.floor(Date.now() / 10_000)}`; // bucket de 10s
-  // @ts-expect-error Deno KV n’existe pas ici — fallback noop (Vercel Edge n’a pas de KV par défaut)
-  const count = (globalThis as any)[key] ?? 0;
-  // @ts-expect-error idem
-  (globalThis as any)[key] = count + 1;
-  if (count > 5) {
-    return new Response(null, { status: 204 }); // on ignore silencieusement
-  }
-
-  let payload: any = null;
   try {
-    payload = await req.json();
-  } catch {
-    // no-op (mal formé)
+    const body = (await req.json().catch(() => ({}))) as ErrLogPayload;
+
+    // IP côté Edge/Proxy: on tente les entêtes usuels puis fallback
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      req.headers.get("cf-connecting-ip") || // Cloudflare
+      req.headers.get("x-client-ip") ||
+      req.headers.get("fastly-client-ip") ||
+      undefined;
+
+    const ua = req.headers.get("user-agent") || "";
+
+    // Log minimal côté serveur (visible dans Vercel > Functions logs)
+    // eslint-disable-next-line no-console
+    console.error("[client-error]", {
+      message: body?.message ?? "unknown",
+      digest: body?.digest ?? null,
+      at: body?.at ?? null,
+      ip,
+      ua,
+      // stack peut être volumineuse : on la met quand même pour debug
+      stack: body?.stack ?? null,
+      extra: body?.extra ?? undefined,
+    });
+
+    // Réponse vide, succès (no content)
+    return new Response(null, { status: 204 });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[errlog-endpoint-failed]", e);
+    // On ne casse jamais l’UX : on renvoie 204 quand même
+    return new Response(null, { status: 204 });
   }
-
-  const safe = sanitize(payload);
-  // Log non bloquant (visible dans Vercel > Functions logs)
-  // eslint-disable-next-line no-console
-  console.log("[client-error]", {
-    at: new Date().toISOString(),
-    ip,
-    url: safe?.at ?? null,
-    message: safe?.message ?? null,
-    digest: safe?.digest ?? null,
-    stack: safe?.stack ?? null,
-  });
-
-  // On ne renvoie rien (pas de fuite d’info côté client)
-  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
-}
-
-export function GET() {
-  // Désactivé (read only)
-  return new Response("Method Not Allowed", { status: 405 });
 }
