@@ -1,32 +1,19 @@
 // app/api/sentry/route.ts
-import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
-export const runtime = "edge"; // ou "nodejs"
+// Edge ou Node: au choix. Si tu utilises déjà @sentry/nextjs, Node est OK.
+export const runtime = "nodejs";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    const DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || "";
-    if (!DSN) return new Response("Sentry DSN missing", { status: 204 });
-
-    // DSN format: https://<key>@o<orgId>.ingest.sentry.io/<projectId>
-    const ingestUrl = new URL(DSN);
-    ingestUrl.username = ""; // nettoie userinfo
-    const parts = ingestUrl.pathname.split("/").filter(Boolean);
-    const projectId = parts[parts.length - 1];
-    ingestUrl.pathname = `/api/${projectId}/envelope/`;
-
-    const body = await req.text();
-    const res = await fetch(ingestUrl.toString(), {
-      method: "POST",
-      body,
-      headers: {
-        "Content-Type":
-          req.headers.get("content-type") || "application/x-sentry-envelope",
-      },
+    // Provoque une erreur côté serveur
+    throw new Error("Test Sentry — server error 💥");
+  } catch (err) {
+    // Capture par le SDK Sentry (utilise NEXT_PUBLIC_SENTRY_DSN)
+    Sentry.captureException(err);
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
-
-    return new Response(null, { status: res.status });
-  } catch {
-    return new Response(null, { status: 204 });
   }
 }
