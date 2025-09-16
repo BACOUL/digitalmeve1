@@ -1,95 +1,55 @@
-"use client";
+'use client';
 
-import * as Sentry from "@sentry/nextjs";
-import { useEffect, useState } from "react";
+import * as Sentry from '@sentry/nextjs';
+import { useState } from 'react';
 
-export default function DebugSentryPage() {
-  const [sdkReady, setSdkReady] = useState(false);
-  const [lastEventId, setLastEventId] = useState<string | null>(null);
-  const [proxyInfo, setProxyInfo] = useState<string>("—");
+const DEBUG_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_SENTRY_DEBUG === 'true' ||
+  process.env.NODE_ENV !== 'production'; // visible en dev, masquée en prod sauf override
 
-  useEffect(() => {
-    // @ts-expect-error _isInitialized est interne, juste pour debug visuel
-    setSdkReady(!!Sentry?.getCurrentHub?.()?.getClient?.()?._isInitialized);
-  }, []);
+export default function SentryDebugPage() {
+  const [eventId, setEventId] = useState<string | null>(null);
 
-  async function testProxy() {
-    try {
-      const res = await fetch("/api/sentry", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-sentry-envelope" },
-        body: "test", // on envoie un truc bidon, on veut juste vérifier le 200
-      });
-      setProxyInfo(JSON.stringify({ ok: res.ok, status: res.status }));
-      alert(`Proxy répond: ${res.status}`);
-    } catch (e: any) {
-      setProxyInfo(e?.message || "error");
-      alert("Proxy KO");
-    }
+  if (!DEBUG_ENABLED) {
+    // rien à afficher en prod
+    return null;
   }
 
-  function throwUnhandled() {
-    // Provoque une erreur *non interceptée* (en dehors de l’event handler)
+  const throwUnhandled = () => {
+    // non interceptée → unhandled error
     setTimeout(() => {
-      throw new Error("DMV unhandled client error");
+      // @ts-ignore test
+      throw new Error('DMV: unhandled client error');
     }, 0);
-    alert("Erreur non interceptée déclenchée (vérifie Sentry dans 10–30 s).");
-  }
+  };
 
-  async function captureMsg() {
-    const id = Sentry.captureMessage("DMV test message (client)");
-    setLastEventId(id);
-    alert("Message capturé (client). Vérifie Sentry.");
-  }
-
-  async function captureException() {
-    try {
-      JSON.parse("{"); // force une erreur
-    } catch (err) {
-      const id = Sentry.captureException(err);
-      setLastEventId(id);
-      alert("Exception capturée (client). Vérifie Sentry.");
-    }
-  }
+  const sendMessage = () => {
+    const id = Sentry.captureMessage('DMV: test message (client)', {
+      level: 'info',
+      tags: { area: 'debug' },
+    });
+    setEventId(typeof id === 'string' ? id : null);
+    alert('Message envoyé. Vérifie Sentry dans ~10–30 s.');
+  };
 
   return (
-    <main className="mx-auto max-w-screen-md p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Debug Sentry</h1>
+    <main className="mx-auto max-w-xl p-6">
+      <h1 className="text-2xl font-semibold mb-4">Debug Sentry</h1>
 
-      <div className="rounded-xl border border-neutral-700 p-4 leading-7">
-        <div>SDK initialisé : {sdkReady ? "oui ✅" : "non ❌"}</div>
-        <div>Env : {process.env.NODE_ENV}</div>
-        <div>Dernier eventId : {lastEventId ?? "—"}</div>
-        <div>Proxy info : {proxyInfo}</div>
+      <div className="rounded border p-4 mb-6">
+        <p>SDK initialisé : {Sentry.isInitialized() ? 'oui ✅' : 'non ❌'}</p>
+        <p>Env : {process.env.NODE_ENV}</p>
+        <p>Dernier eventId : {eventId ?? '—'}</p>
       </div>
 
-      <button
-        onClick={throwUnhandled}
-        className="w-full rounded-lg border border-neutral-700 px-4 py-3 text-left hover:bg-neutral-900"
-      >
-        Throw client error (unhandled)
-      </button>
-
-      <button
-        onClick={captureMsg}
-        className="w-full rounded-lg border border-neutral-700 px-4 py-3 text-left hover:bg-neutral-900"
-      >
-        Capture message (client)
-      </button>
-
-      <button
-        onClick={captureException}
-        className="w-full rounded-lg border border-neutral-700 px-4 py-3 text-left hover:bg-neutral-900"
-      >
-        Capture exception (client)
-      </button>
-
-      <button
-        onClick={testProxy}
-        className="w-full rounded-lg border border-neutral-700 px-4 py-3 text-left hover:bg-neutral-900"
-      >
-        Tester envoi brut via proxy
-      </button>
+      <div className="flex flex-col gap-3">
+        <button onClick={throwUnhandled} className="rounded bg-white/10 px-4 py-2">
+          Throw client error (unhandled)
+        </button>
+        <button onClick={sendMessage} className="rounded bg-white/10 px-4 py-2">
+          Capture message (client)
+        </button>
+      </div>
     </main>
   );
-      }
+}
