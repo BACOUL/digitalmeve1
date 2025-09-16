@@ -2,36 +2,42 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-// ✅ Utilise le wrapper safe (évite les erreurs au build/SSG)
-import { useSessionSafe as useSession, signOutSafe as signOut } from "@/lib/safe-auth";
-
-import { Menu, LogIn, UserPlus, LogOut, LayoutDashboard, User2, Globe } from "lucide-react";
+import {
+  useSessionSafe as useSession,
+  signOutSafe as signOut,
+} from "@/lib/safe-auth";
+import {
+  Menu,
+  LogIn,
+  UserPlus,
+  LogOut,
+  LayoutDashboard,
+  User2,
+  Globe,
+} from "lucide-react";
 import MobileMenu from "./MobileMenu";
 
 export default function Header() {
-  // ✅ ne pas déstructurer — on lit .data
   const sessionState = useSession();
   const session = sessionState?.data;
-
   const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Ferme le drawer si on change de route via hash (mobile)
-  useEffect(() => {
-    const close = () => setOpen(false);
-    window.addEventListener("hashchange", close);
-    return () => window.removeEventListener("hashchange", close);
-  }, []);
-
-  // Ombre + renforcement glass au scroll
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener("hashchange", close);
+    return () => window.removeEventListener("hashchange", close);
   }, []);
 
   const role =
@@ -41,14 +47,13 @@ export default function Header() {
       ? "Individual"
       : undefined;
 
-  // Nav items (facile à maintenir)
   const nav = useMemo(
     () => [
-      { href: "/generate", label: "Generate" },
-      { href: "/verify", label: "Verify" },
-      { href: "/personal", label: "For Individuals" },
-      { href: "/pro", label: "For Business" },
-      { href: "/pricing", label: "Pricing" },
+      { href: "/generate", label: "Protéger" },
+      { href: "/verify", label: "Vérifier" },
+      { href: "/personal", label: "Particuliers" },
+      { href: "/pro", label: "Entreprises" },
+      { href: "/pricing", label: "Tarifs" },
     ],
     []
   );
@@ -60,42 +65,52 @@ export default function Header() {
 
   return (
     <>
-      {/* Lien “skip” a11y */}
+      {/* Lien accessibilité pour sauter au contenu */}
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus-ring fixed left-3 top-3 z-[1001] rounded-xl bg-white/90 px-3 py-2 text-sm font-medium text-slate-900 shadow"
+        className="sr-only focus:not-sr-only fixed left-3 top-3 z-[1001] rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow focus:outline-none focus:ring-2 focus:ring-sky-400"
       >
-        Skip to content
+        Aller au contenu
       </a>
 
-      {/* HEADER sombre + verre dépoli + ombre au scroll */}
+      {/* HEADER clair premium */}
       <header
-        className={`sticky top-0 z-50 w-full border-b border-white/10 glass transition-shadow ${
-          scrolled ? "shadow-[0_6px_24px_rgba(0,0,0,.25)]" : ""
-        }`}
         role="banner"
+        className={[
+          "sticky top-0 z-50 w-full border-b border-gray-200",
+          "bg-white/95 supports-[backdrop-filter]:bg-white/80 backdrop-blur",
+          scrolled ? "shadow-[0_6px_24px_rgba(2,6,23,.10)]" : "shadow-none",
+          "transition-shadow",
+        ].join(" ")}
       >
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 text-slate-100">
-          {/* Logo (brand) */}
-          <Link href="/" className="mr-1 text-lg font-semibold focus-ring rounded-lg px-1 -mx-1">
-            <span className="text-emerald-400">Digital</span>
-            <span className="text-sky-400">Meve</span>
+        <div className="container-max flex h-16 items-center gap-3 text-slate-900">
+          {/* Logo marque */}
+          <Link
+            href="/"
+            className="mr-1 -mx-1 px-1 rounded-lg font-extrabold text-[1.25rem] tracking-tight focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            aria-label="DigitalMeve - Accueil"
+          >
+            <span className="text-emerald-500">Digital</span>
+            <span className="text-sky-500">Meve</span>
           </Link>
 
-          {/* Nav principale (desktop) */}
+          {/* Navigation (desktop) */}
           <nav
-            className="ml-2 hidden items-center gap-6 text-sm md:flex"
-            aria-label="Primary"
+            aria-label="Navigation principale"
+            className="ml-4 hidden items-center gap-7 text-[0.95rem] md:flex"
           >
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
-                className={`relative focus-ring rounded-lg px-1 -mx-1 text-slate-300 hover:text-white transition
-                after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[2px] after:w-0 after:rounded-full after:bg-gradient-to-r after:from-emerald-400 after:to-sky-400 after:transition-all
-                hover:after:w-3/5
-                ${isActive(item.href) ? "text-white after:w-3/5" : ""}`}
+                className={[
+                  "relative -mx-1 px-1 font-medium text-slate-700 hover:text-slate-900 transition-colors",
+                  "after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[2px] after:w-0 after:rounded-full",
+                  "after:bg-gradient-to-r after:from-emerald-500 after:to-sky-500 after:transition-all",
+                  "hover:after:w-3/5",
+                  isActive(item.href) ? "text-slate-900 after:w-3/5" : "",
+                ].join(" ")}
               >
                 {item.label}
               </Link>
@@ -104,94 +119,92 @@ export default function Header() {
 
           <div className="flex-1" />
 
-          {/* Lang switcher (optionnel) */}
+          {/* Langues (desktop) */}
           <div className="hidden items-center gap-2 md:flex">
             <Link
+              href="/?lang=fr"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs text-slate-700 hover:bg-gray-50"
+              aria-label="Passer en français"
+            >
+              <Globe className="h-3.5 w-3.5 text-emerald-500" />
+              FR
+            </Link>
+            <span className="text-slate-300">/</span>
+            <Link
               href="/?lang=en"
-              className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-slate-200 hover:bg-white/10 focus-ring"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs text-slate-700 hover:bg-gray-50"
               aria-label="Switch to English"
             >
-              <Globe className="h-3.5 w-3.5 text-emerald-400" />
               EN
-            </Link>
-            <span className="text-slate-600">/</span>
-            <Link
-              href="/?lang=fr"
-              className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-slate-200 hover:bg-white/10 focus-ring"
-              aria-label="Basculer en français"
-            >
-              FR
             </Link>
           </div>
 
-          {/* Auth zone (desktop) */}
+          {/* Auth (desktop) */}
           <div className="hidden items-center gap-3 md:flex">
             {!session?.user ? (
               <>
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-100 hover:bg-white/10 focus-ring"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
                 >
                   <LogIn className="h-4 w-4" />
-                  Login
+                  Connexion
                 </Link>
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-[0_0_30px_rgba(34,211,238,0.35)] hover:brightness-110 focus-ring"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-2 text-sm font-semibold text-white shadow hover:brightness-105"
                 >
                   <UserPlus className="h-4 w-4" />
-                  Register
+                  Créer un compte
                 </Link>
               </>
             ) : (
               <div className="hidden items-center gap-3 md:flex">
-                <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5">
-                  <User2 className="h-4 w-4 text-slate-200" />
+                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
+                  <User2 className="h-4 w-4 text-slate-700" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium leading-tight text-slate-100">
+                    <p className="truncate text-sm font-medium leading-tight text-slate-900">
                       {session.user.email}
                     </p>
                     {role && (
-                      <p className="text-xs leading-tight text-slate-400">{role}</p>
+                      <p className="text-xs leading-tight text-slate-500">{role}</p>
                     )}
                   </div>
                 </div>
-
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-100 hover:bg-white/10 focus-ring"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-gray-50"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
                 </Link>
-
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="inline-flex items-center gap-2 rounded-xl bg-rose-500/15 px-3 py-1.5 text-sm font-medium text-rose-300 hover:bg-rose-500/25 focus-ring"
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600/10 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-600/15"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign out
+                  Déconnexion
                 </button>
               </div>
             )}
           </div>
 
-          {/* Hamburger (mobile) */}
+          {/* Menu mobile */}
           <button
             onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 focus-ring md:hidden"
+            aria-label="Ouvrir le menu"
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-slate-900 hover:bg-gray-50 active:scale-95 transition"
           >
-            <Menu className="h-5 w-5 text-slate-100" />
+            <Menu className="h-5 w-5" />
           </button>
         </div>
       </header>
 
-      {/* Drawer mobile */}
+      {/* Drawer mobile (tu as déjà le composant) */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
 
-      {/* #main anchor pour le skip link */}
+      {/* Ancre pour le lien “skip” */}
       <span id="main" className="sr-only" />
     </>
   );
-          }
+}
