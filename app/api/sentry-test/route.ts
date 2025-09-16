@@ -1,14 +1,17 @@
-import * as Sentry from "@sentry/nextjs";
+// app/api/sentry-test/route.ts
+import * as Sentry from '@sentry/nextjs';
+import { NextResponse } from 'next/server';
 
-export const runtime = "nodejs"; // (edge possible aussi, mais restons simple)
+// Force Node runtime pour que ce soit capturé par sentry.server.config
+export const runtime = 'nodejs';
 
-export async function POST() {
+export async function GET() {
   try {
-    throw new Error("DM test: exception côté serveur");
+    throw new Error('DMV server test error');
   } catch (err) {
+    // On capture explicitement (Next captera aussi l’unhandled)
     Sentry.captureException(err);
-    // Laissez Sentry flusher rapidement
     await Sentry.flush(2000);
-    return new Response("captured", { status: 200 });
+    return NextResponse.json({ ok: false, sentry: 'captured' }, { status: 500 });
   }
 }
