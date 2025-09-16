@@ -1,17 +1,12 @@
 // sentry.server.config.ts
 import * as Sentry from "@sentry/nextjs";
 
-/**
- * Init Sentry côté serveur (Node runtimes).
- */
-const DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || "";
-if (DSN) {
-  Sentry.init({
-    dsn: DSN,
-    tracesSampleRate: 0.05, // un peu plus bas côté serveur
-    environment: process.env.NEXT_PUBLIC_RUNTIME_ENV || process.env.NODE_ENV || "production",
-    release: process.env.NEXT_PUBLIC_COMMIT_SHA || undefined,
-    tunnel: "/api/sentry",
-    sendClientReports: true,
-  });
-}
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  sampleRate: 1.0,
+  tracesSampleRate: 1.0,
+  environment:
+    process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV || "production",
+  debug: true, // logs côté serveur
+  integrations: [],
+});
