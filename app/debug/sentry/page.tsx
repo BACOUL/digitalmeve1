@@ -1,16 +1,15 @@
+// app/debug/sentry/page.tsx
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
 
 export default function DebugSentryPage() {
   const throwUnhandled = () => {
-    // Erreur non interceptée (unhandled) : Sentry doit la voir automatiquement
+    // Erreur non interceptée (unhandled) → Sentry doit l’attraper
     setTimeout(() => {
-      // en dehors du handler React
-      // @ts-expect-error test
       throw new Error("Test: unhandled client error");
     }, 0);
-    alert("Erreur non interceptée déclenchée (regarde Sentry dans 10-30s).");
+    alert("Erreur non interceptée déclenchée (vérifie Sentry dans 10–30 s).");
   };
 
   const captureMessage = () => {
@@ -20,7 +19,8 @@ export default function DebugSentryPage() {
 
   const captureException = () => {
     try {
-      // @ts-expect-error test
+      // on force une ReferenceError contrôlée
+      // @ts-ignore – volontaire pour la démo
       myUndefinedFunction();
     } catch (e) {
       Sentry.captureException(e);
@@ -33,31 +33,19 @@ export default function DebugSentryPage() {
       <h1 className="text-3xl font-bold">Debug Sentry</h1>
 
       <div className="flex flex-wrap gap-3">
-        <button
-          onClick={throwUnhandled}
-          className="px-4 py-2 rounded bg-white/10 hover:bg-white/20"
-        >
+        <button onClick={throwUnhandled} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">
           Throw client error (unhandled)
         </button>
-
-        <button
-          onClick={captureMessage}
-          className="px-4 py-2 rounded bg-white/10 hover:bg-white/20"
-        >
+        <button onClick={captureMessage} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">
           Capture message
         </button>
-
-        <button
-          onClick={captureException}
-          className="px-4 py-2 rounded bg-white/10 hover:bg-white/20"
-        >
+        <button onClick={captureException} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">
           Capture exception
         </button>
       </div>
 
       <p className="text-sm opacity-70">
-        Si rien n’apparaît dans Sentry, ouvre la console réseau du navigateur et
-        vérifie qu’il y a un POST vers <code>/api/sentry</code> (envelope 200/204).
+        Astuce: dans l’onglet <b>Network</b>, vérifie le POST <code>/api/sentry</code> (200/204).
       </p>
     </main>
   );
