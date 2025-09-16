@@ -1,4 +1,6 @@
+// next.config.mjs
 /** @type {import('next').NextConfig} */
+import { withSentryConfig } from "@sentry/nextjs";
 
 // ------------ ENV ------------
 const isProd = process.env.NODE_ENV === "production";
@@ -6,13 +8,12 @@ const hasSentry = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 // Domaines externes utiles (ajuste si besoin)
 const IMG_WHITELIST = [
-  "https://images.unsplash.com", // exemple
-  // Ajoute ici tes autres domaines d’images si nécessaire
+  "https://images.unsplash.com",
 ];
 
 // Si Sentry activé, on autorise les domaines d’ingest + CDN
 const SENTRY_SCRIPT = "https://browser.sentry-cdn.com";
-// ⚠️ Autoriser toutes les régions (US + EU)
+// Autoriser US + EU
 const SENTRY_INGEST = [
   "https://*.ingest.sentry.io",
   "https://*.ingest.de.sentry.io",
@@ -20,19 +21,14 @@ const SENTRY_INGEST = [
 ].join(" ");
 
 // ------------ CSP ------------
-/**
- * Remarques importantes :
- * - On autorise 'unsafe-inline' en `script-src` : Next injecte des scripts inline pour l'hydratation.
- *   (alternative avancée : nonces/hashes)
- * - On autorise `blob:` pour les scripts/workers (Next 15 & web workers).
- * - On ouvre `connect-src` vers `https:` et `wss:` (SSE/WebSocket, Sentry, API externes).
- */
 const cspParts = [
   "default-src 'self'",
+  // Next injecte des scripts inline pour l’hydratation
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} blob:${hasSentry ? " " + SENTRY_SCRIPT : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob:${IMG_WHITELIST.length ? " " + IMG_WHITELIST.join(" ") : ""}`,
   "font-src 'self' data:",
+  // Ouvre les connexions nécessaires (SSE/WebSocket/Sentry)
   `connect-src 'self' https: wss:${hasSentry ? " " + SENTRY_INGEST : ""}`,
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
@@ -46,7 +42,6 @@ const csp = cspParts.join("; ");
 
 // ------------ Security Headers ------------
 const securityHeaders = [
-  // HSTS uniquement en prod
   isProd && {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
@@ -89,16 +84,14 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
-  // Laisse simple pour l’instant ; si tu veux le loader <Image />, retire `unoptimized`
   images: { unoptimized: true },
 
-  // Utile pour Sentry et debug de prod
+  // utile pour Sentry (source maps)
   productionBrowserSourceMaps: true,
 
   async headers() {
     return [
       {
-        // On applique ces headers partout (y compris app/route)
         source: "/:path*",
         headers: securityHeaders,
       },
@@ -106,4 +99,9 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// ➜ IMPORTANT : on wrappe la config avec le plugin Sentry
+export default withSentryConfig(nextConfig, {
+  // options plugin (facultatives)
+  silent: true,
+  // widenClientFileUpload: true, // utile si vous avez beaucoup de fichiers client
+});
