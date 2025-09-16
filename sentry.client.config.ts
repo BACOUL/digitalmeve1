@@ -1,30 +1,24 @@
 // sentry.client.config.ts
-'use client';
-
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,   // on garde le DSN public
+  tunnel: "/api/sentry",                     // envoi via le proxy Next
+  environment: process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV,
 
-  // Contexte utile dans Sentry
-  environment:
-    (process.env.NEXT_PUBLIC_VERCEL_ENV as string) ||
-    (process.env.NODE_ENV as string) ||
-    'production',
-  release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
+  // Performance (client)
+  tracesSampleRate: 0.2,                     // 20% d’échantillonnage (ajuste selon trafic)
+  // Session Replay (optionnel – utile pour débug)
+  integrations: [Sentry.replayIntegration()],
+  replaysSessionSampleRate: 0.05,            // 5% des sessions
+  replaysOnErrorSampleRate: 1.0,             // 100% si erreur
 
-  // Tracing côté client (baisse si tu veux consommer moins de quota)
-  tracesSampleRate: 0.2,
-
-  // Nettoyage du bruit courant
-  ignoreErrors: [
-    'ResizeObserver loop limit exceeded',
-    'Network Error',
-    'Failed to fetch',
-  ],
-  denyUrls: [
-    /extensions\//i,
-    /^chrome:\/\//i,
-    /safari-extension:/i,
-  ],
+  // Qualité du signal
+  ignoreErrors: ["ResizeObserver loop limit exceeded"],
+  denyUrls: [/chrome-extension:\/\//, /extensions\//],
+  beforeSend(event) {
+    // filtre simple des bots
+    if (navigator?.userAgent?.includes("HeadlessChrome")) return null;
+    return event;
+  },
 });
