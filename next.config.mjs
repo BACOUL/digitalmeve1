@@ -12,14 +12,18 @@ const IMG_WHITELIST = [
 
 // Si Sentry activé, on autorise les domaines d’ingest + CDN
 const SENTRY_SCRIPT = "https://browser.sentry-cdn.com";
-const SENTRY_INGEST =
-  "https://o450.ingest.sentry.io https://o450*.ingest.sentry.io https://sentry.io";
+// ⚠️ Autoriser toutes les régions (US + EU)
+const SENTRY_INGEST = [
+  "https://*.ingest.sentry.io",
+  "https://*.ingest.de.sentry.io",
+  "https://sentry.io",
+].join(" ");
 
 // ------------ CSP ------------
 /**
  * Remarques importantes :
  * - On autorise 'unsafe-inline' en `script-src` : Next injecte des scripts inline pour l'hydratation.
- *   (alternative avancée : nonces/hashes — mais plus complexe à mettre en place partout)
+ *   (alternative avancée : nonces/hashes)
  * - On autorise `blob:` pour les scripts/workers (Next 15 & web workers).
  * - On ouvre `connect-src` vers `https:` et `wss:` (SSE/WebSocket, Sentry, API externes).
  */
