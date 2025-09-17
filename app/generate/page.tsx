@@ -3,12 +3,21 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Upload, FileDown, FileCheck2, ShieldCheck, Lock, Clipboard, XCircle } from "lucide-react";
+import {
+  Upload,
+  FileDown,
+  FileCheck2,
+  ShieldCheck,
+  Lock,
+  Clipboard,
+  XCircle,
+  Loader2,
+} from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
 import { sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
-import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";   // PDF invisible watermark
+import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // PDF invisible watermark
 import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx"; // DOCX invisible watermark
 
 // 🔹 Quota invité
@@ -46,7 +55,8 @@ export default function GeneratePage() {
     const name = file.name.toLowerCase();
     if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
     if (
-      mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      mt ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       name.endsWith(".docx")
     )
       return "docx";
@@ -58,7 +68,8 @@ export default function GeneratePage() {
     const name = f.name.toLowerCase();
     if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
     if (
-      mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      mt ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       name.endsWith(".docx")
     )
       return "docx";
@@ -81,8 +92,7 @@ export default function GeneratePage() {
     const end = (opts?: Toast) => {
       setBusy(false);
       if (opts) setToast(opts);
-      // auto-hide toast
-      if (opts) setTimeout(() => setToast(null), 3500);
+      if (opts) setTimeout(() => setToast(null), 3500); // auto-hide toast
     };
 
     try {
@@ -105,7 +115,8 @@ export default function GeneratePage() {
       if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
       const k = guessKind(file);
-      if (k === "other") return end({ type: "error", message: "Only PDF and DOCX are supported for now." });
+      if (k === "other")
+        return end({ type: "error", message: "Only PDF and DOCX are supported for now." });
 
       // 1) Hash de l’original (spéc MEVE)
       const t0 = performance.now();
@@ -124,7 +135,7 @@ export default function GeneratePage() {
 
         if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
-        // 3) Filigrane *invisible* %MEVE{...}EVEM avant %%EOF
+        // 3) Filigrane *invisible* %MEVE{...}EVEM
         outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
           hash,
           ts: whenISO,
@@ -178,19 +189,35 @@ export default function GeneratePage() {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    // nettoyage au repos
     const revoke = () => URL.revokeObjectURL(url);
-    (window as any).requestIdleCallback ? (window as any).requestIdleCallback(revoke) : setTimeout(revoke, 15000);
+    (window as any).requestIdleCallback
+      ? (window as any).requestIdleCallback(revoke)
+      : setTimeout(revoke, 15000);
   }
 
   // Certificat HTML
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
-    exportHtmlCertificate(res.fileName.replace(/\.(pdf|docx)$/i, ""), res.hash, res.whenISO, issuer);
+    exportHtmlCertificate(
+      res.fileName.replace(/\.(pdf|docx)$/i, ""),
+      res.hash,
+      res.whenISO,
+      issuer
+    );
   }
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
+      {/* Fond premium façon home */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 opacity-50"
+        style={{
+          background:
+            "radial-gradient(1200px 600px at 10% -10%, rgba(16,185,129,.08), transparent 60%), radial-gradient(1000px 520px at 85% 0%, rgba(56,189,248,.08), transparent 60%)",
+        }}
+      />
+
       {/* SR status pour lecteurs d’écran */}
       <p aria-live="polite" className="sr-only">
         {busy ? "Generating…" : res.hash ? "Proof ready." : "Idle"}
@@ -198,13 +225,15 @@ export default function GeneratePage() {
 
       <section className="border-b border-[var(--border)] bg-[var(--bg)]">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
+          {/* Title */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Generate a <span className="text-[var(--accent-1)]">.MEVE</span> proof
           </h1>
 
+          {/* Subtitle */}
           <p className="mt-3 text-lg text-[var(--fg-muted)]">
-            Upload your document (PDF or DOCX). We add a lightweight, invisible proof inside.
-            You’ll receive{" "}
+            Upload your document (PDF or DOCX). We add a lightweight, invisible proof inside. You’ll
+            receive{" "}
             <span className="font-semibold">
               name<span className="opacity-60">.meve</span>.pdf/.docx
             </span>{" "}
@@ -213,7 +242,10 @@ export default function GeneratePage() {
 
           <p className="mt-2 text-sm text-[var(--fg-muted)]">
             No upload. Everything runs locally in your browser.{" "}
-            <Link href="/samples" className="underline hover:opacity-80">Try with sample files</Link>.
+            <Link href="/samples" className="underline hover:opacity-80">
+              Try with sample files
+            </Link>
+            .
           </p>
 
           {/* Trust badges */}
@@ -237,19 +269,20 @@ export default function GeneratePage() {
             )}
           </div>
 
-          <div className="mt-8">
+          {/* Dropzone wrapper avec glow hover */}
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur transition hover:bg-white/10 hover:shadow-[0_0_36px_rgba(56,189,248,.18)]">
             <FileDropzone
               onSelected={setFile}
               label="Choose a file"
               maxSizeMB={10}
               hint="Drag & drop or tap to select. Max {SIZE} MB."
               accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              // accessibilité clavier minimale si ton composant les relaye:
               role="button"
               tabIndex={0}
             />
           </div>
 
+          {/* Issuer */}
           <div className="mt-5">
             <label htmlFor="issuer" className="block text-sm font-medium">
               Issuer (optional)
@@ -266,6 +299,7 @@ export default function GeneratePage() {
             />
           </div>
 
+          {/* Actions */}
           <div className="mt-6 flex items-center gap-3">
             <button
               onClick={onGenerate}
@@ -273,8 +307,17 @@ export default function GeneratePage() {
               className="btn btn-primary shadow-glow disabled:opacity-50"
               aria-disabled={!file || busy}
             >
-              <Upload className="h-5 w-5" />
-              {busy ? "Generating…" : "Generate Proof"}
+              {busy ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Upload className="h-5 w-5" />
+                  Generate Proof
+                </>
+              )}
             </button>
 
             <button
@@ -286,29 +329,55 @@ export default function GeneratePage() {
               <XCircle className="h-5 w-5" />
               Cancel
             </button>
+
+            {/* Cross-CTA vers Verify */}
+            <Link href="/verify" className="ml-auto text-sm text-[var(--fg-muted)] underline hover:text-[var(--fg)]">
+              Want to check a file instead? Verify a document →
+            </Link>
           </div>
 
+          {/* Result */}
           {res.pdfBlob && res.fileName && (
             <div className="mt-8 card p-5">
               <h2 className="text-lg font-semibold">Proof Preview</h2>
 
-              <dl className="mt-3 grid gap-y-1 text-sm">
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">File</dt>
+              <dl className="mt-3 grid gap-y-2 text-sm">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
+                  <dt className="text-[var(--fg-muted)]">
+                    <span className="mr-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
+                      FILE
+                    </span>
+                  </dt>
                   <dd className="col-span-2 sm:col-span-3 break-words">{res.fileName}</dd>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">Date / Time</dt>
+
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
+                  <dt className="text-[var(--fg-muted)]">
+                    <span className="mr-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-300 ring-1 ring-sky-400/20">
+                      DATE
+                    </span>
+                  </dt>
                   <dd className="col-span-2 sm:col-span-3">
-                    {new Date(res.whenISO!).toLocaleDateString()} — {new Date(res.whenISO!).toLocaleTimeString()}
+                    {new Date(res.whenISO!).toLocaleDateString()} —{" "}
+                    {new Date(res.whenISO!).toLocaleTimeString()}
                   </dd>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">Issuer</dt>
+
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
+                  <dt className="text-[var(--fg-muted)]">
+                    <span className="mr-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 ring-1 ring-white/20">
+                      ISSUER
+                    </span>
+                  </dt>
                   <dd className="col-span-2 sm:col-span-3">{issuer || "—"}</dd>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">SHA-256</dt>
+
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
+                  <dt className="text-[var(--fg-muted)]">
+                    <span className="mr-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
+                      SHA-256
+                    </span>
+                  </dt>
                   <dd className="col-span-2 sm:col-span-3 break-words">
                     <div className="flex items-center gap-2 flex-wrap">
                       <code className="text-xs break-all">{res.hash}</code>
@@ -316,7 +385,10 @@ export default function GeneratePage() {
                         onClick={() => {
                           if (res.hash) {
                             navigator.clipboard.writeText(res.hash);
-                            setToast({ type: "info", message: "SHA-256 copied to clipboard" });
+                            setToast({
+                              type: "info",
+                              message: "SHA-256 copied to clipboard",
+                            });
                             setTimeout(() => setToast(null), 2000);
                           }
                         }}
@@ -325,10 +397,7 @@ export default function GeneratePage() {
                       >
                         <Clipboard className="h-3.5 w-3.5" /> Copy
                       </button>
-                      <Link
-                        href={`/verify?hash=${encodeURIComponent(res.hash || "")}`}
-                        className="btn btn-ghost text-xs"
-                      >
+                      <Link href={`/verify?hash=${encodeURIComponent(res.hash || "")}`} className="btn btn-ghost text-xs">
                         Verify now →
                       </Link>
                     </div>
@@ -348,11 +417,16 @@ export default function GeneratePage() {
               </div>
 
               <p className="mt-3 text-xs text-[var(--fg-muted)]">
-                The file downloads directly to preserve integrity. The certificate may briefly
-                open in a new tab (~10s) so you can choose “Open”.
+                The file downloads directly to preserve integrity. The certificate may briefly open
+                in a new tab (~10s) so you can choose “Open”.
               </p>
             </div>
           )}
+
+          {/* Micro-claims (cohérence home) */}
+          <p className="mt-10 text-center text-xs text-[var(--fg-muted)]">
+            Privacy by design · In-browser only · Works with all file types
+          </p>
         </div>
       </section>
 
@@ -381,4 +455,4 @@ export default function GeneratePage() {
       />
     </main>
   );
-      }
+    }
