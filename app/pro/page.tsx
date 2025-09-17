@@ -1,4 +1,3 @@
-// app/pro/page.tsx
 import Link from "next/link";
 import {
   Briefcase,
@@ -42,6 +41,19 @@ export default function BusinessPage() {
             <Link href="/developers" className="btn btn-ghost inline-flex items-center gap-2">
               Explore docs
             </Link>
+          </div>
+
+          {/* At-a-glance strip (nouveau) */}
+          <div className="mt-8 grid gap-3 sm:grid-cols-3 text-xs text-[var(--fg-muted)]">
+            <div className="rounded-xl ring-1 ring-white/10 bg-white/5 px-3 py-2">
+              <span className="font-medium text-white">99.9%+ SLA</span> — verification endpoints
+            </div>
+            <div className="rounded-xl ring-1 ring-white/10 bg-white/5 px-3 py-2">
+              <span className="font-medium text-white">&lt; 50 ms</span> typical per-doc processing
+            </div>
+            <div className="rounded-xl ring-1 ring-white/10 bg-white/5 px-3 py-2">
+              <span className="font-medium text-white">Hash-only</span> option (no content)
+            </div>
           </div>
 
           {/* Trust badges */}
@@ -190,8 +202,8 @@ export default function BusinessPage() {
         </div>
       </section>
 
-      {/* Pricing Section (aligned with /pricing business tiers) */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-[var(--border)]">
+      {/* Pricing Section */}
+      <section id="business-pricing" className="mx-auto max-w-6xl px-4 py-16 border-t border-[var(--border)]">
         <h2 className="text-2xl font-semibold text-center">Business plans</h2>
         <p className="mt-2 text-center text-[var(--fg-muted)]">
           Choose a plan that fits your organization. Scale as you grow.
@@ -210,7 +222,7 @@ export default function BusinessPage() {
               "Email support",
             ]}
             cta="Start now"
-            href="/pricing#business"
+            href="/register?plan=starter-business"
           />
           <PricingCard
             name="Growth"
@@ -224,7 +236,7 @@ export default function BusinessPage() {
               "Priority support",
             ]}
             cta="Upgrade"
-            href="/pricing#business"
+            href="/register?plan=growth-business"
             highlight
           />
           <PricingCard
@@ -258,7 +270,7 @@ export default function BusinessPage() {
           <Link href="/contact" className="btn btn-primary inline-flex items-center gap-2">
             Contact sales <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link href="/pricing#business" className="btn btn-ghost inline-flex items-center gap-2">
+          <Link href="#business-pricing" className="btn btn-ghost inline-flex items-center gap-2">
             View pricing
           </Link>
         </div>
@@ -362,4 +374,4 @@ function PricingCard({
       </Link>
     </div>
   );
-                  }
+          }
