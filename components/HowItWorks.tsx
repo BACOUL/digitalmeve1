@@ -170,4 +170,4 @@ export default function HowItWorks() {
       </div>
     </section>
   );
-}
+      }
