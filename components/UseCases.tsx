@@ -2,26 +2,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  Users,
-  Briefcase,
-  Building2,
-  CheckCircle2,
-} from "lucide-react";
+import { Users, Briefcase, CheckCircle2 } from "lucide-react";
 
-type TabId = "individuals" | "business" | "institutions";
+type TabId = "individuals" | "business";
 
-const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: "individuals", label: "Individuals",  icon: <Users className="h-4 w-4" /> },
-  { id: "business",    label: "Business",     icon: <Briefcase className="h-4 w-4" /> },
-  { id: "institutions",label: "Institutions", icon: <Building2 className="h-4 w-4" /> },
+const TABS: { id: TabId; label: string; color: "emerald" | "sky"; icon: React.ReactNode }[] = [
+  { id: "individuals", label: "Individuals", color: "emerald", icon: <Users className="h-4 w-4" /> },
+  { id: "business",    label: "Business",    color: "sky",     icon: <Briefcase className="h-4 w-4" /> },
 ];
 
 export default function UseCases() {
   const [tab, setTab] = useState<TabId>("individuals");
 
-  // Révélation douce au scroll pour cartes & badges
+  // Relance l'IO à l'arrivée dans le viewport ET à chaque switch d'onglet
   useEffect(() => {
     const io = new IntersectionObserver(
       (entries) => {
@@ -38,106 +31,77 @@ export default function UseCases() {
       { rootMargin: "0px 0px -10% 0px", threshold: 0.15 }
     );
 
-    document
-      .querySelectorAll<HTMLElement>('[data-reveal="uc"]')
-      .forEach((el) => io.observe(el));
+    // Réinitialise l'état visuel puis observe les éléments de l'onglet courant
+    document.querySelectorAll<HTMLElement>('[data-reveal="uc"]').forEach((el) => {
+      el.classList.remove("opacity-100", "translate-y-0");
+      el.classList.add("opacity-0", "translate-y-2");
+      el.style.transitionDelay = "0ms";
+      io.observe(el);
+    });
+
     return () => io.disconnect();
-  }, []);
+  }, [tab]);
 
   return (
     <section className="section-dark" aria-labelledby="use-cases">
       <div className="container-max pb-14">
         <h2 id="use-cases" className="h2">Use Cases</h2>
-
-        {/* pastille premium */}
         <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs ring-1 ring-white/10">
           • real examples • under 20s • no storage
         </p>
 
-        {/* Tabs */}
+        {/* Tabs 2 couleurs */}
         <div className="mt-6 flex flex-wrap gap-2">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`group relative inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm transition
-                ${
-                  tab === t.id
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            const color =
+              t.color === "emerald"
+                ? "from-emerald-500/70 to-emerald-400/70"
+                : "from-sky-500/70 to-sky-400/70";
+
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`group relative inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm transition
+                  ${active
                     ? "bg-white/10 text-white ring-1 ring-white/15"
-                    : "bg-white/[0.04] text-[var(--fg-muted)] hover:text-[var(--fg)] ring-1 ring-white/10"
-                }`}
-            >
-              {t.icon}
-              {t.label}
-              <span
-                className={`pointer-events-none absolute left-3 right-3 -bottom-1 h-px transition-opacity
-                ${
-                  tab === t.id ? "opacity-100" : "opacity-0"
-                } bg-gradient-to-r from-emerald-400/60 via-cyan-400/60 to-sky-400/60`}
-              />
-            </button>
-          ))}
+                    : "bg-white/[0.04] text-[var(--fg-muted)] hover:text-[var(--fg)] ring-1 ring-white/10"}`}
+              >
+                {t.icon}
+                {t.label}
+                {active && (
+                  <span
+                    className={`pointer-events-none absolute left-3 right-3 -bottom-1 h-[2px] rounded-full
+                                bg-gradient-to-r ${color}`}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Cartes */}
         <div className="mt-6 grid gap-4">
           {tab === "individuals" && (
             <>
-              <Card
-                i={0}
-                title="Diplomas & transcripts"
-                desc="Protect PDF diplomas and share a certificate anyone can verify."
-              />
-              <Card
-                i={1}
-                title="IDs & documents"
-                desc="Add a portable proof to scans (PDF) without changing how they open."
-              />
-              <Card
-                i={2}
-                title="Creative work"
-                desc="Stamp portfolios, scripts or treatments with a verifiable fingerprint."
-              />
+              <Card i={0} title="Diplomas & transcripts"
+                    desc="Protect PDF diplomas and share a certificate anyone can verify." />
+              <Card i={1} title="IDs & documents"
+                    desc="Add a portable proof to scans (PDF) without changing how they open." />
+              <Card i={2} title="Creative work"
+                    desc="Stamp portfolios, scripts or treatments with a verifiable fingerprint." />
             </>
           )}
 
           {tab === "business" && (
             <>
-              <Card
-                i={0}
-                title="HR & onboarding"
-                desc="Automate checks on diplomas / certifications. Issue tamper-evident PDFs."
-              />
-              <Card
-                i={1}
-                title="Contracts & compliance"
-                desc="Add a durable proof on generated contracts and policy docs."
-              />
-              <Card
-                i={2}
-                title="Customer trust"
-                desc="Share price sheets, proposals or white-papers with verifiable integrity."
-              />
-            </>
-          )}
-
-          {tab === "institutions" && (
-            <>
-              <Card
-                i={0}
-                title="Universities"
-                desc="Protect issued diplomas; allow anyone to verify online or offline."
-              />
-              <Card
-                i={1}
-                title="Hospitals"
-                desc="Secure patient PDFs and ensure integrity across systems."
-              />
-              <Card
-                i={2}
-                title="Public sector"
-                desc="Publish memos or forms with an embedded proof and transparent verification."
-              />
+              <Card i={0} title="HR & onboarding"
+                    desc="Automate checks on diplomas/certifications. Issue tamper-evident PDFs." />
+              <Card i={1} title="Contracts & compliance"
+                    desc="Add a durable proof on generated contracts and policy docs." />
+              <Card i={2} title="Customer trust"
+                    desc="Share price sheets, proposals or white-papers with verifiable integrity." />
             </>
           )}
         </div>
@@ -153,7 +117,7 @@ export default function UseCases() {
               key={c}
               data-reveal="uc"
               data-index={i}
-              className="opacity-0 translate-y-1 transition-all duration-500
+              className="opacity-0 translate-y-2 transition-all duration-500
                          inline-flex items-center gap-1 rounded-full
                          bg-gradient-to-r from-emerald-500/10 to-sky-500/10
                          px-3 py-1 text-xs ring-1 ring-white/10"
@@ -180,7 +144,6 @@ function Card({ i, title, desc }: { i: number; title: string; desc: string }) {
                  backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,.25)]
                  hover:shadow-[0_20px_60px_rgba(0,0,0,.35)] hover:-translate-y-0.5"
     >
-      {/* glow ring subtil */}
       <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10 [mask-image:linear-gradient(black,transparent)]" />
       <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
       <p className="mt-1 text-sm text-[var(--fg-muted)]">{desc}</p>
