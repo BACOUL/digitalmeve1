@@ -1,236 +1,125 @@
-// components/MobileMenu.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { X, LogIn, UserPlus, LogOut, LayoutDashboard, User2 } from "lucide-react";
-import { useSessionSafe as useSession, signOutSafe as signOut } from "@/lib/safe-auth";
+import { X } from "lucide-react";
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function MobileMenu({ open, onClose }: Props) {
-  const { data: session } = useSession();
   const pathname = usePathname();
-
-  const role =
-    (session?.user as any)?.role === "BUSINESS"
-      ? "Business"
-      : (session?.user as any)?.role === "INDIVIDUAL"
-      ? "Individual"
-      : undefined;
-
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const firstFocusRef = useRef<HTMLButtonElement | null>(null);
-  const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
+  // scroll lock
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const to = setTimeout(() => (firstFocusRef.current ?? panelRef.current)?.focus(), 0);
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") return onClose();
-      if (e.key !== "Tab") return;
-      const f = getFocusable(panelRef.current);
-      if (f.length === 0) return;
-      const first = f[0];
-      const last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        (last as HTMLElement).focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        (first as HTMLElement).focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("keydown", onKey);
-      clearTimeout(to);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
-
-  // swipe-to-close
-  const startX = useRef<number | null>(null);
-  const dx = useRef(0);
-  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    startX.current = e.touches[0].clientX;
-    dx.current = 0;
-  };
-  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (startX.current == null) return;
-    dx.current = e.touches[0].clientX - startX.current;
-    if (panelRef.current && dx.current > 0) {
-      panelRef.current.style.transform = `translateX(${Math.min(80, dx.current)}px)`;
-    }
-  };
-  const onTouchEnd = () => {
-    if (panelRef.current) panelRef.current.style.transform = "";
-    if (dx.current > 60) onClose();
-    startX.current = null;
-    dx.current = 0;
-  };
-
-  const links = useMemo(
-    () => [
-      { href: "/generate", label: "Generate" },
-      { href: "/verify", label: "Verify" },
-      { href: "/personal", label: "For Individuals" },
-      { href: "/pro", label: "For Business" },
-      { href: "/contact", label: "Contact" },
-    ],
-    []
-  );
+  }, [open]);
 
   if (!open) return null;
+
+  const nav = [
+    { href: "/generate", label: "Generate" },
+    { href: "/verify", label: "Verify" },
+    { href: "/personal", label: "For Individuals" },
+    { href: "/pro", label: "For Business" },
+    { href: "/contact", label: "Contact" },
+  ];
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname?.startsWith(href);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="mobilemenu-title"
-      className="fixed inset-0 z-[1000] flex bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[1000] flex bg-black/50 backdrop-blur-sm"
       onClick={onClose}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       <div
         ref={panelRef}
         role="document"
-        className="ml-auto flex h-dvh w-full max-w-sm flex-col bg-slate-950 outline-none md:rounded-l-2xl md:shadow-2xl animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] focus-visible:ring-2 focus-visible:ring-emerald-400/40"
+        className="ml-auto flex h-full w-full max-w-sm flex-col bg-slate-950 text-slate-100 shadow-xl animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)]"
         onClick={(e) => e.stopPropagation()}
-        tabIndex={-1}
       >
         {/* Top */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/90 backdrop-blur px-4 py-4">
-          <Link href="/" onClick={onClose} className="text-lg font-extrabold tracking-tight">
-            <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">Digital</span>
-            <span className="bg-gradient-to-r from-sky-400 to-sky-300 bg-clip-text text-transparent">Meve</span>
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
+          <Link
+            href="/"
+            onClick={onClose}
+            className="text-lg font-extrabold bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent"
+          >
+            DigitalMeve
           </Link>
           <button
-            ref={firstFocusRef}
             onClick={onClose}
             aria-label="Close menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800"
           >
             <X className="h-5 w-5 text-slate-200" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex h-[calc(100dvh-4rem)] flex-col">
-          <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-6">
-            <h2 id="mobilemenu-title" className="sr-only">Main navigation</h2>
-
-            {/* Quick CTAs */}
-            <div className="mb-6 grid grid-cols-2 gap-3">
-              <Link
-                href="/generate"
-                onClick={onClose}
-                className="text-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-2.5 text-sm font-medium text-white shadow-[0_0_22px_rgba(56,189,248,.22)] hover:brightness-110"
-              >
-                Generate
-              </Link>
-              <Link
-                href="/verify"
-                onClick={onClose}
-                className="text-center rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/10"
-              >
-                Verify
-              </Link>
-            </div>
-
-            <ul className="space-y-2">
-              {links.map((it) => (
-                <li key={it.href}>
-                  <Link
-                    href={it.href}
-                    onClick={onClose}
-                    className="block rounded-lg px-2 py-2 text-[15px] text-slate-200 hover:bg-white/10 hover:text-white transition"
-                    aria-current={(pathname || "").startsWith(it.href) ? "page" : undefined}
-                  >
-                    {it.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Account */}
-          <div className="border-t border-white/10 p-4">
-            {session?.user ? (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10">
-                      <User2 className="h-5 w-5 text-slate-200" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-100">{(session.user as any)?.email}</p>
-                      {role && <p className="text-xs text-slate-400">{role}</p>}
-                    </div>
-                  </div>
-                </div>
-
+        {/* Nav links */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6">
+          <h2 id="mobilemenu-title" className="sr-only">
+            Main navigation
+          </h2>
+          <ul className="space-y-2 text-base font-medium">
+            {nav.map((it) => (
+              <li key={it.href}>
                 <Link
-                  href="/dashboard"
+                  href={it.href}
                   onClick={onClose}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
+                  className={`block rounded-lg px-3 py-2 transition ${
+                    isActive(it.href)
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-200 hover:bg-slate-900 hover:text-white"
+                  }`}
+                  aria-current={isActive(it.href) ? "page" : undefined}
                 >
-                  <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  {it.label}
                 </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-                <button
-                  ref={lastFocusRef}
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600/20 px-4 py-2 text-sm font-medium text-rose-300 hover:bg-rose-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40"
-                >
-                  <LogOut className="h-4 w-4" /> Sign out
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="/login"
-                  onClick={onClose}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
-                >
-                  <LogIn className="h-4 w-4" /> Login
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={onClose}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:brightness-105"
-                >
-                  <UserPlus className="h-4 w-4" /> Register
-                </Link>
-              </div>
-            )}
-          </div>
+        {/* CTA bottom */}
+        <div className="border-t border-slate-800 p-4">
+          <Link
+            href="/generate"
+            onClick={onClose}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow hover:brightness-110"
+          >
+            Get started free
+          </Link>
         </div>
       </div>
 
       <style jsx global>{`
         @keyframes mmSlideIn {
-          from { transform: translateX(8%); opacity: 0.4; }
-          to { transform: translateX(0%); opacity: 1; }
+          from {
+            transform: translateX(8%);
+            opacity: 0.4;
+          }
+          to {
+            transform: translateX(0%);
+            opacity: 1;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
-          .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] { animation: none !important; }
+          .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] {
+            animation: none !important;
+          }
         }
       `}</style>
     </div>
   );
 }
-
-/* Utils */
-function getFocusable(root: HTMLElement | null): HTMLElement[] {
-  if (!root) return [];
-  const selectors = ["a[href]","button","input","select","textarea","[tabindex]:not([tabindex='-1'])"];
-  const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
-  return nodes.filter(el => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden") && el.tabIndex !== -1);
-       }
