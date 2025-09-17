@@ -149,4 +149,4 @@ function Card({ i, title, desc }: { i: number; title: string; desc: string }) {
       <p className="mt-1 text-sm text-[var(--fg-muted)]">{desc}</p>
     </article>
   );
-}
+                    }
