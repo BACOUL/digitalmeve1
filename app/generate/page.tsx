@@ -11,27 +11,27 @@ import {
   Lock,
   Clipboard,
   XCircle,
-  Loader2,
 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
 import { sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
-import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf"; // PDF invisible watermark
-import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx"; // DOCX invisible watermark
+import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";
+import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx";
 
-// 🔹 Quota invité
 import LimitModal from "@/components/LimitModal";
 import { checkFreeQuota } from "@/lib/quotaClient";
 
 type GenResult = {
-  pdfBlob?: Blob; // utilisé pour PDF *et* DOCX
+  pdfBlob?: Blob;
   fileName?: string;
   hash?: string;
   whenISO?: string;
 };
 
-type Toast = { type: "success" | "error" | "info"; message: string } | null;
+type Toast =
+  | { type: "success" | "error" | "info"; message: string }
+  | null;
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -39,13 +39,12 @@ export default function GeneratePage() {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<GenResult>({});
 
-  // UI quota
+  // quota
   const [limitOpen, setLimitOpen] = useState(false);
-  const [quotaCount, setQuotaCount] = useState<number | undefined>(undefined);
-  const [quotaResetDay, setQuotaResetDay] = useState<string | undefined>(undefined);
-  const [quotaRemaining, setQuotaRemaining] = useState<number | undefined>(undefined);
+  const [quotaCount, setQuotaCount] = useState<number | undefined>();
+  const [quotaResetDay, setQuotaResetDay] = useState<string | undefined>();
+  const [quotaRemaining, setQuotaRemaining] = useState<number | undefined>();
 
-  // UX: toasts & annulation douce
   const [toast, setToast] = useState<Toast>(null);
   const cancelRef = useRef(false);
 
@@ -78,8 +77,10 @@ export default function GeneratePage() {
 
   function humanError(e: unknown) {
     const msg = (e as any)?.message || "";
-    if (/pdf|docx|type/i.test(msg)) return "Only PDF or DOCX are supported.";
-    if (/size|10 ?mb/i.test(msg)) return "Max size is 10 MB.";
+    if (/pdf|docx|type/i.test(msg))
+      return "Only PDF or DOCX are supported.";
+    if (/size|10 ?mb/i.test(msg))
+      return "Max size is 10 MB.";
     return "Something went wrong while generating the proof.";
   }
 
@@ -92,11 +93,11 @@ export default function GeneratePage() {
     const end = (opts?: Toast) => {
       setBusy(false);
       if (opts) setToast(opts);
-      if (opts) setTimeout(() => setToast(null), 3500); // auto-hide toast
+      if (opts) setTimeout(() => setToast(null), 3500);
     };
 
     try {
-      // 0) Vérifier quota invité AVANT toute opération
+      // Quota check
       try {
         const q = await checkFreeQuota();
         setQuotaRemaining(q.remaining);
@@ -107,35 +108,39 @@ export default function GeneratePage() {
           setQuotaCount(err.quota.count);
           setQuotaResetDay(err.quota.resetDayUTC);
           setLimitOpen(true);
-          return end(); // stoppe le flux
+          return end();
         }
-        // erreur réseau ponctuelle : on laisse passer pour ne pas bloquer l’utilisateur
       }
 
-      if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
+      if (cancelRef.current)
+        return end({ type: "info", message: "Cancelled." });
 
       const k = guessKind(file);
       if (k === "other")
-        return end({ type: "error", message: "Only PDF and DOCX are supported for now." });
+        return end({
+          type: "error",
+          message: "Only PDF and DOCX are supported for now.",
+        });
 
-      // 1) Hash de l’original (spéc MEVE)
       const t0 = performance.now();
       const hash = await sha256Hex(file);
       const whenISO = new Date().toISOString();
 
-      if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
+      if (cancelRef.current)
+        return end({ type: "info", message: "Cancelled." });
 
       let outBlob: Blob;
       let outName: string;
 
       if (k === "pdf") {
-        // 2) PDF : watermark visuel → ArrayBuffer → Blob
         const watermarkedAB = await addWatermarkPdf(file);
-        const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
+        const watermarkedBlob = new Blob([watermarkedAB], {
+          type: "application/pdf",
+        });
 
-        if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
+        if (cancelRef.current)
+          return end({ type: "info", message: "Cancelled." });
 
-        // 3) Filigrane *invisible* %MEVE{...}EVEM
         outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
           hash,
           ts: whenISO,
@@ -144,7 +149,6 @@ export default function GeneratePage() {
 
         outName = toMeveName(file.name, "pdf");
       } else {
-        // DOCX : insertion du marqueur invisible dans docProps/custom.xml
         outBlob = await embedInvisibleWatermarkDocx(file, {
           hash,
           ts: whenISO,
@@ -156,9 +160,15 @@ export default function GeneratePage() {
 
       setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
 
+      const elapsed = performance.now() - t0;
+      const pretty =
+        elapsed < 1000
+          ? `${Math.round(elapsed)} ms`
+          : `${(elapsed / 1000).toFixed(1)} s`;
+
       end({
         type: "success",
-        message: `Proof ready in ${Math.max(1, Math.round(performance.now() - t0))} ms`,
+        message: `Proof ready in ${pretty}`,
       });
     } catch (e) {
       console.error(e);
@@ -179,7 +189,6 @@ export default function GeneratePage() {
     return `${base}.meve.${kind}`;
   }
 
-  // Téléchargement direct
   function downloadFile() {
     if (!res.pdfBlob || !res.fileName) return;
     const url = URL.createObjectURL(res.pdfBlob);
@@ -195,7 +204,6 @@ export default function GeneratePage() {
       : setTimeout(revoke, 15000);
   }
 
-  // Certificat HTML
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     exportHtmlCertificate(
@@ -208,32 +216,25 @@ export default function GeneratePage() {
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
-      {/* Fond premium façon home */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-50"
-        style={{
-          background:
-            "radial-gradient(1200px 600px at 10% -10%, rgba(16,185,129,.08), transparent 60%), radial-gradient(1000px 520px at 85% 0%, rgba(56,189,248,.08), transparent 60%)",
-        }}
-      />
-
-      {/* SR status pour lecteurs d’écran */}
       <p aria-live="polite" className="sr-only">
-        {busy ? "Generating…" : res.hash ? "Proof ready." : "Idle"}
+        {busy
+          ? "Generating…"
+          : res.hash
+          ? "Proof ready."
+          : "Idle"}
       </p>
 
       <section className="border-b border-[var(--border)] bg-[var(--bg)]">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
-          {/* Title */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Generate a <span className="text-[var(--accent-1)]">.MEVE</span> proof
+            Generate a{" "}
+            <span className="text-[var(--accent-1)]">.MEVE</span>{" "}
+            proof
           </h1>
 
-          {/* Subtitle */}
           <p className="mt-3 text-lg text-[var(--fg-muted)]">
-            Upload your document (PDF or DOCX). We add a lightweight, invisible proof inside. You’ll
-            receive{" "}
+            Upload your document (PDF or DOCX). We add a
+            lightweight, invisible proof inside. You’ll receive{" "}
             <span className="font-semibold">
               name<span className="opacity-60">.meve</span>.pdf/.docx
             </span>{" "}
@@ -242,13 +243,15 @@ export default function GeneratePage() {
 
           <p className="mt-2 text-sm text-[var(--fg-muted)]">
             No upload. Everything runs locally in your browser.{" "}
-            <Link href="/samples" className="underline hover:opacity-80">
+            <Link
+              href="/samples"
+              className="underline hover:opacity-80"
+            >
               Try with sample files
             </Link>
             .
           </p>
 
-          {/* Trust badges */}
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
             <span className="badge">
               <Lock className="h-4 w-4 text-[var(--accent-1)]" />
@@ -265,59 +268,59 @@ export default function GeneratePage() {
               </span>
             )}
             {typeof quotaRemaining === "number" && (
-              <span className="badge">{quotaRemaining} free left today</span>
+              <span
+                className="badge"
+                title={
+                  quotaResetDay
+                    ? `Resets on ${quotaResetDay}`
+                    : undefined
+                }
+              >
+                {quotaRemaining} free left today
+              </span>
             )}
           </div>
 
-          {/* Dropzone wrapper avec glow hover */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur transition hover:bg-white/10 hover:shadow-[0_0_36px_rgba(56,189,248,.18)]">
+          <div className="mt-8">
             <FileDropzone
               onSelected={setFile}
               label="Choose a file"
               maxSizeMB={10}
-              hint="Drag & drop or tap to select. Max {SIZE} MB."
+              hint="Drag & drop or tap to select. Max 10 MB."
               accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               role="button"
               tabIndex={0}
             />
           </div>
 
-          {/* Issuer */}
           <div className="mt-5">
-            <label htmlFor="issuer" className="block text-sm font-medium">
+            <label
+              htmlFor="issuer"
+              className="block text-sm font-medium"
+            >
               Issuer (optional)
             </label>
             <input
               id="issuer"
-              type="email"
+              type="text"
               placeholder="e.g. alice@company.com"
               value={issuer}
               onChange={(e) => setIssuer(e.target.value)}
               className="input mt-1"
-              autoComplete="email"
-              inputMode="email"
+              autoComplete="off"
             />
           </div>
 
-          {/* Actions */}
           <div className="mt-6 flex items-center gap-3">
             <button
               onClick={onGenerate}
               disabled={!file || busy}
-              className="btn btn-primary shadow-glow disabled:opacity-50"
+              className="btn btn-primary shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
               aria-disabled={!file || busy}
+              aria-label="Generate a .MEVE proof"
             >
-              {busy ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <Upload className="h-5 w-5" />
-                  Generate Proof
-                </>
-              )}
+              <Upload className="h-5 w-5" />
+              {busy ? "Generating…" : "Generate Proof"}
             </button>
 
             <button
@@ -325,71 +328,74 @@ export default function GeneratePage() {
               disabled={!busy}
               className="btn btn-ghost"
               aria-disabled={!busy}
+              aria-label="Cancel generation"
             >
               <XCircle className="h-5 w-5" />
               Cancel
             </button>
-
-            {/* Cross-CTA vers Verify */}
-            <Link href="/verify" className="ml-auto text-sm text-[var(--fg-muted)] underline hover:text-[var(--fg)]">
-              Want to check a file instead? Verify a document →
-            </Link>
           </div>
 
-          {/* Result */}
           {res.pdfBlob && res.fileName && (
             <div className="mt-8 card p-5">
-              <h2 className="text-lg font-semibold">Proof Preview</h2>
+              <h2 className="text-lg font-semibold">
+                Proof Preview
+              </h2>
 
-              <dl className="mt-3 grid gap-y-2 text-sm">
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
-                  <dt className="text-[var(--fg-muted)]">
-                    <span className="mr-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
-                      FILE
-                    </span>
-                  </dt>
-                  <dd className="col-span-2 sm:col-span-3 break-words">{res.fileName}</dd>
-                </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
-                  <dt className="text-[var(--fg-muted)]">
-                    <span className="mr-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-300 ring-1 ring-sky-400/20">
-                      DATE
-                    </span>
-                  </dt>
-                  <dd className="col-span-2 sm:col-span-3">
-                    {new Date(res.whenISO!).toLocaleDateString()} —{" "}
-                    {new Date(res.whenISO!).toLocaleTimeString()}
+              <dl className="mt-3 grid gap-y-1 text-sm">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <dt className="text-[var(--fg-muted)]">File</dt>
+                  <dd className="col-span-2 sm:col-span-3 break-words">
+                    {res.fileName}
                   </dd>
                 </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   <dt className="text-[var(--fg-muted)]">
-                    <span className="mr-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 ring-1 ring-white/20">
-                      ISSUER
-                    </span>
+                    Date / Time
                   </dt>
-                  <dd className="col-span-2 sm:col-span-3">{issuer || "—"}</dd>
+                  <dd className="col-span-2 sm:col-span-3">
+                    {new Date(res.whenISO!).toLocaleDateString(
+                      undefined,
+                      {
+                        year: "numeric",
+                        month: "short",
+                        day: "2-digit",
+                      }
+                    )}{" "}
+                    —{" "}
+                    {new Date(res.whenISO!).toLocaleTimeString(
+                      undefined,
+                      { hour: "2-digit", minute: "2-digit" }
+                    )}
+                  </dd>
                 </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-start">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <dt className="text-[var(--fg-muted)]">Issuer</dt>
+                  <dd className="col-span-2 sm:col-span-3">
+                    {issuer || "—"}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   <dt className="text-[var(--fg-muted)]">
-                    <span className="mr-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
-                      SHA-256
-                    </span>
+                    SHA-256
                   </dt>
                   <dd className="col-span-2 sm:col-span-3 break-words">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <code className="text-xs break-all">{res.hash}</code>
+                      <code className="text-xs break-all">
+                        {res.hash}
+                      </code>
                       <button
                         onClick={() => {
                           if (res.hash) {
                             navigator.clipboard.writeText(res.hash);
                             setToast({
                               type: "info",
-                              message: "SHA-256 copied to clipboard",
+                              message:
+                                "SHA-256 copied to clipboard",
                             });
-                            setTimeout(() => setToast(null), 2000);
+                            setTimeout(
+                              () => setToast(null),
+                              2000
+                            );
                           }
                         }}
                         className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
@@ -397,9 +403,16 @@ export default function GeneratePage() {
                       >
                         <Clipboard className="h-3.5 w-3.5" /> Copy
                       </button>
-                      <Link href={`/verify?hash=${encodeURIComponent(res.hash || "")}`} className="btn btn-ghost text-xs">
-                        Verify now →
-                      </Link>
+                      {!busy && (
+                        <Link
+                          href={`/verify?hash=${encodeURIComponent(
+                            res.hash || ""
+                          )}`}
+                          className="btn btn-ghost text-xs"
+                        >
+                          Verify now →
+                        </Link>
+                      )}
                     </div>
                   </dd>
                 </div>
@@ -417,20 +430,15 @@ export default function GeneratePage() {
               </div>
 
               <p className="mt-3 text-xs text-[var(--fg-muted)]">
-                The file downloads directly to preserve integrity. The certificate may briefly open
-                in a new tab (~10s) so you can choose “Open”.
+                The file downloads directly to preserve integrity. The
+                certificate may briefly open in a new tab (~10s) so you
+                can choose “Open”.
               </p>
             </div>
           )}
-
-          {/* Micro-claims (cohérence home) */}
-          <p className="mt-10 text-center text-xs text-[var(--fg-muted)]">
-            Privacy by design · In-browser only · Works with all file types
-          </p>
         </div>
       </section>
 
-      {/* Toast simple */}
       {toast && (
         <div
           role="status"
@@ -446,7 +454,6 @@ export default function GeneratePage() {
         </div>
       )}
 
-      {/* Modal quota (si limite atteinte) */}
       <LimitModal
         open={limitOpen}
         onClose={() => setLimitOpen(false)}
@@ -455,4 +462,4 @@ export default function GeneratePage() {
       />
     </main>
   );
-    }
+      }
