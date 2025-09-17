@@ -1,81 +1,84 @@
 "use client";
 
-import { Upload, ShieldCheck, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { Upload, ShieldCheck, Download, ArrowRight } from "lucide-react";
 
 export default function HowItWorks() {
-  const steps = [
-    {
-      step: "1",
-      title: "Upload",
-      desc: "Drop your file. It never leaves your device.",
-      icon: <Upload className="h-6 w-6 text-emerald-400" />,
-    },
-    {
-      step: "2",
-      title: "Protect",
-      desc: "We add an invisible proof and prepare your certificate.",
-      icon: <ShieldCheck className="h-6 w-6 text-sky-400" />,
-    },
-    {
-      step: "3",
-      title: "Share & check",
-      desc: "Share the file and certificate. Anyone can check it in seconds.",
-      icon: <CheckCircle2 className="h-6 w-6 text-emerald-400" />,
-    },
-  ];
+  const card =
+    "rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6 transition hover:bg-white/[0.08]";
+  const stepBadge =
+    "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-slate-200";
 
   return (
     <section
-      className="mx-auto max-w-5xl px-4 py-20"
-      id="how-it-works"
-      aria-describedby="how-sub"
+      id="how"
+      aria-label="How DigitalMeve works"
+      className="mx-auto max-w-6xl px-4 py-10 sm:py-14"
     >
-      {/* Title */}
-      <h2 className="text-center text-3xl font-extrabold text-white sm:text-4xl">
-        Proof in seconds. Easy to check anytime.
-      </h2>
-      <p id="how-sub" className="mt-3 text-center text-slate-400">
-        Three simple steps — no jargon, no account, no storage.
-      </p>
+      <h2 className="text-2xl sm:text-3xl font-semibold">How it works</h2>
+      <p className="mt-2 text-slate-400">Three simple steps. No jargon.</p>
 
-      {/* Steps */}
-      <ol className="mt-12 grid gap-6 sm:grid-cols-3">
-        {steps.map(({ step, title, desc, icon }, i) => (
-          <li
-            key={step}
-            className="relative rounded-2xl border border-white/10 bg-white/[0.05] p-6 backdrop-blur-md shadow-md transition
-                       hover:border-emerald-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.15)]"
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        {/* Step 1 */}
+        <div className={card}>
+          <span className={stepBadge}>
+            <Upload className="h-3.5 w-3.5 text-emerald-400" />
+            Step 1
+          </span>
+          <h3 className="mt-3 text-lg font-semibold">Upload your document</h3>
+          <p className="mt-1 text-sm text-slate-300">
+            Works with common formats; your file stays on your device.
+          </p>
+          <Link
+            href="/generate"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-100 hover:opacity-90"
           >
-            {/* Step number + icon */}
-            <div className="mb-4 flex items-center gap-3">
-              <div
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15
-                           bg-slate-800/60 text-sm font-semibold text-slate-200"
-                aria-hidden
-              >
-                {step}
-              </div>
-              {icon}
-            </div>
+            Try now <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
 
-            {/* Title */}
-            <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
+        {/* Step 2 */}
+        <div className={card}>
+          <span className={stepBadge}>
+            <ShieldCheck className="h-3.5 w-3.5 text-sky-400" />
+            Step 2
+          </span>
+          <h3 className="mt-3 text-lg font-semibold">Get your protected copy</h3>
+          <p className="mt-1 text-sm text-slate-300">
+            We add a lightweight, invisible <span className="font-semibold">.MEVE</span> proof and
+            prepare your official certificate.
+          </p>
+        </div>
 
-            {/* Description */}
-            <p className="mt-2 text-sm text-slate-400">{desc}</p>
+        {/* Step 3 */}
+        <div className={card}>
+          <span className={stepBadge}>
+            <Download className="h-3.5 w-3.5 text-emerald-400" />
+            Step 3
+          </span>
+          <h3 className="mt-3 text-lg font-semibold">Download &amp; share</h3>
+          <p className="mt-1 text-sm text-slate-300">
+            Share the file and its certificate. Anyone can check it in seconds.
+          </p>
+          <Link
+            href="/verify"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-100 hover:opacity-90"
+          >
+            Verify a document <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
 
-            {/* Connector arrow (desktop except last card) */}
-            {i < steps.length - 1 && (
-              <div
-                className="pointer-events-none absolute right-[-18px] top-1/2 hidden -translate-y-1/2 select-none sm:block"
-                aria-hidden
-              >
-                <span className="text-slate-600">→</span>
-              </div>
-            )}
-          </li>
-        ))}
-      </ol>
+      {/* Slim CTA bar (cohérent avec le hero) */}
+      <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm sm:text-base text-slate-300">
+          Add invisible proof to your file — in seconds.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/generate" className="btn btn-primary">Protect a file now</Link>
+          <Link href="/verify" className="btn btn-outline">Verify a file</Link>
+        </div>
+      </div>
     </section>
   );
 }
