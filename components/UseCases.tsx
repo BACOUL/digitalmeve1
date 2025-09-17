@@ -1,106 +1,189 @@
 // components/UseCases.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Users, Briefcase, Building2, ArrowRight } from "lucide-react";
+import {
+  Users,
+  Briefcase,
+  Building2,
+  CheckCircle2,
+} from "lucide-react";
 
-type CaseItem = { title: string; desc: string; cta?: { href: string; label: string } };
+type TabId = "individuals" | "business" | "institutions";
 
-const DATA: Record<"individuals" | "business" | "institutions", CaseItem[]> = {
-  individuals: [
-    { title: "Diplomas & transcripts", desc: "Protect PDF diplomas and share a certificate anyone can verify." },
-    { title: "IDs & documents", desc: "Add a portable proof to scans (PDF) without changing how they open." },
-    { title: "Creative work", desc: "Stamp portfolios, scripts or treatments with a verifiable fingerprint." },
-  ],
-  business: [
-    { title: "Employee credentials", desc: "Issue protected PDFs/DOCX for onboarding and compliance." },
-    { title: "Contracts & proposals", desc: "Share trusted documents; recipients verify in under a second." },
-    { title: "Automation", desc: "Use API/SDKs to certify at scale with logs and webhooks." },
-  ],
-  institutions: [
-    { title: "Universities", desc: "Streamline degree verification without changing your student portal." },
-    { title: "Hospitals", desc: "Share policies and training docs with built-in authenticity." },
-    { title: "Public agencies", desc: "Publish PDFs with a tamper-evident, human-readable certificate." },
-  ],
-};
+const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  { id: "individuals", label: "Individuals",  icon: <Users className="h-4 w-4" /> },
+  { id: "business",    label: "Business",     icon: <Briefcase className="h-4 w-4" /> },
+  { id: "institutions",label: "Institutions", icon: <Building2 className="h-4 w-4" /> },
+];
 
 export default function UseCases() {
-  const [tab, setTab] = useState<"individuals" | "business" | "institutions">("individuals");
+  const [tab, setTab] = useState<TabId>("individuals");
 
-  const tabs = [
-    { id: "individuals" as const, label: "Individuals", icon: <Users className="h-4 w-4" /> },
-    { id: "business" as const, label: "Business", icon: <Briefcase className="h-4 w-4" /> },
-    { id: "institutions" as const, label: "Institutions", icon: <Building2 className="h-4 w-4" /> },
-  ];
+  // Révélation douce au scroll pour cartes & badges
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const i = Number(el.dataset.index || 0);
+            el.classList.add("opacity-100", "translate-y-0");
+            el.style.transitionDelay = `${80 + i * 60}ms`;
+            io.unobserve(entry.target);
+          }
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.15 }
+    );
 
-  const chips = [
-    "No uploads — processed locally",
-    "GDPR-friendly, privacy by design",
-    "Human-readable certificate provided",
-  ];
+    document
+      .querySelectorAll<HTMLElement>('[data-reveal="uc"]')
+      .forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section className="section-dark" aria-labelledby="use-cases">
-      <div className="container-max py-14">
+      <div className="container-max pb-14">
         <h2 id="use-cases" className="h2">Use Cases</h2>
+
+        {/* pastille premium */}
+        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs ring-1 ring-white/10">
+          • real examples • under 20s • no storage
+        </p>
 
         {/* Tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
-          {tabs.map(t => (
+          {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition
-                ${tab === t.id
-                  ? "bg-white/10 text-white ring-1 ring-white/15"
-                  : "bg-white/5 text-[var(--fg-muted)] hover:text-[var(--fg)] ring-1 ring-white/10"
+              className={`group relative inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm transition
+                ${
+                  tab === t.id
+                    ? "bg-white/10 text-white ring-1 ring-white/15"
+                    : "bg-white/[0.04] text-[var(--fg-muted)] hover:text-[var(--fg)] ring-1 ring-white/10"
                 }`}
-              aria-pressed={tab === t.id}
             >
               {t.icon}
               {t.label}
+              <span
+                className={`pointer-events-none absolute left-3 right-3 -bottom-1 h-px transition-opacity
+                ${
+                  tab === t.id ? "opacity-100" : "opacity-0"
+                } bg-gradient-to-r from-emerald-400/60 via-cyan-400/60 to-sky-400/60`}
+              />
             </button>
           ))}
         </div>
 
-        {/* Cards */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {DATA[tab].map((item, idx) => (
-            <article
-              key={item.title}
-              style={{ transitionDelay: `${idx * 80}ms` }}
-              className="opacity-0 translate-y-2 animate-[fadeIn_.5s_ease_forwards] card p-5"
-            >
-              <h3 className="text-lg font-semibold">{item.title}</h3>
-              <p className="mt-1 text-sm text-[var(--fg-muted)]">{item.desc}</p>
-            </article>
-          ))}
+        {/* Cartes */}
+        <div className="mt-6 grid gap-4">
+          {tab === "individuals" && (
+            <>
+              <Card
+                i={0}
+                title="Diplomas & transcripts"
+                desc="Protect PDF diplomas and share a certificate anyone can verify."
+              />
+              <Card
+                i={1}
+                title="IDs & documents"
+                desc="Add a portable proof to scans (PDF) without changing how they open."
+              />
+              <Card
+                i={2}
+                title="Creative work"
+                desc="Stamp portfolios, scripts or treatments with a verifiable fingerprint."
+              />
+            </>
+          )}
+
+          {tab === "business" && (
+            <>
+              <Card
+                i={0}
+                title="HR & onboarding"
+                desc="Automate checks on diplomas / certifications. Issue tamper-evident PDFs."
+              />
+              <Card
+                i={1}
+                title="Contracts & compliance"
+                desc="Add a durable proof on generated contracts and policy docs."
+              />
+              <Card
+                i={2}
+                title="Customer trust"
+                desc="Share price sheets, proposals or white-papers with verifiable integrity."
+              />
+            </>
+          )}
+
+          {tab === "institutions" && (
+            <>
+              <Card
+                i={0}
+                title="Universities"
+                desc="Protect issued diplomas; allow anyone to verify online or offline."
+              />
+              <Card
+                i={1}
+                title="Hospitals"
+                desc="Secure patient PDFs and ensure integrity across systems."
+              />
+              <Card
+                i={2}
+                title="Public sector"
+                desc="Publish memos or forms with an embedded proof and transparent verification."
+              />
+            </>
+          )}
         </div>
 
-        {/* Chips */}
-        <div className="mt-6 flex flex-wrap gap-2 text-xs text-[var(--fg-muted)]">
-          {chips.map(c => (
-            <span key={c} className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
-              <CheckCircle2 className="h-4 w-4 text-[var(--accent-1)]" /> {c}
+        {/* Badges crédibilité */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          {[
+            "No uploads — processed locally",
+            "GDPR-friendly, privacy by design",
+            "Human-readable certificate provided",
+          ].map((c, i) => (
+            <span
+              key={c}
+              data-reveal="uc"
+              data-index={i}
+              className="opacity-0 translate-y-1 transition-all duration-500
+                         inline-flex items-center gap-1 rounded-full
+                         bg-gradient-to-r from-emerald-500/10 to-sky-500/10
+                         px-3 py-1 text-xs ring-1 ring-white/10"
+            >
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              {c}
             </span>
           ))}
         </div>
-
-        {/* CTA row */}
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/generate" className="btn btn-primary-strong btn-glow">
-            Protect a file now <ArrowRight className="h-5 w-5" aria-hidden />
-          </Link>
-          <Link href={tab === "business" || tab === "institutions" ? "/pro" : "/verify"} className="btn-outline">
-            {tab === "business" || tab === "institutions" ? "Talk to us" : "Verify a file"} <ArrowRight className="h-5 w-5" aria-hidden />
-          </Link>
-        </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn { to { opacity: 1; transform: none; } }
-      `}</style>
     </section>
+  );
+}
+
+/* ---------- internals ---------- */
+
+function Card({ i, title, desc }: { i: number; title: string; desc: string }) {
+  return (
+    <article
+      data-reveal="uc"
+      data-index={i}
+      className="relative opacity-0 translate-y-2 transition-all duration-700
+                 rounded-2xl border border-white/10 bg-white/[0.04] p-5
+                 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,.25)]
+                 hover:shadow-[0_20px_60px_rgba(0,0,0,.35)] hover:-translate-y-0.5"
+    >
+      {/* glow ring subtil */}
+      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10 [mask-image:linear-gradient(black,transparent)]" />
+      <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+      <p className="mt-1 text-sm text-[var(--fg-muted)]">{desc}</p>
+    </article>
   );
 }
