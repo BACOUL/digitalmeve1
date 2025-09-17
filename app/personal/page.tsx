@@ -1,4 +1,3 @@
-// app/personal/page.tsx
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -30,10 +29,10 @@ export default function PersonalPage() {
               href="/generate"
               className="btn btn-primary inline-flex items-center gap-2"
             >
-              Get Started Free <ArrowRight className="h-4 w-4" />
+              Get started free <ArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/verify" className="btn btn-ghost inline-flex items-center gap-2">
-              Verify a Document
+              Verify a document
             </Link>
           </div>
 
@@ -54,7 +53,7 @@ export default function PersonalPage() {
             </span>
             <span className="badge">
               <ShieldCheck className="h-4 w-4 text-[var(--accent-2)]" />
-              Verifiable anywhere
+              Readable anywhere
             </span>
             <span className="badge">
               <CheckCircle2 className="h-4 w-4 text-[var(--accent-1)]" />
@@ -76,7 +75,7 @@ export default function PersonalPage() {
             {
               step: "1",
               title: "Upload",
-              desc: "Drop your file (PDF, DOCX, PNG soon). Nothing is stored.",
+              desc: "Drop your file (PDF or DOCX). Nothing is stored.",
             },
             {
               step: "2",
@@ -112,9 +111,9 @@ export default function PersonalPage() {
           </div>
           <div className="flex flex-col items-center">
             <ShieldCheck className="h-8 w-8 text-[var(--accent-2)]" />
-            <p className="mt-2 text-sm font-medium">Verifiable anywhere</p>
+            <p className="mt-2 text-sm font-medium">Readable anywhere</p>
             <p className="text-xs text-[var(--fg-muted)]">
-              Files stay readable and portable.
+              Files stay compatible and portable.
             </p>
           </div>
           <div className="flex flex-col items-center">
@@ -140,7 +139,7 @@ export default function PersonalPage() {
               price: "$0",
               desc: "Forever free, perfect for personal use.",
               features: ["Up to 5 files/day", "Basic .MEVE proof", "No account required"],
-              cta: "Get Started",
+              cta: "Get started free",
               href: "/generate",
               highlight: false,
             },
@@ -150,7 +149,7 @@ export default function PersonalPage() {
               desc: "For power users who need more volume.",
               features: ["Up to 50 files/day", "Priority verification", "Email support"],
               cta: "Upgrade",
-              href: "/pricing",
+              href: "/register?plan=plus-personal",
               highlight: true,
             },
             {
@@ -159,7 +158,7 @@ export default function PersonalPage() {
               desc: "For freelancers & professionals.",
               features: ["Unlimited files", "Advanced proof options", "Priority support"],
               cta: "Go Premium",
-              href: "/pricing",
+              href: "/register?plan=premium-personal",
               highlight: false,
             },
           ].map(({ name, price, desc, features, cta, href, highlight }) => (
@@ -232,4 +231,4 @@ export default function PersonalPage() {
       </section>
     </main>
   );
-      }
+            }
