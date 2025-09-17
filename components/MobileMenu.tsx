@@ -1,4 +1,3 @@
-// components/MobileMenu.tsx
 "use client";
 
 import Link from "next/link";
@@ -85,7 +84,6 @@ export default function MobileMenu({ open, onClose }: Props) {
     { href: "/pro", label: "For Business" },
   ], []);
   const resources = useMemo(() => [
-    { href: "/pricing", label: "Pricing" },
     { href: "/developers", label: "Developers" },
     { href: "/security", label: "Security" },
     { href: "/status", label: "Status" },
@@ -266,4 +264,4 @@ function isActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-}
+                          }
