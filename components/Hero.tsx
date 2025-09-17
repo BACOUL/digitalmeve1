@@ -30,7 +30,7 @@ export default function Hero() {
           THE .MEVE STANDARD
         </div>
 
-        {/* Titre — plus compact sur mobile */}
+        {/* Titre */}
         <h1 className="mt-3 text-balance font-extrabold tracking-tight text-white leading-[1.06] text-[clamp(2.2rem,6.2vw,3.75rem)] sm:text-6xl md:text-7xl">
           Invisible proof.
           <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
@@ -38,19 +38,19 @@ export default function Hero() {
           </span>
         </h1>
 
-        {/* Sous-titre — compact */}
+        {/* Sous-titre */}
         <p className="mx-auto mt-4 max-w-3xl text-[15.5px] sm:text-lg text-[var(--fg-muted)]">
           DigitalMeve embeds a lightweight, invisible <span className="font-semibold">.MEVE</span> proof
           into your file and issues an official certificate. Your document remains identical and readable
-          everywhere — anyone can verify it in seconds. No account. No storage.
+          everywhere — anyone can verify it in seconds.
         </p>
 
-        {/* Micro-claims (plus courts, sans “free”) */}
+        {/* Micro-claims */}
         <p id="hero-claims" className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
           Privacy by design · In-browser processing · No account • No storage
         </p>
 
-        {/* CTAs — tailles réduites pour tenir à l’écran */}
+        {/* CTAs */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3" aria-describedby="hero-claims">
           <Link
             href="/generate"
@@ -68,7 +68,7 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Badges premium — UNE seule mention “Free” */}
+        {/* Badges */}
         <div className="badge-group mt-5">
           <span className="badge badge--brand">
             <Sparkles className="opacity-90" />
