@@ -22,7 +22,7 @@ export default function Hero() {
       </div>
 
       {/* Contenu */}
-      <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-8 text-center sm:px-5 sm:pt-24 sm:pb-20">
+      <div className="relative mx-auto max-w-6xl px-4 pt-11 pb-7 text-center sm:px-5 sm:pt-24 sm:pb-20">
         {/* Eyebrow */}
         <div
           className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur"
@@ -42,16 +42,15 @@ export default function Hero() {
 
         {/* Sous-titre */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
-          Protect any file with an invisible{" "}
-          <span className="font-semibold">.MEVE</span> certificate — 100% private,
+          Protect any file with an invisible <span className="font-semibold">.MEVE</span> certificate — 100% private,
           verified anywhere in seconds.
         </p>
 
-        {/* CTAs */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+        {/* CTAs (hiérarchie renforcée) */}
+        <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2.5">
           <Link
             href="/generate"
-            className="btn btn-primary px-5 h-11 text-[15px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.22)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+            className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.22)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
             Get started free
@@ -65,43 +64,50 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Mini demo (statique pour l’instant) */}
+        {/* Mini demo (clarifiée) */}
         <div
           role="button"
           tabIndex={0}
-          aria-label="Drop a file to try DigitalMeve"
-          className="mt-4 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-5 hover:bg-white/10 transition-colors"
+          aria-label="Demo — try DigitalMeve"
+          className="mt-3.5 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-5 hover:bg-white/10 transition-colors"
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") window.location.assign("/generate");
           }}
           onClick={() => window.location.assign("/generate")}
         >
+          <div className="mx-auto mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] tracking-wide text-slate-300">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+            Demo
+          </div>
           <div className="text-sm sm:text-[15px] text-slate-200">
             <span className="font-semibold underline decoration-dotted underline-offset-4">
               Drop a file
             </span>{" "}
             to try — or pick one.
           </div>
-          <div className="mt-1.5 text-xs text-slate-400">
-            Your file never leaves your device.
-          </div>
+          <div className="mt-1.5 text-xs text-slate-400">Your file never leaves your device.</div>
         </div>
 
-        {/* Badges */}
-        <div className="badge-group mt-4 flex flex-wrap justify-center gap-2">
-          <span className="badge badge--brand">
-            <Sparkles aria-hidden className="opacity-90" />
+        {/* Badges (ghost/flat, moins “CTA”) */}
+        <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-slate-300">
+            <Sparkles aria-hidden className="h-3.5 w-3.5 opacity-90" />
             Privacy by design
           </span>
-          <span className="badge badge--success">
-            <ShieldCheck aria-hidden />
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-slate-300">
+            <ShieldCheck aria-hidden className="h-3.5 w-3.5" />
             Certificate included
           </span>
-          <span className="badge badge--info max-[360px]:hidden">
-            <ArrowRight aria-hidden />
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-slate-300 max-[360px]:hidden">
+            <ArrowRight aria-hidden className="h-3.5 w-3.5" />
             All file types
           </span>
         </div>
+
+        {/* Micro-preuve (texte simple) */}
+        <p className="mx-auto mt-2 max-w-xl text-[12.5px] text-slate-400">
+          Open standard · 100% transparent · Verify anywhere in seconds
+        </p>
       </div>
 
       {/* séparateur */}
