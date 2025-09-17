@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   Clipboard,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
@@ -159,7 +160,17 @@ export default function VerifyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)] relative">
+      {/* Fond premium (cohérent home/generate) */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 opacity-50"
+        style={{
+          background:
+            "radial-gradient(1200px 600px at 10% -10%, rgba(16,185,129,.08), transparent 60%), radial-gradient(1000px 520px at 85% 0%, rgba(56,189,248,.08), transparent 60%)",
+        }}
+      />
+
       {/* SR status pour lecteurs d’écran */}
       <p aria-live="polite" className="sr-only">
         {busy ? "Checking…" : res ? "Verification done." : "Idle"}
@@ -195,7 +206,8 @@ export default function VerifyPage() {
             )}
           </div>
 
-          <div className="mt-8">
+          {/* Dropzone en carte avec glow */}
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur transition hover:bg-white/10 hover:shadow-[0_0_36px_rgba(56,189,248,.18)]">
             <FileDropzone
               onSelected={(f) => {
                 setFile(f);
@@ -203,7 +215,7 @@ export default function VerifyPage() {
               }}
               label="Choose a file"
               maxSizeMB={10}
-              hint="Drag & drop or tap to select. Max {SIZE} MB."
+              hint="Drag & drop or tap to select. Max 10 MB."
               accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               role="button"
               tabIndex={0}
@@ -214,10 +226,18 @@ export default function VerifyPage() {
             <button
               onClick={onVerify}
               disabled={!file || busy}
-              className="btn btn-primary shadow-glow disabled:opacity-50"
+              className="btn btn-primary shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
               aria-disabled={!file || busy}
+              aria-label="Verify a .MEVE proof"
             >
-              {busy ? "Checking…" : "Verify Proof"}
+              {busy ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Checking…
+                </>
+              ) : (
+                "Verify Proof"
+              )}
             </button>
 
             {file && (
@@ -229,6 +249,7 @@ export default function VerifyPage() {
                 disabled={busy}
                 className="btn btn-ghost"
                 aria-disabled={busy}
+                aria-label="Reset selected file"
               >
                 <XCircle className="h-5 w-5" />
                 Reset
@@ -236,9 +257,15 @@ export default function VerifyPage() {
             )}
 
             {/* Lien utile : générer un fichier si l’utilisateur s’est trompé */}
-            <Link href="/generate" className="btn btn-ghost">
-              Need a .MEVE file? Generate →
-            </Link>
+            {!busy && (
+              <Link
+                href="/generate"
+                className="ml-auto text-sm text-[var(--fg-muted)] underline hover:text-[var(--fg)]"
+                aria-label="Need a .MEVE file? Generate one"
+              >
+                Need a .MEVE file instead? Generate →
+              </Link>
+            )}
           </div>
 
           {/* Résultat */}
@@ -275,8 +302,16 @@ export default function VerifyPage() {
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       <dt className="text-[var(--fg-muted)]">Date / Time</dt>
                       <dd className="col-span-2 sm:col-span-3">
-                        {new Date(res.whenISO!).toLocaleDateString()} —{" "}
-                        {new Date(res.whenISO!).toLocaleTimeString()}
+                        {new Date(res.whenISO!).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "2-digit",
+                        })}{" "}
+                        —{" "}
+                        {new Date(res.whenISO!).toLocaleTimeString(undefined, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </dd>
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -311,7 +346,7 @@ export default function VerifyPage() {
                     </div>
 
                     <div className="mt-5">
-                      <button onClick={downloadCert} className="btn">
+                      <button onClick={downloadCert} className="btn" aria-label="Download certificate as HTML">
                         <FileCheck2 className="h-4 w-4 text-[var(--accent-2)]" />
                         Download Certificate (.html)
                       </button>
@@ -336,6 +371,11 @@ export default function VerifyPage() {
               )}
             </div>
           )}
+
+          {/* Micro-claims (cohérence home) */}
+          <p className="mt-10 text-center text-xs text-[var(--fg-muted)]">
+            Privacy by design · In-browser only · Works with all file types
+          </p>
         </div>
       </section>
 
@@ -356,4 +396,4 @@ export default function VerifyPage() {
       )}
     </main>
   );
-            }
+  }
