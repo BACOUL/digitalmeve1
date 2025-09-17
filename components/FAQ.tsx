@@ -1,21 +1,38 @@
-// components/FAQ.tsx
+"use client";
+
+const QA = [
+  {
+    q: "Do I need an account?",
+    a: "No. You can generate and verify without creating an account.",
+  },
+  {
+    q: "Do you store my files?",
+    a: "No. Everything runs in your browser — we never keep your files.",
+  },
+  {
+    q: "Are my files still readable?",
+    a: "Yes. Nothing changes for how you open or share them.",
+  },
+  {
+    q: "Is this a legal proof?",
+    a: "It’s a technical integrity signal. See Legal/Terms for guidance per jurisdiction.",
+  },
+];
+
 export default function FAQ() {
   return (
-    <section aria-label="FAQ" className="mx-auto max-w-6xl px-4 py-12">
-      <h2 className="text-2xl font-semibold">FAQ</h2>
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <h3 className="font-semibold text-slate-100">Do I need an account?</h3>
-          <p className="mt-1 text-sm text-slate-300">No. You can generate and verify without creating an account.</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <h3 className="font-semibold text-slate-100">Do you store my files?</h3>
-          <p className="mt-1 text-sm text-slate-300">No. Files stay on your device. We only prepare your certificate.</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <h3 className="font-semibold text-slate-100">Are files still readable?</h3>
-          <p className="mt-1 text-sm text-slate-300">Yes. Open and share them as usual — the proof is invisible.</p>
-        </div>
+    <section aria-label="FAQ" className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+      <h2 className="text-2xl sm:text-3xl font-semibold">FAQ</h2>
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        {QA.map((f) => (
+          <details key={f.q} className="surface p-5 rounded-2xl group" data-reveal>
+            <summary className="cursor-pointer list-none font-semibold">
+              {f.q}
+              <span className="float-right opacity-60 group-open:rotate-45 transition">+</span>
+            </summary>
+            <p className="mt-2 text-sm text-[var(--fg-muted)]">{f.a}</p>
+          </details>
+        ))}
       </div>
     </section>
   );
