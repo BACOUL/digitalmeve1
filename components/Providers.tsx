@@ -1,7 +1,13 @@
-// components/Providers.tsx
-import { ReactNode } from "react";
+"use client";
 
-export default function Providers({ children }: { children: ReactNode }) {
-  // Ajoute ici tes providers globaux (SessionProvider, Theme, Query, etc.)
+import * as React from "react";
+
+// Si tu utilises next-auth plus tard :
+// import { SessionProvider } from "next-auth/react";
+
+export default function Providers({ children }: { children: React.ReactNode }) {
+  // Si tu n'as pas encore SessionProvider, renvoie juste les children.
+  // Quand tu brancheras next-auth, remplace par :
+  // return <SessionProvider>{children}</SessionProvider>;
   return <>{children}</>;
 }
