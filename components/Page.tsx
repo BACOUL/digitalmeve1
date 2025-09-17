@@ -9,26 +9,13 @@ import PreFooterCTA from "@/components/PreFooterCTA";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
-      {/* 1. HERO */}
+    <main className="min-h-screen bg-slate-950 text-slate-100">
       <Hero />
-
-      {/* 2. HOW IT WORKS */}
       <HowItWorks />
-
-      {/* 3. WHY DIGITALMEVE */}
       <WhyDigitalMeve />
-
-      {/* 4. USE CASES */}
       <UseCases />
-
-      {/* 5. SECURITY STRIP */}
       <SecurityStrip />
-
-      {/* 6. FAQ */}
       <FAQ />
-
-      {/* 7. PRE-FOOTER CTA */}
       <PreFooterCTA />
     </main>
   );
