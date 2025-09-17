@@ -1,22 +1,13 @@
+// components/Header.tsx
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
-
-// wrappers safe-auth (si tu les utilises déjà)
-import {
-  useSessionSafe as useSession,
-  signOutSafe as signOut,
-} from "@/lib/safe-auth";
-
+import { Menu } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 
 export default function Header() {
-  const sessionState = useSession?.();
-  const session = sessionState?.data;
-
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -28,7 +19,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // fermeture auto du drawer si route change via hash
   useEffect(() => {
     const close = () => setOpen(false);
     window.addEventListener("hashchange", close);
@@ -51,7 +41,6 @@ export default function Header() {
 
   return (
     <>
-      {/* lien skip a11y */}
       <a
         href="#main"
         className="sr-only focus:not-sr-only fixed left-3 top-3 z-[1001] rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow outline-none ring-2 ring-emerald-500"
@@ -59,7 +48,6 @@ export default function Header() {
         Skip to content
       </a>
 
-      {/* HEADER blanc premium */}
       <header
         role="banner"
         className={`sticky top-0 z-50 w-full border-b border-gray-200 bg-white transition-shadow ${
@@ -67,7 +55,7 @@ export default function Header() {
         }`}
       >
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 text-slate-900">
-          {/* Logo en dégradé (vert -> bleu) */}
+          {/* Logo gradient */}
           <Link
             href="/"
             className="mr-1 -mx-1 rounded-lg px-1 text-[1.25rem] font-extrabold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent"
@@ -107,11 +95,8 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Drawer mobile */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
-
-      {/* ancre pour le skip link */}
       <span id="main" className="sr-only" />
     </>
   );
-}
+          }
