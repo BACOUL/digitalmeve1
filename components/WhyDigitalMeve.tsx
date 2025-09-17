@@ -2,13 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Lock,
-  FileText,
-  Zap,
-  Globe,
-  ShieldCheck,
-} from "lucide-react";
+import { useEffect } from "react";
+import { Lock, FileText, Zap, Globe } from "lucide-react";
 
 export default function WhyDigitalMeve() {
   const FEATURES = [
@@ -34,9 +29,29 @@ export default function WhyDigitalMeve() {
     },
   ];
 
+  // Fade-in au scroll
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const el = e.target as HTMLElement;
+            const i = Number(el.dataset.index || 0);
+            el.classList.add("opacity-100", "translate-y-0");
+            el.style.transitionDelay = `${80 + i * 90}ms`;
+            io.unobserve(el);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    document.querySelectorAll<HTMLElement>(".why-card").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <section className="relative overflow-hidden px-4 py-20 sm:py-24">
-      {/* subtle background echoing Hero */}
+      {/* fond subtil */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-40"
@@ -63,12 +78,14 @@ export default function WhyDigitalMeve() {
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map((f) => (
+          {FEATURES.map((f, i) => (
             <div
               key={f.title}
-              className="relative rounded-2xl border border-white/8 bg-slate-900/50 p-5 backdrop-blur transition hover:shadow-lg hover:shadow-[0_12px_30px_rgba(16,185,129,.04)]"
+              data-index={i}
+              className="why-card relative rounded-2xl border border-white/8 bg-slate-900/50 p-5 backdrop-blur transition-all duration-700 opacity-0 translate-y-6
+                         hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(16,185,129,.08),0_6px_18px_rgba(56,189,248,.08)]"
             >
-              <div className="inline-flex items-center justify-center h-11 w-11 rounded-lg bg-gradient-to-br from-emerald-500/10 to-sky-500/10 text-emerald-300 ring-1 ring-white/6">
+              <div className="inline-flex items-center justify-center h-11 w-11 rounded-lg bg-gradient-to-br from-emerald-500/10 to-sky-500/10 text-emerald-300 ring-1 ring-white/6 transition-transform group-hover:-translate-y-0.5">
                 {f.icon}
               </div>
               <h3 className="mt-4 text-sm font-semibold text-white">{f.title}</h3>
@@ -97,4 +114,4 @@ export default function WhyDigitalMeve() {
       </div>
     </section>
   );
-}
+            }
