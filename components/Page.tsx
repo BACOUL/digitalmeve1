@@ -1,8 +1,9 @@
 import Hero from "@/components/Hero";
 import HowItWorks from "@/components/HowItWorks";
 import WhyDigitalMeve from "@/components/WhyDigitalMeve";
+import TrustedByDesign from "@/components/TrustedByDesign";
+import Showcase from "@/components/Showcase";
 import UseCases from "@/components/UseCases";
-import SecurityStrip from "@/components/SecurityStrip";
 import FAQ from "@/components/FAQ";
 import PreFooterCTA from "@/components/PreFooterCTA";
 
@@ -15,8 +16,9 @@ export default function HomePage() {
       <Hero />
       <HowItWorks />
       <WhyDigitalMeve />
+      <TrustedByDesign />
+      <Showcase />
       <UseCases />
-      <SecurityStrip />
       <FAQ />
       <PreFooterCTA />
     </main>
