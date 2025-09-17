@@ -14,21 +14,21 @@ type Step = {
 
 const STEPS: Step[] = [
   {
-    icon: <Upload className="h-5 w-5" />,
+    icon: <Upload className="h-6 w-6" />,
     eyebrow: "Step 1",
     title: "Drop your file",
     desc: "Works with common formats; your file never leaves your device.",
     cta: { href: "/generate", label: "Get started for free" },
   },
   {
-    icon: <ShieldCheck className="h-5 w-5" />,
+    icon: <ShieldCheck className="h-6 w-6" />,
     eyebrow: "Step 2",
     title: "Invisible proof + certificate",
     desc: "We embed a lightweight, invisible proof and issue an official .MEVE certificate.",
     cta: { href: "/generate", label: "Get started for free" },
   },
   {
-    icon: <Download className="h-5 w-5" />,
+    icon: <Download className="h-6 w-6" />,
     eyebrow: "Step 3",
     title: "Share & verify anywhere",
     desc: "Distribute your file and certificate. Anyone can confirm it in seconds.",
@@ -75,7 +75,7 @@ export default function HowItWorks() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden px-4 py-20">
+    <section className="relative overflow-hidden px-4 py-16 sm:py-20">
       {/* arrière-plan doux */}
       <div
         aria-hidden
@@ -105,7 +105,7 @@ export default function HowItWorks() {
           <div className="absolute left-[10%] right-[10%] top-10 h-[2px] bg-white/5" />
           <div
             ref={lineRef}
-            className="absolute left-[10%] top-10 h-[2px] w-0 rounded-full transition-[width] duration-[1200ms] ease-out"
+            className="absolute left-[10%] top-10 h-[2px] w-0 rounded-full transition-[width] duration-[1200ms] ease-out shadow-[0_0_15px_rgba(56,189,248,.3)]"
             style={{
               background:
                 "linear-gradient(90deg, rgba(16,185,129,.8), rgba(56,189,248,.8))",
@@ -159,7 +159,7 @@ export default function HowItWorks() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/generate"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow hover:brightness-105"
+            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_30px_rgba(56,189,248,.25)] hover:brightness-105"
           >
             Get started for free
           </Link>
@@ -173,4 +173,4 @@ export default function HowItWorks() {
       </div>
     </section>
   );
-                }
+}
