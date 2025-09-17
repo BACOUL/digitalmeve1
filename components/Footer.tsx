@@ -1,59 +1,72 @@
-// components/Footer.tsx
 "use client";
 
 import Link from "next/link";
+import { Github, Twitter, Linkedin } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/10 bg-slate-950/95 backdrop-blur px-6 py-10 sm:py-14">
-      <div className="mx-auto max-w-6xl">
-        {/* Haut du footer */}
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Branding */}
+    <footer className="border-t border-gray-200 bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-4">
+          {/* Logo + pitch */}
           <div>
-            <h3 className="text-lg font-bold text-white">DigitalMeve</h3>
-            <p className="mt-2 text-sm text-slate-400">
-              Invisible proof. Visible trust.
+            <Link
+              href="/"
+              className="text-xl font-extrabold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent"
+            >
+              DigitalMeve
+            </Link>
+            <p className="mt-3 text-sm text-slate-500">
+              Proof your documents in seconds. Invisible, portable, secure.
             </p>
-          </div>
-
-          {/* Links */}
-          <div>
-            <h4 className="text-sm font-semibold text-white">Product</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li><Link href="/generate" className="hover:text-white">Protect a file</Link></li>
-              <li><Link href="/verify" className="hover:text-white">Verify a document</Link></li>
-              <li><Link href="/#usecases" className="hover:text-white">Use cases</Link></li>
-              <li><Link href="/#faq" className="hover:text-white">FAQ</Link></li>
-            </ul>
           </div>
 
           {/* Company */}
           <div>
-            <h4 className="text-sm font-semibold text-white">Company</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li><Link href="/about" className="hover:text-white">About us</Link></li>
-              <li><Link href="/legal/privacy" className="hover:text-white">Privacy Policy</Link></li>
-              <li><Link href="/legal/terms" className="hover:text-white">Terms of Service</Link></li>
-              <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
+            <h3 className="text-sm font-semibold text-slate-700">Company</h3>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li><Link href="/about" className="hover:text-emerald-600">About</Link></li>
+              <li><Link href="/contact" className="hover:text-emerald-600">Contact</Link></li>
+              <li><Link href="/legal" className="hover:text-emerald-600">Legal</Link></li>
             </ul>
           </div>
 
-          {/* Social (optionnel) */}
+          {/* Resources */}
           <div>
-            <h4 className="text-sm font-semibold text-white">Follow</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li><a href="#" className="hover:text-white">Twitter</a></li>
-              <li><a href="#" className="hover:text-white">LinkedIn</a></li>
-              <li><a href="#" className="hover:text-white">GitHub</a></li>
+            <h3 className="text-sm font-semibold text-slate-700">Resources</h3>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li><Link href="/developers" className="hover:text-emerald-600">Developers</Link></li>
+              <li><Link href="/security" className="hover:text-emerald-600">Security</Link></li>
+              <li><Link href="/status" className="hover:text-emerald-600">Status</Link></li>
+              <li><Link href="/changelog" className="hover:text-emerald-600">Changelog</Link></li>
             </ul>
+          </div>
+
+          {/* Legal & Social */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700">Legal</h3>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li><Link href="/terms" className="hover:text-emerald-600">Terms</Link></li>
+              <li><Link href="/privacy" className="hover:text-emerald-600">Privacy</Link></li>
+              <li><Link href="/cookies" className="hover:text-emerald-600">Cookies</Link></li>
+            </ul>
+            <div className="mt-4 flex gap-4 text-slate-500">
+              <Link href="https://github.com" target="_blank" aria-label="GitHub">
+                <Github className="h-5 w-5 hover:text-emerald-600" />
+              </Link>
+              <Link href="https://twitter.com" target="_blank" aria-label="Twitter">
+                <Twitter className="h-5 w-5 hover:text-emerald-600" />
+              </Link>
+              <Link href="https://linkedin.com" target="_blank" aria-label="LinkedIn">
+                <Linkedin className="h-5 w-5 hover:text-emerald-600" />
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Bas du footer */}
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-slate-500 sm:flex-row">
-          <p>© {new Date().getFullYear()} DigitalMeve. All rights reserved.</p>
-          <p>Privacy by design • No storage • Works in your browser</p>
+        {/* Bottom line */}
+        <div className="mt-12 border-t border-gray-200 pt-6 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} DigitalMeve. All rights reserved.
         </div>
       </div>
     </footer>
