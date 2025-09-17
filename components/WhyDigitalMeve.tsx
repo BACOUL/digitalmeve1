@@ -1,45 +1,99 @@
+// components/WhyDigitalMeve.tsx
 "use client";
 
-import { ShieldCheck, BadgeCheck, FileCheck2, Lock } from "lucide-react";
+import Link from "next/link";
+import {
+  Lock,
+  FileText,
+  Zap,
+  Globe,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function WhyDigitalMeve() {
-  const items = [
+  const FEATURES = [
     {
-      icon: <ShieldCheck className="h-5 w-5 text-emerald-400" />,
-      title: "Built-in proof",
-      desc: "A durable .MEVE proof lives with the file. No viewer or plugin required.",
+      icon: <Lock className="h-5 w-5" aria-hidden />,
+      title: "Privacy first",
+      desc: "All processing runs in the browser — your files never leave your device.",
     },
     {
-      icon: <BadgeCheck className="h-5 w-5 text-emerald-400" />,
-      title: "Readable everywhere",
-      desc: "Files remain clean and portable — open and share them as usual.",
+      icon: <FileText className="h-5 w-5" aria-hidden />,
+      title: "Universal",
+      desc: "Works with any file type; certificates readable and verifiable everywhere.",
     },
     {
-      icon: <FileCheck2 className="h-5 w-5 text-emerald-400" />,
-      title: "Certificate included",
-      desc: "Every protected file comes with a human-readable certificate.",
+      icon: <Zap className="h-5 w-5" aria-hidden />,
+      title: "Zero friction",
+      desc: "No account, no setup, no storage — start in seconds and share instantly.",
     },
     {
-      icon: <Lock className="h-5 w-5 text-emerald-400" />,
-      title: "No account. No storage.",
-      desc: "Everything runs in your browser. We never keep your files.",
+      icon: <Globe className="h-5 w-5" aria-hidden />,
+      title: "Open standard",
+      desc: ".MEVE is transparent and future-proof — auditable, simple, and interoperable.",
     },
   ];
 
   return (
-    <section aria-label="Why DigitalMeve" className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-      <h2 className="text-2xl sm:text-3xl font-semibold">Why DigitalMeve</h2>
-      <p className="mt-2 text-[var(--fg-muted)]">
-        Designed for everyone — simple to use, built for trust.
-      </p>
+    <section className="relative overflow-hidden px-4 py-20 sm:py-24">
+      {/* subtle background echoing Hero */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            "radial-gradient(800px 360px at 10% 10%, rgba(16,185,129,.06), transparent 40%), radial-gradient(700px 320px at 95% 30%, rgba(56,189,248,.04), transparent 40%)",
+        }}
+      />
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {items.map((f) => (
-          <div key={f.title} className="surface p-5 sm:p-6" data-reveal>
-            <div className="flex items-center gap-2 text-sm">{f.icon}<span className="font-medium">{f.title}</span></div>
-            <p className="mt-2 text-sm text-[var(--fg-muted)]">{f.desc}</p>
-          </div>
-        ))}
+      <div className="mx-auto max-w-6xl relative">
+        <div className="text-center">
+          <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+            Why DigitalMeve
+          </p>
+
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Proof without compromise
+          </h2>
+
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
+            DigitalMeve makes proofs invisible, private and universal — so you can protect and share files with confidence.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map((f) => (
+            <div
+              key={f.title}
+              className="relative rounded-2xl border border-white/8 bg-slate-900/50 p-5 backdrop-blur transition hover:shadow-lg hover:shadow-[0_12px_30px_rgba(16,185,129,.04)]"
+            >
+              <div className="inline-flex items-center justify-center h-11 w-11 rounded-lg bg-gradient-to-br from-emerald-500/10 to-sky-500/10 text-emerald-300 ring-1 ring-white/6">
+                {f.icon}
+              </div>
+              <h3 className="mt-4 text-sm font-semibold text-white">{f.title}</h3>
+              <p className="mt-2 text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/generate"
+            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_30px_rgba(56,189,248,.22)] hover:brightness-105"
+            aria-label="Get started for free — add a .MEVE certificate"
+          >
+            Get started for free
+          </Link>
+
+          <Link
+            href="/verify"
+            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
+            aria-label="Verify a document"
+          >
+            Verify a document
+          </Link>
+        </div>
       </div>
     </section>
   );
