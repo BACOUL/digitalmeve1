@@ -160,23 +160,68 @@
 .btn-outline:hover { background: color-mix(in oklab, var(--surface) 88%, white 12%); }
 
 /* ----------------------------- */
-/* Badges & chips                 */
+/* Badges (premium)               */
 /* ----------------------------- */
 .badge {
-  @apply inline-flex items-center gap-2 px-2.5 py-1 text-xs;
-  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .42rem .68rem;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 1;
   border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 80%, white 20%);
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 84%, white 16%);
+  color: var(--fg);
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+  white-space: nowrap;
+}
+.badge:hover { transform: translateY(-1px); }
+
+.badge--brand {
+  background: var(--grad-brand);
+  border-color: transparent;
+  color: #0B1220;
+  box-shadow: 0 0 34px color-mix(in oklab, var(--accent-2) 35%, transparent);
+}
+.badge--success {
+  color: var(--accent-1);
+  border-color: color-mix(in oklab, var(--accent-1) 45%, var(--border));
+  background: color-mix(in oklab, var(--surface) 78%, var(--accent-1) 22%);
+}
+.badge--info {
+  color: var(--accent-2);
+  border-color: color-mix(in oklab, var(--accent-2) 45%, var(--border));
+  background: color-mix(in oklab, var(--surface) 78%, var(--accent-2) 22%);
+}
+.badge--neutral {
+  color: var(--fg);
+  border-color: var(--border);
+  background: color-mix(in oklab, var(--surface) 86%, white 14%);
+}
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: center;
+}
+.badge > svg { width: 14px; height: 14px; }
+
+.theme-light .badge {
+  background: color-mix(in oklab, var(--surface) 86%, black 14%);
+  border-color: var(--border);
   color: var(--fg);
 }
-.badge-green { color: var(--accent-1); border-color: color-mix(in oklab, var(--accent-1) 40%, var(--border)); }
-.badge-sky { color: var(--accent-2); border-color: color-mix(in oklab, var(--accent-2) 40%, var(--border)); }
-.badge-solid { background: var(--grad-brand); color: #0B1220; border-color: transparent; }
-
-.chip { display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; font-size:.75rem; font-weight:600;
-  border-radius:999px; border:1px solid var(--border); background:color-mix(in oklab,var(--surface) 86%,white 14%); color:var(--fg);}
-.chip-ok { color:var(--accent-1); border-color:color-mix(in oklab,var(--accent-1) 45%,var(--border)); }
-.chip-info { color:var(--accent-2); border-color:color-mix(in oklab,var(--accent-2) 45%,var(--border)); }
+.theme-light .badge--brand { color: #0B1220; }
+.theme-light .badge--success {
+  background: color-mix(in oklab, var(--surface) 80%, var(--accent-2) 20%);
+}
+.theme-light .badge--info {
+  background: color-mix(in oklab, var(--surface) 80%, var(--accent-1) 20%);
+}
 
 /* ----------------------------- */
 /* Inputs                         */
