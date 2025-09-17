@@ -11,77 +11,65 @@ export default function Hero() {
       aria-label="DigitalMeve — Invisible proof, visible trust"
       className="relative overflow-hidden"
     >
-      {/* ===== Background FX (emerald/sky auroras + beam + grain) ===== */}
+      {/* ==== FX de fond (auroras + beam + grain) ==== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="aurora aurora-1" />
         <div className="aurora aurora-2" />
         <div className="aurora aurora-3" />
         <div className="beam" />
         <div className="noise" />
-
-        {/* Top white band (to blend with your white header) */}
-        <div className="absolute inset-x-0 top-0 h-16 bg-white/90 mix-blend-normal [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-        {/* Subtle vertical vignette for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/15 to-black/50" />
+        {/* bandeau blanc pour fondre avec le header blanc */}
+        <div className="absolute inset-x-0 top-0 h-12 bg-white/90 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       </div>
 
-      {/* ===== Content ===== */}
-      <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-16 text-center sm:pt-28 sm:pb-24">
+      {/* ==== Contenu ==== */}
+      <div className="relative mx-auto max-w-6xl px-5 pt-16 pb-12 text-center sm:pt-24 sm:pb-20">
         {/* Eyebrow */}
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur animate-[fadeIn_300ms_ease-out_both]">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
           THE .MEVE STANDARD
         </div>
 
-        {/* Headline */}
-        <h1 className="mt-4 text-balance font-extrabold tracking-tight text-white leading-[1.05] text-5xl sm:text-6xl md:text-7xl animate-[fadeIn_420ms_ease-out_both]">
-          Invisible proof.{" "}
+        {/* Titre — plus compact sur mobile */}
+        <h1 className="mt-3 text-balance font-extrabold tracking-tight text-white leading-[1.06] text-[clamp(2.2rem,6.2vw,3.75rem)] sm:text-6xl md:text-7xl">
+          Invisible proof.
           <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
             Visible trust.
           </span>
         </h1>
 
-        {/* Subheading */}
-        <p className="mx-auto mt-5 max-w-3xl text-lg sm:text-xl text-[var(--fg-muted)] animate-[fadeIn_520ms_ease-out_both]">
+        {/* Sous-titre — compact */}
+        <p className="mx-auto mt-4 max-w-3xl text-[15.5px] sm:text-lg text-[var(--fg-muted)]">
           DigitalMeve embeds a lightweight, invisible <span className="font-semibold">.MEVE</span> proof
-          into your file and issues an official certificate. Your document stays identical and readable
-          everywhere — and anyone can verify it in seconds. No account. No storage.
+          into your file and issues an official certificate. Your document remains identical and readable
+          everywhere — anyone can verify it in seconds. No account. No storage.
         </p>
 
-        {/* CTAs */}
-        <div
-          className="mt-8 flex flex-wrap items-center justify-center gap-4 animate-[fadeIn_640ms_ease-out_both]"
-          aria-describedby="hero-claims"
-        >
+        {/* Micro-claims (plus courts, sans “free”) */}
+        <p id="hero-claims" className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
+          Privacy by design · In-browser processing · No account • No storage
+        </p>
+
+        {/* CTAs — tailles réduites pour tenir à l’écran */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3" aria-describedby="hero-claims">
           <Link
             href="/generate"
-            className="btn btn-primary px-6 py-3 text-base font-semibold shadow-[0_0_45px_rgba(56,189,248,.25)] hover:brightness-110"
-            aria-label="Get started for free with DigitalMeve"
+            className="btn btn-primary px-5 py-2.5 text-[15px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.22)] hover:brightness-110"
           >
-            <ShieldCheck className="h-5 w-5" />
+            <ShieldCheck className="h-[18px] w-[18px]" />
             Get started for free
           </Link>
-
           <Link
             href="/verify"
-            className="btn btn-outline px-6 py-3 text-base"
-            aria-label="Verify a document with DigitalMeve"
+            className="btn btn-outline px-5 py-2.5 text-[15px]"
           >
-            <Radar className="h-5 w-5" />
+            <Radar className="h-[18px] w-[18px]" />
             Verify a document
           </Link>
         </div>
 
-        {/* Micro-claims */}
-        <p
-          id="hero-claims"
-          className="mx-auto mt-3 max-w-2xl text-sm text-slate-400 animate-[fadeIn_720ms_ease-out_both]"
-        >
-          Privacy by design · In-browser processing · Free for individuals
-        </p>
-
-        {/* Premium badges row */}
-        <div className="badge-group mt-6 animate-[fadeIn_800ms_ease-out_both]">
+        {/* Badges premium — UNE seule mention “Free” */}
+        <div className="badge-group mt-5">
           <span className="badge badge--brand">
             <Sparkles className="opacity-90" />
             Free for individuals
@@ -94,17 +82,11 @@ export default function Hero() {
             <ArrowRight />
             All file types
           </span>
-          <span className="badge badge--neutral">
-            No account • No storage
-          </span>
         </div>
       </div>
 
-      {/* Soft separator to next section */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
-      />
+      {/* séparateur doux */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </section>
   );
 }
