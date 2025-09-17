@@ -22,7 +22,7 @@ export default function Hero() {
       </div>
 
       {/* Contenu */}
-      <div className="relative mx-auto max-w-6xl px-4 pt-11 pb-6 text-center sm:px-5 sm:pt-24 sm:pb-20">
+      <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-5 text-center sm:px-5 sm:pt-24 sm:pb-20">
         {/* Eyebrow */}
         <div
           className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur"
@@ -47,16 +47,18 @@ export default function Hero() {
         </p>
 
         {/* CTAs (hiérarchie renforcée) */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5">
           <Link
             href="/generate"
-            className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.22)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+            aria-label="Get started for free — add a .MEVE certificate"
+            className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
-            Get started free
+            Get started for free
           </Link>
           <Link
             href="/verify"
+            aria-label="Verify a document"
             className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <Radar aria-hidden className="h-[18px] w-[18px]" />
@@ -69,7 +71,8 @@ export default function Hero() {
           role="button"
           tabIndex={0}
           aria-label="Demo — try DigitalMeve"
-          className="mt-3 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-5 hover:bg-white/10 transition-colors"
+          aria-describedby="demo-formats"
+          className="mt-2.5 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-5 hover:bg-white/10 transition-colors cursor-pointer"
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") window.location.assign("/generate");
           }}
@@ -85,22 +88,22 @@ export default function Hero() {
             </span>{" "}
             to try — or pick one.
           </div>
-          <div className="mt-1.5 text-xs text-slate-400">
+          <div id="demo-formats" className="mt-1.5 text-xs text-slate-400">
             Your file never leaves your device. <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
           </div>
         </div>
 
-        {/* Badges (ghost/flat, contraste léger ↓) */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-slate-300/90">
+        {/* Badges (ghost/flat, présence visuelle réduite) */}
+        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <Sparkles aria-hidden className="h-3.5 w-3.5 opacity-80" />
             Privacy by design
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-slate-300/90">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <ShieldCheck aria-hidden className="h-3.5 w-3.5 opacity-80" />
             Certificate included
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-slate-300/90 max-[360px]:hidden">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80 max-[360px]:hidden">
             <ArrowRight aria-hidden className="h-3.5 w-3.5 opacity-80" />
             All file types
           </span>
