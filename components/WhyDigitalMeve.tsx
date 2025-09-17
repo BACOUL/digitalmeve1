@@ -1,54 +1,44 @@
 "use client";
 
-import { ShieldCheck, Fingerprint, FileCheck2, Sparkles } from "lucide-react";
+import { ShieldCheck, BadgeCheck, FileCheck2, Lock } from "lucide-react";
 
 export default function WhyDigitalMeve() {
-  const feats = [
+  const items = [
     {
       icon: <ShieldCheck className="h-5 w-5 text-emerald-400" />,
-      title: "Proof built into the file",
-      desc: "A durable .MEVE proof lives with your document. No viewer or plugin required.",
+      title: "Built-in proof",
+      desc: "A durable .MEVE proof lives with the file. No viewer or plugin required.",
+    },
+    {
+      icon: <BadgeCheck className="h-5 w-5 text-emerald-400" />,
+      title: "Readable everywhere",
+      desc: "Files remain clean and portable — open and share them as usual.",
     },
     {
       icon: <FileCheck2 className="h-5 w-5 text-emerald-400" />,
-      title: "Readable everywhere",
-      desc: "Open and share files as usual. Nothing breaks, nothing looks different.",
+      title: "Certificate included",
+      desc: "Every protected file comes with a human-readable certificate.",
     },
     {
-      icon: <Fingerprint className="h-5 w-5 text-sky-400" />,
-      title: "Private by design",
-      desc: "Processing happens in your browser. Files never leave your device.",
-    },
-    {
-      icon: <Sparkles className="h-5 w-5 text-sky-400" />,
-      title: "Fast & lightweight",
-      desc: "Seconds to protect or verify. Minimal overhead, maximum clarity.",
+      icon: <Lock className="h-5 w-5 text-emerald-400" />,
+      title: "No account. No storage.",
+      desc: "Everything runs in your browser. We never keep your files.",
     },
   ];
 
   return (
-    <section
-      id="why-digitalmeve"
-      aria-label="Why choose DigitalMeve"
-      className="mx-auto max-w-6xl px-4 py-14 sm:py-18"
-    >
-      <div className="text-center">
-        <p className="kicker">WHY DIGITALMEVE</p>
-        <h2 className="heading-2 mt-2">Trust you can ship, without friction</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-[var(--fg-muted)]">
-          We turn your everyday files into trustworthy proofs—clean, portable, and verifiable by anyone.
-        </p>
-      </div>
+    <section aria-label="Why DigitalMeve" className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+      <h2 className="text-2xl sm:text-3xl font-semibold">Why DigitalMeve</h2>
+      <p className="mt-2 text-[var(--fg-muted)]">
+        Designed for everyone — simple to use, built for trust.
+      </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {feats.map((f) => (
-          <article key={f.title} className="surface p-5 sm:p-6">
-            <div className="flex items-center gap-2 text-sm">
-              {f.icon}
-              <span className="font-semibold">{f.title}</span>
-            </div>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((f) => (
+          <div key={f.title} className="surface p-5 sm:p-6" data-reveal>
+            <div className="flex items-center gap-2 text-sm">{f.icon}<span className="font-medium">{f.title}</span></div>
             <p className="mt-2 text-sm text-[var(--fg-muted)]">{f.desc}</p>
-          </article>
+          </div>
         ))}
       </div>
     </section>
