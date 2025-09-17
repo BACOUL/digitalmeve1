@@ -1,3 +1,4 @@
+// components/MobileMenu.tsx
 "use client";
 
 import Link from "next/link";
@@ -19,12 +20,10 @@ export default function MobileMenu({ open, onClose }: Props) {
       ? "Individual"
       : undefined;
 
-  const dialogRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const firstFocusRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
-  // scroll lock + focus trap + Esc
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -75,35 +74,25 @@ export default function MobileMenu({ open, onClose }: Props) {
     dx.current = 0;
   };
 
-  const products = useMemo(() => [
-    { href: "/generate", label: "Generate" },
-    { href: "/verify", label: "Verify" },
-  ], []);
-  const solutions = useMemo(() => [
-    { href: "/personal", label: "For Individuals" },
-    { href: "/pro", label: "For Business" },
-  ], []);
-  const resources = useMemo(() => [
-    { href: "/developers", label: "Developers" },
-    { href: "/security", label: "Security" },
-    { href: "/status", label: "Status" },
-    { href: "/changelog", label: "Changelog" },
-  ], []);
-  const company = useMemo(() => [
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-    { href: "/legal", label: "Legal" },
-  ], []);
+  const links = useMemo(
+    () => [
+      { href: "/generate", label: "Generate" },
+      { href: "/verify", label: "Verify" },
+      { href: "/personal", label: "For Individuals" },
+      { href: "/pro", label: "For Business" },
+      { href: "/contact", label: "Contact" },
+    ],
+    []
+  );
 
   if (!open) return null;
 
   return (
     <div
-      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mobilemenu-title"
-      className="fixed inset-0 z-[1000] flex bg-black/40 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[1000] flex bg-black/40 backdrop-blur-sm"
       onClick={onClose}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -117,15 +106,16 @@ export default function MobileMenu({ open, onClose }: Props) {
         tabIndex={-1}
       >
         {/* Top */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-4">
-          <Link href="/" onClick={onClose} className="text-lg font-semibold">
-            <span className="text-emerald-400">Digital</span><span className="text-sky-400">Meve</span>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/90 backdrop-blur px-4 py-4">
+          <Link href="/" onClick={onClose} className="text-lg font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">Digital</span>
+            <span className="bg-gradient-to-r from-sky-400 to-sky-300 bg-clip-text text-transparent">Meve</span>
           </Link>
           <button
             ref={firstFocusRef}
             onClick={onClose}
             aria-label="Close menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40"
           >
             <X className="h-5 w-5 text-slate-200" />
           </button>
@@ -136,53 +126,61 @@ export default function MobileMenu({ open, onClose }: Props) {
           <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-6">
             <h2 id="mobilemenu-title" className="sr-only">Main navigation</h2>
 
+            {/* Quick CTAs */}
             <div className="mb-6 grid grid-cols-2 gap-3">
-              <Link href="/generate" onClick={onClose} className="text-center rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white hover:brightness-110">Generate</Link>
-              <Link href="/verify" onClick={onClose} className="text-center rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800">Verify</Link>
+              <Link
+                href="/generate"
+                onClick={onClose}
+                className="text-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-2.5 text-sm font-medium text-white shadow-[0_0_22px_rgba(56,189,248,.22)] hover:brightness-110"
+              >
+                Generate
+              </Link>
+              <Link
+                href="/verify"
+                onClick={onClose}
+                className="text-center rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/10"
+              >
+                Verify
+              </Link>
             </div>
 
-            <Section title="Products">
-              {products.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+            <ul className="space-y-2">
+              {links.map((it) => (
+                <li key={it.href}>
+                  <Link
+                    href={it.href}
+                    onClick={onClose}
+                    className="block rounded-lg px-2 py-2 text-[15px] text-slate-200 hover:bg-white/10 hover:text-white transition"
+                    aria-current={(pathname || "").startsWith(it.href) ? "page" : undefined}
+                  >
+                    {it.label}
+                  </Link>
+                </li>
               ))}
-            </Section>
-
-            <Section title="Solutions">
-              {solutions.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
-            </Section>
-
-            <Section title="Resources">
-              {resources.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
-            </Section>
-
-            <Section title="Company">
-              {company.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
-            </Section>
+            </ul>
           </nav>
 
           {/* Account */}
-          <div className="border-t border-slate-800 p-4">
+          <div className="border-t border-white/10 p-4">
             {session?.user ? (
               <div className="space-y-3">
-                <div className="rounded-xl border border-slate-700 bg-slate-900 p-3">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-slate-800">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10">
                       <User2 className="h-5 w-5 text-slate-200" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-100">{session.user.email}</p>
+                      <p className="truncate text-sm font-medium text-slate-100">{(session.user as any)?.email}</p>
                       {role && <p className="text-xs text-slate-400">{role}</p>}
                     </div>
                   </div>
                 </div>
 
-                <Link href="/dashboard" onClick={onClose} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800">
+                <Link
+                  href="/dashboard"
+                  onClick={onClose}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
+                >
                   <LayoutDashboard className="h-4 w-4" /> Dashboard
                 </Link>
 
@@ -196,10 +194,18 @@ export default function MobileMenu({ open, onClose }: Props) {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <Link href="/login" onClick={onClose} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800">
+                <Link
+                  href="/login"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
+                >
                   <LogIn className="h-4 w-4" /> Login
                 </Link>
-                <Link href="/register" onClick={onClose} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:brightness-105">
+                <Link
+                  href="/register"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:brightness-105"
+                >
                   <UserPlus className="h-4 w-4" /> Register
                 </Link>
               </div>
@@ -221,47 +227,10 @@ export default function MobileMenu({ open, onClose }: Props) {
   );
 }
 
-/* ——— Subcomponents ——— */
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-6">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
-      <ul className="space-y-2">{children}</ul>
-    </div>
-  );
-}
-
-function Item({
-  href, label, onClose, active,
-}: { href: string; label: string; onClose: () => void; active?: boolean }) {
-  return (
-    <li>
-      <Link
-        href={href}
-        onClick={onClose}
-        className={[
-          "block rounded-lg px-2 py-2 text-[15px] transition",
-          active ? "bg-slate-900 text-white" : "text-slate-200 hover:bg-slate-900 hover:text-white",
-        ].join(" ")}
-        aria-current={active ? "page" : undefined}
-      >
-        {label}
-      </Link>
-    </li>
-  );
-}
-
-/* ——— Utils ——— */
-
+/* Utils */
 function getFocusable(root: HTMLElement | null): HTMLElement[] {
   if (!root) return [];
   const selectors = ["a[href]","button","input","select","textarea","[tabindex]:not([tabindex='-1'])"];
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
   return nodes.filter(el => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden") && el.tabIndex !== -1);
-}
-function isActive(pathname: string | null, href: string) {
-  if (!pathname) return false;
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(href + "/");
-                          }
+       }
