@@ -1,73 +1,60 @@
 "use client";
 
-import { Upload, ShieldCheck, BadgeCheck } from "lucide-react";
 import Link from "next/link";
+import { Upload, ShieldCheck, Share2 } from "lucide-react";
 
 export default function HowItWorks() {
   const steps = [
     {
       icon: <Upload className="h-5 w-5 text-emerald-400" />,
-      title: "Drop your file",
-      desc: "Drag & drop a PDF, DOCX or image. Everything stays on your device.",
-      cta: { href: "/generate", label: "Protect a file" },
+      tag: "Step 1",
+      title: "Upload your document",
+      desc: "Works with common formats; your file stays on your device.",
+      cta: { href: "/generate", label: "Try now" },
     },
     {
       icon: <ShieldCheck className="h-5 w-5 text-sky-400" />,
-      title: "We embed the .MEVE proof",
-      desc: "We add a tiny, invisible proof and prepare your official certificate.",
-      cta: { href: "/generate#how", label: "See details" },
+      tag: "Step 2",
+      title: "Get your protected copy",
+      desc: "We add a lightweight, invisible proof and prepare your certificate.",
     },
     {
-      icon: <BadgeCheck className="h-5 w-5 text-emerald-400" />,
-      title: "Share & verify anywhere",
-      desc: "Your file stays readable everywhere. Anyone can verify in seconds.",
-      cta: { href: "/verify", label: "Verify a file" },
+      icon: <Share2 className="h-5 w-5 text-emerald-400" />,
+      tag: "Step 3",
+      title: "Download & share",
+      desc: "Share your file and certificate. Anyone can check it in seconds.",
+      cta: { href: "/verify", label: "Verify a document" },
     },
   ];
 
   return (
-    <section
-      id="how-it-works"
-      aria-label="How DigitalMeve works"
-      className="mx-auto max-w-6xl px-4 py-14 sm:py-18"
-    >
-      <div className="text-center">
-        <p className="kicker">HOW IT WORKS</p>
-        <h2 className="heading-2 mt-2">Invisible proof. Instant trust.</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-[var(--fg-muted)]">
-          Three simple steps. No account. No storage. Your files remain clean and portable.
-        </p>
-      </div>
+    <section aria-label="How it works" className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+      <h2 className="text-2xl sm:text-3xl font-semibold">How it works</h2>
+      <p className="mt-2 text-[var(--fg-muted)]">Three simple steps. No jargon.</p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {steps.map((s) => (
-          <article
+          <div
             key={s.title}
-            className="surface p-5 sm:p-6 transition hover:shadow-[0_8px_30px_rgba(0,0,0,.35)]"
+            className="surface p-5 sm:p-6 transition hover:translate-y-[-2px] hover:shadow-[var(--shadow)]"
+            data-reveal
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs">
+            <div className="flex items-center gap-2 text-sm">
               {s.icon}
-              <span className="font-semibold">{s.title}</span>
+              <span className="kicker">{s.tag}</span>
             </div>
-            <p className="mt-3 text-sm text-[var(--fg-muted)]">{s.desc}</p>
-
-            <div className="mt-4">
+            <h3 className="mt-2 font-semibold text-lg">{s.title}</h3>
+            <p className="mt-1 text-sm text-[var(--fg-muted)]">{s.desc}</p>
+            {s.cta && (
               <Link
                 href={s.cta.href}
-                className="btn btn-outline"
-                aria-label={s.cta.label}
+                className="mt-4 inline-flex items-center gap-2 text-sm link"
               >
-                {s.cta.label}
+                {s.cta.label} →
               </Link>
-            </div>
-          </article>
+            )}
+          </div>
         ))}
-      </div>
-
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs">
-        <span className="badge badge-solid">Certificate included</span>
-        <span className="badge badge-green">Free for individuals</span>
-        <span className="badge badge-sky">Works offline • Browser-first</span>
       </div>
     </section>
   );
