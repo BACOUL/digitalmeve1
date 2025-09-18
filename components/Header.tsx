@@ -1,19 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 
-export default function Header() {
+function HeaderInner() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false); // évite mismatch SSR/CSR
 
   useEffect(() => {
-    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -26,7 +25,7 @@ export default function Header() {
       { href: "/verify", label: "Verify" },
       { href: "/personal", label: "For Individuals" },
       { href: "/pro", label: "For Business" },
-      { href: "/contact", label: "Contact" }, // ajouté
+      { href: "/contact", label: "Contact" },
     ],
     []
   );
@@ -43,7 +42,7 @@ export default function Header() {
         }`}
       >
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 text-slate-900">
-          {/* Logo identique à la home (gradient) */}
+          {/* Logo identique à la home */}
           <Link
             href="/"
             className="mr-1 -mx-1 rounded-lg px-1 text-[1.25rem] font-extrabold bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500 bg-clip-text text-transparent hover:brightness-110"
@@ -69,27 +68,19 @@ export default function Header() {
               </Link>
             ))}
 
-            {/* Auth client-only (évite hydratation #310) */}
-            <span suppressHydrationWarning className="inline-flex items-center gap-2">
-              {mounted ? (
-                <>
-                  <Link
-                    href="/login?callbackUrl=/dashboard"
-                    className="ml-3 text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 text-sm font-medium"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/register?callbackUrl=/dashboard"
-                    className="ml-1 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:brightness-110"
-                  >
-                    Register
-                  </Link>
-                </>
-              ) : (
-                <span className="ml-3 h-6 w-40 rounded bg-transparent" aria-hidden />
-              )}
-            </span>
+            {/* Auth liens simples (pas de session ici pour éviter mismatch) */}
+            <Link
+              href="/login?callbackUrl=/dashboard"
+              className="ml-3 text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 text-sm font-medium"
+            >
+              Login
+            </Link>
+            <Link
+              href="/register?callbackUrl=/dashboard"
+              className="ml-1 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:brightness-110"
+            >
+              Register
+            </Link>
           </nav>
 
           <div className="flex-1" />
@@ -105,7 +96,15 @@ export default function Header() {
         </div>
       </header>
 
+      {/* Mobile menu */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
     </>
   );
-       }
+}
+
+/**
+ * EXPORT NO-SSR
+ * - Empêche le rendu côté serveur → évite l’hydratation #310 liée au menu
+ * - Le Header s’affiche uniquement côté client
+ */
+export default dynamic(() => Promise.resolve(HeaderInner), { ssr: false });
