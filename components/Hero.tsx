@@ -8,7 +8,7 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      aria-label="DigitalMeve — Invisible proof, visible trust"
+      aria-label="DigitalMeve — Invisible proof. Visible trust."
       className="relative overflow-hidden"
     >
       {/* FX de fond */}
@@ -35,6 +35,8 @@ export default function Hero() {
         {/* Titre */}
         <h1 className="mt-2 font-extrabold tracking-tight text-white leading-[1.12] text-[clamp(1.9rem,6vw,3.25rem)] sm:leading-[1.06] sm:text-6xl md:text-7xl">
           Invisible proof.
+          {/* espace de sécurité si le span repasse inline un jour */}
+          {" "}
           <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
             Visible trust.
           </span>
