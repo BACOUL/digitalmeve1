@@ -24,6 +24,7 @@ export default function Header() {
       { href: "/verify", label: "Verify" },
       { href: "/personal", label: "For Individuals" },
       { href: "/pro", label: "For Business" },
+      { href: "/contact", label: "Contact" }, // ← ajouté
     ],
     []
   );
@@ -40,10 +41,10 @@ export default function Header() {
         }`}
       >
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 text-slate-900">
-          {/* Logo gradient */}
+          {/* Logo identique à la home (gradient) */}
           <Link
             href="/"
-            className="mr-1 -mx-1 rounded-lg px-1 text-[1.25rem] font-extrabold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent"
+            className="mr-1 -mx-1 rounded-lg px-1 text-[1.25rem] font-extrabold bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500 bg-clip-text text-transparent hover:brightness-110"
             aria-label="DigitalMeve – Home"
           >
             DigitalMeve
@@ -56,26 +57,26 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
-                className={`px-1 -mx-1 rounded-lg transition ${
+                className={`px-1 -mx-1 rounded-lg transition underline-offset-4 ${
                   isActive(item.href)
                     ? "text-emerald-600 font-semibold"
-                    : "text-slate-700 hover:text-emerald-600"
+                    : "text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 hover:underline"
                 }`}
               >
                 {item.label}
               </Link>
             ))}
 
-            {/* Login/Register visible desktop */}
+            {/* Auth (desktop) */}
             <Link
               href="/login?callbackUrl=/dashboard"
-              className="rounded-lg px-3 py-1 text-slate-700 hover:text-emerald-600"
+              className="ml-3 text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 text-sm font-medium"
             >
               Login
             </Link>
             <Link
               href="/register?callbackUrl=/dashboard"
-              className="rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1 text-white font-medium shadow hover:brightness-105"
+              className="ml-1 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:brightness-110"
             >
               Register
             </Link>
