@@ -10,8 +10,10 @@ export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false); // évite mismatch SSR/CSR
 
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -24,7 +26,7 @@ export default function Header() {
       { href: "/verify", label: "Verify" },
       { href: "/personal", label: "For Individuals" },
       { href: "/pro", label: "For Business" },
-      { href: "/contact", label: "Contact" }, // ← ajouté
+      { href: "/contact", label: "Contact" }, // ajouté
     ],
     []
   );
@@ -67,19 +69,27 @@ export default function Header() {
               </Link>
             ))}
 
-            {/* Auth (desktop) */}
-            <Link
-              href="/login?callbackUrl=/dashboard"
-              className="ml-3 text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 text-sm font-medium"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register?callbackUrl=/dashboard"
-              className="ml-1 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:brightness-110"
-            >
-              Register
-            </Link>
+            {/* Auth client-only (évite hydratation #310) */}
+            <span suppressHydrationWarning className="inline-flex items-center gap-2">
+              {mounted ? (
+                <>
+                  <Link
+                    href="/login?callbackUrl=/dashboard"
+                    className="ml-3 text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 text-sm font-medium"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register?callbackUrl=/dashboard"
+                    className="ml-1 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:brightness-110"
+                  >
+                    Register
+                  </Link>
+                </>
+              ) : (
+                <span className="ml-3 h-6 w-40 rounded bg-transparent" aria-hidden />
+              )}
+            </span>
           </nav>
 
           <div className="flex-1" />
@@ -98,4 +108,4 @@ export default function Header() {
       <MobileMenu open={open} onClose={() => setOpen(false)} />
     </>
   );
-}
+       }
