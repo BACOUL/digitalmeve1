@@ -1,13 +1,13 @@
+// components/Header.tsx
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 
-function HeaderInner() {
+export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -19,13 +19,19 @@ function HeaderInner() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener("hashchange", close);
+    return () => window.removeEventListener("hashchange", close);
+  }, []);
+
   const nav = useMemo(
     () => [
       { href: "/generate", label: "Generate" },
       { href: "/verify", label: "Verify" },
       { href: "/personal", label: "For Individuals" },
       { href: "/pro", label: "For Business" },
-      { href: "/contact", label: "Contact" },
+      { href: "/pricing", label: "Pricing" },
     ],
     []
   );
@@ -35,6 +41,13 @@ function HeaderInner() {
 
   return (
     <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only fixed left-3 top-3 z-[1001] rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow outline-none ring-2 ring-emerald-500"
+      >
+        Skip to content
+      </a>
+
       <header
         role="banner"
         className={`sticky top-0 z-50 w-full border-b border-gray-200 bg-white transition-shadow ${
@@ -42,10 +55,10 @@ function HeaderInner() {
         }`}
       >
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 text-slate-900">
-          {/* Logo identique à la home */}
+          {/* Logo gradient */}
           <Link
             href="/"
-            className="mr-1 -mx-1 rounded-lg px-1 text-[1.25rem] font-extrabold bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500 bg-clip-text text-transparent hover:brightness-110"
+            className="mr-1 -mx-1 rounded-lg px-1 text-[1.25rem] font-extrabold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent"
             aria-label="DigitalMeve – Home"
           >
             DigitalMeve
@@ -58,29 +71,15 @@ function HeaderInner() {
                 key={item.href}
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
-                className={`px-1 -mx-1 rounded-lg transition underline-offset-4 ${
+                className={`px-1 -mx-1 rounded-lg transition ${
                   isActive(item.href)
                     ? "text-emerald-600 font-semibold"
-                    : "text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 hover:underline"
+                    : "text-slate-700 hover:text-emerald-600"
                 }`}
               >
                 {item.label}
               </Link>
             ))}
-
-            {/* Auth liens simples (pas de session ici pour éviter mismatch) */}
-            <Link
-              href="/login?callbackUrl=/dashboard"
-              className="ml-3 text-slate-700 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-emerald-500 hover:to-sky-500 text-sm font-medium"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register?callbackUrl=/dashboard"
-              className="ml-1 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:brightness-110"
-            >
-              Register
-            </Link>
           </nav>
 
           <div className="flex-1" />
@@ -96,15 +95,8 @@ function HeaderInner() {
         </div>
       </header>
 
-      {/* Mobile menu */}
       <MobileMenu open={open} onClose={() => setOpen(false)} />
+      <span id="main" className="sr-only" />
     </>
   );
-}
-
-/**
- * EXPORT NO-SSR
- * - Empêche le rendu côté serveur → évite l’hydratation #310 liée au menu
- * - Le Header s’affiche uniquement côté client
- */
-export default dynamic(() => Promise.resolve(HeaderInner), { ssr: false });
+        }
