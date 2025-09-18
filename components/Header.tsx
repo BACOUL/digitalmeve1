@@ -18,12 +18,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const close = () => setOpen(false);
-    window.addEventListener("hashchange", close);
-    return () => window.removeEventListener("hashchange", close);
-  }, []);
-
   const nav = useMemo(
     () => [
       { href: "/generate", label: "Generate" },
@@ -39,13 +33,6 @@ export default function Header() {
 
   return (
     <>
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only fixed left-3 top-3 z-[1001] rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow outline-none ring-2 ring-emerald-500"
-      >
-        Skip to content
-      </a>
-
       <header
         role="banner"
         className={`sticky top-0 z-50 w-full border-b border-gray-200 bg-white transition-shadow ${
@@ -78,16 +65,17 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            {/* Auth links (desktop) */}
+
+            {/* Login/Register visible desktop */}
             <Link
-              href="/login"
-              className="ml-4 text-slate-700 hover:text-emerald-600 text-sm font-medium"
+              href="/login?callbackUrl=/dashboard"
+              className="rounded-lg px-3 py-1 text-slate-700 hover:text-emerald-600"
             >
               Login
             </Link>
             <Link
-              href="/register"
-              className="ml-2 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110"
+              href="/register?callbackUrl=/dashboard"
+              className="rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-3 py-1 text-white font-medium shadow hover:brightness-105"
             >
               Register
             </Link>
@@ -107,7 +95,6 @@ export default function Header() {
       </header>
 
       <MobileMenu open={open} onClose={() => setOpen(false)} />
-      <span id="main" className="sr-only" />
     </>
   );
 }
