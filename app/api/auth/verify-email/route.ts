@@ -1,18 +1,16 @@
 // app/api/auth/verify-email/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma"; // ✅ utilise un Prisma singleton
 
 /**
  * Vérifie un token de confirmation d'email.
- * - Stockage côté DB : table VerificationToken (email, token, type, expiresAt, ip)
- * - Pas de champ emailVerifiedAt sur User → on se contente d’invalider le token et de retourner un statut.
- * - GET : utilisé par le lien dans l’email → redirige vers /verify-email?status=...
- * - POST : utile si tu veux vérifier depuis un formulaire → renvoie JSON {status}
+ * - Table: VerificationToken (email, token, type, expiresAt, ip, created_at/at)
+ * - Type attendu: "email_verification" (on garde TA convention)
+ * - GET: lien depuis l'email → redirige vers /verify-email?status=...&email=...
+ * - POST: renvoie JSON { status }
  *
- * ENV utiles :
- * - NEXT_PUBLIC_APP_URL (par défaut https://digitalmeve.com)
+ * ENV:
+ * - NEXT_PUBLIC_APP_URL (ex: https://digitalmeve.com ou ton Vercel)
  */
 
 type VerifyStatus = "ok" | "invalid" | "expired";
@@ -25,36 +23,48 @@ function redirectToVerifyPage(status: VerifyStatus, email?: string | null) {
   return NextResponse.redirect(url.toString(), 302);
 }
 
-async function checkAndConsumeToken(email: string, token: string): Promise<VerifyStatus> {
-  // On cherche le token
-  const record = await prisma.verificationToken.findFirst({
-    where: { email, token, type: "email_verification" },
-    select: { id: true, expiresAt: true, email: true },
+// ✅ Ne demande plus l'email en paramètre : on résout par token
+async function checkAndConsumeToken(token: string): Promise<{ status: VerifyStatus; email?: string | null }> {
+  // 1) Cherche le token par sa valeur (pas besoin de l'email)
+  const row = await prisma.verificationToken.findUnique({
+    where: { token }, // suppose token UNIQUE (comme chez toi)
+    select: { id: true, email: true, type: true, expiresAt: true },
   });
 
-  if (!record) return "invalid";
-  if (record.expiresAt && record.expiresAt.getTime() < Date.now()) {
-    // Token expiré → on le supprime
-    await prisma.verificationToken.delete({ where: { id: record.id } }).catch(() => {});
-    return "expired";
+  if (!row || row.type !== "email_verification") {
+    return { status: "invalid" };
   }
 
-  // Succès → on supprime tous les tokens de ce type pour cet email
+  // 2) Expiration ?
+  if (row.expiresAt && row.expiresAt.getTime() < Date.now()) {
+    // supprime le token expiré uniquement
+    await prisma.verificationToken.delete({ where: { id: row.id } }).catch(() => {});
+    return { status: "expired", email: row.email };
+  }
+
+  const email = (row.email || "").trim().toLowerCase();
+
+  // 3) Active le compte si pas encore actif (on garde 'ACTIVE' comme valeur)
+  await prisma.user.updateMany({
+    where: { email },
+    data: { status: "ACTIVE" },
+  });
+
+  // 4) Nettoie tous les tokens de ce type pour cet email
   await prisma.verificationToken
     .deleteMany({ where: { email, type: "email_verification" } })
     .catch(() => {});
-  return "ok";
+
+  return { status: "ok", email };
 }
 
-/** GET /api/auth/verify-email?token=...&email=... */
+/** GET /api/auth/verify-email?token=... */
 export async function GET(req: NextRequest) {
   try {
     const token = req.nextUrl.searchParams.get("token")?.trim() || "";
-    const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase() || "";
+    if (!token) return redirectToVerifyPage("invalid");
 
-    if (!token || !email) return redirectToVerifyPage("invalid");
-
-    const status = await checkAndConsumeToken(email, token);
+    const { status, email } = await checkAndConsumeToken(token);
     return redirectToVerifyPage(status, email);
   } catch (e) {
     console.error("verify-email GET error:", e);
@@ -62,32 +72,28 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** POST /api/auth/verify-email  (body: { email, token }) */
+/** POST /api/auth/verify-email  (body: { token }) — email inutile désormais */
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
-    let email = "";
     let token = "";
 
     if (contentType.includes("application/json")) {
       const body = await req.json().catch(() => ({} as any));
-      email = (body?.email || "").toString().trim().toLowerCase();
       token = (body?.token || "").toString().trim();
     } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
-      email = String(form.get("email") || "").trim().toLowerCase();
       token = String(form.get("token") || "").trim();
     } else {
       const body = await req.json().catch(() => ({} as any));
-      email = (body?.email || "").toString().trim().toLowerCase();
       token = (body?.token || "").toString().trim();
     }
 
-    if (!email || !token) {
+    if (!token) {
       return NextResponse.json({ status: "invalid" as VerifyStatus }, { status: 400 });
     }
 
-    const status = await checkAndConsumeToken(email, token);
+    const { status } = await checkAndConsumeToken(token);
     return NextResponse.json({ status }, { status: 200 });
   } catch (e) {
     console.error("verify-email POST error:", e);
