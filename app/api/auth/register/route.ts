@@ -1,46 +1,197 @@
 // app/api/auth/register/route.ts
 import { NextResponse } from "next/server";
-import { hash } from "bcryptjs";
-import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
+import { prisma } from "@/lib/prisma";
 
-type Body = {
-  email?: string;
-  password?: string;
-  role?: "INDIVIDUAL" | "BUSINESS";
-};
+export const runtime = "nodejs";
+
+/**
+ * Flux :
+ * - POST { email, password }
+ * - Création User si inexistant (ou 409 si email déjà pris)
+ * - Génération token "email_verification" (24h) + envoi email via Resend
+ * - Réponse neutre (pas d’info sensible)
+ *
+ * ENV:
+ * - RESEND_API_KEY (optionnel en dev/preview → on log le lien)
+ * - EMAIL_FROM (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
+ * - NEXT_PUBLIC_APP_URL (ex: 'https://digitalmeve1.vercel.app')
+ */
 
 export async function POST(req: Request) {
   try {
-    const { email, password, role }: Body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    let email = "";
+    let password = "";
 
-    if (!email || !password) {
-      return NextResponse.json({ ok: false, error: "Missing fields" }, { status: 400 });
+    if (contentType.includes("application/json")) {
+      const body = await req.json().catch(() => ({}));
+      email = (body?.email || "").toString().trim().toLowerCase();
+      password = (body?.password || "").toString();
+    } else if (contentType.includes("application/x-www-form-urlencoded")) {
+      const form = await req.formData();
+      email = String(form.get("email") || "").trim().toLowerCase();
+      password = String(form.get("password") || "");
+    } else {
+      const body = await req.json().catch(() => ({}));
+      email = (body?.email || "").toString().trim().toLowerCase();
+      password = (body?.password || "").toString();
     }
-    if (password.length < 6) {
-      return NextResponse.json({ ok: false, error: "Password too short" }, { status: 400 });
+
+    // Validation basique
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+    if (!email || !emailRegex.test(email) || !password || password.length < 8) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid email or password (min 8 chars)." },
+        { status: 400 }
+      );
     }
 
-    const lowerEmail = email.trim().toLowerCase();
-
-    // existe déjà ?
-    const exists = await prisma.user.findUnique({ where: { email: lowerEmail } });
-    if (exists) {
-      return NextResponse.json({ ok: false, error: "User already exists" }, { status: 400 });
+    // Email déjà pris ?
+    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (existing) {
+      // Rester explicite côté UX : on peut renvoyer 409 pour que le front affiche "already registered"
+      return NextResponse.json(
+        { ok: false, error: "Email already registered." },
+        { status: 409 }
+      );
     }
 
-    const hashed = await hash(password, 10);
-
+    // Création user
+    const hash = await bcrypt.hash(password, 12);
     await prisma.user.create({
       data: {
-        email: lowerEmail,
-        password: hashed,
-        role: role === "BUSINESS" ? "BUSINESS" : "INDIVIDUAL",
+        email,
+        password: hash,
+        // role par défaut = "INDIVIDUAL" (défini dans le schema)
       },
     });
 
-    return NextResponse.json({ ok: true }, { status: 201 });
-  } catch (err) {
-    console.error("Register error:", err);
-    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
+    // Invalide tokens précédents (s'il y en a)
+    await prisma.verificationToken.deleteMany({
+      where: { email, type: "email_verification" },
+    });
+
+    // Nouveau token (24h)
+    const token = crypto.randomBytes(32).toString("base64url");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.verificationToken.create({
+      data: {
+        email,
+        token,
+        type: "email_verification",
+        expiresAt, // camelCase côté Prisma
+        ip: (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || "unknown",
+      },
+    });
+
+    // Compose URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
+    const verifyUrl = new URL(`${appUrl}/verify-email`);
+    verifyUrl.searchParams.set("token", token); // pas d'email dans l'URL
+
+    const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+    const EMAIL_FROM = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
+
+    // En dev/preview sans clé → on log le lien
+    if (!RESEND_API_KEY) {
+      console.log("[REGISTER][DEV] Verify link:", verifyUrl.toString());
+      return NextResponse.json({ ok: true, message: "Account created. Check your email to verify." }, { status: 200 });
+    }
+
+    // Email HTML
+    const html = renderVerifyEmailHTML({
+      verifyUrl: verifyUrl.toString(),
+      email,
+      appName: "DigitalMeve",
+    });
+
+    const sendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [email],
+        subject: "Confirm your email",
+        html,
+        text: `Confirm your email: ${verifyUrl.toString()}`,
+      }),
+    });
+
+    if (!sendRes.ok) {
+      const errText = await sendRes.text().catch(() => "");
+      console.error("[REGISTER] Resend error:", sendRes.status, errText);
+      // On ne révèle rien au client
+    }
+
+    return NextResponse.json({ ok: true, message: "Account created. Check your email to verify." }, { status: 200 });
+  } catch (e) {
+    console.error("[REGISTER] error:", e);
+    return NextResponse.json({ ok: false, error: "Unable to register." }, { status: 500 });
   }
+}
+
+/** -------- Email HTML (dark) -------- */
+function renderVerifyEmailHTML({
+  verifyUrl,
+  email,
+  appName,
+}: {
+  verifyUrl: string;
+  email: string;
+  appName: string;
+}) {
+  return `<!doctype html>
+<html>
+  <head>
+    <meta name="color-scheme" content="dark light">
+    <meta name="supported-color-schemes" content="dark light">
+    <meta charset="utf-8">
+    <title>${escapeHtml(appName)} – Verify your email</title>
+  </head>
+  <body style="background:#0b1220;color:#e6f1ff;font-family:Inter,system-ui,Arial,sans-serif;padding:24px">
+    <table role="presentation" width="100%" style="max-width:560px;margin:auto;background:#0f172a;border:1px solid #1f2a44;border-radius:16px;padding:24px">
+      <tr><td>
+        <h1 style="margin:0 0 8px 0;font-size:22px;line-height:1.3;color:#e6f1ff;">Verify your email</h1>
+        <p style="margin:0 0 16px 0;font-size:14px;color:#c7d2fe;">
+          Hi, we just need to confirm <strong>${escapeHtml(email)}</strong> belongs to you.
+        </p>
+
+        <a href="${verifyUrl}"
+           style="display:inline-block;margin-top:8px;background:linear-gradient(90deg,#10b981,#0ea5e9);color:#0b1220;text-decoration:none;padding:12px 16px;border-radius:10px;font-weight:600">
+          Confirm email
+        </a>
+
+        <p style="margin:16px 0 0 0;font-size:12px;color:#93a4bf;">
+          This link expires in 24 hours. If you didn’t request this, you can safely ignore this email.
+        </p>
+
+        <hr style="border:none;border-top:1px solid #1f2a44;margin:20px 0" />
+
+        <p style="margin:0;font-size:12px;color:#8aa0c6;word-break:break-all">
+          Or paste this URL in your browser:<br/>
+          <span>${escapeHtml(verifyUrl)}</span>
+        </p>
+
+        <p style="margin:24px 0 0 0;font-size:11px;color:#6e85a6">
+          © ${new Date().getFullYear()} ${escapeHtml(appName)} — All rights reserved.
+        </p>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function escapeHtml(input: string) {
+  return input
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
