@@ -1,20 +1,9 @@
 // app/api/auth/verify-email/resend/route.ts
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { prisma } from "@/lib/prisma"; // ✅ Prisma singleton
+import { prisma } from "@prisma/client"; // <-- si tu as déjà un export central, remplace par "@/lib/prisma"
+import { sendEmailNero } from "@/lib/email";
 
-/**
- * ENV requises :
- * - RESEND_API_KEY (optionnel en dev/preview : on logge le lien)
- * - EMAIL_FROM (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
- * - NEXT_PUBLIC_APP_URL (ex: 'https://digitalmeve.com' ou ton Vercel)
- *
- * Politique :
- * - Toujours répondre 200 pour éviter l’énumération d’emails.
- * - Throttle : 60s entre deux envois + plafond 5/jour/email.
- * - On invalide les anciens tokens avant d’en créer un nouveau.
- * - Token valable 24h. L’URL contient UNIQUEMENT le token (pas l’email).
- */
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
@@ -33,130 +22,96 @@ export async function POST(req: Request) {
       email = (body?.email || "").toString().trim().toLowerCase();
     }
 
-    // Validation simple (mais on renvoie 200 quoiqu’il arrive)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email)) {
-      return NextResponse.json(okResp(), { status: 200 });
+      // Réponse neutre
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
-    // IP best-effort (pour logs / throttling avancé)
     const ip =
       (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
 
-    // Vérifie l’existence de l’utilisateur (sans rien révéler)
+    // L'utilisateur existe ?
     const user = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
     });
+
+    // Toujours 200 même si l'utilisateur n'existe pas (pas d’énumération)
     if (!user) {
-      return NextResponse.json(okResp(), { status: 200 });
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
-    // —— Throttle & quotas ——
-    const since = new Date(Date.now() - 60_000); // 60s
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // 1) Dernier envoi récent (<60s)
-    const recent = await prisma.verificationToken.findFirst({
-      where: {
-        email,
-        type: "email_verification",
-        // @ts-ignore (schéma snake_case)
-        created_at: { gt: since },
-      },
-      select: { id: true },
-    });
-    if (recent) {
-      return NextResponse.json(okResp("Please wait before retrying."), { status: 200 });
-    }
-
-    // 2) Max 5 envois dans la journée
-    const countToday = await prisma.verificationToken.count({
-      where: {
-        email,
-        type: "email_verification",
-        // @ts-ignore (schéma snake_case)
-        created_at: { gte: today },
-      },
-    });
-    if (countToday >= 5) {
-      return NextResponse.json(okResp("Daily limit reached."), { status: 200 });
-    }
-
-    // Invalide les tokens précédents
+    // Invalide anciens tokens
     await prisma.verificationToken.deleteMany({
       where: { email, type: "email_verification" },
     });
 
-    // Nouveau token (base64url), valable 24h
-    const token = crypto.randomBytes(32).toString("base64url");
-    const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
+    // Nouveau token (60 min)
+    const tokenRaw = crypto.randomBytes(32).toString("base64url");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await prisma.verificationToken.create({
       data: {
         email,
-        token,
+        token: tokenRaw,
         type: "email_verification",
-        // @ts-ignore (schéma snake_case)
-        expires_at,
+        expiresAt,
         ip,
       },
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
     const verifyUrl = new URL(`${appUrl}/verify-email`);
-    verifyUrl.searchParams.set("token", token); // ✅ pas d’email dans l’URL
+    verifyUrl.searchParams.set("token", tokenRaw);
+    verifyUrl.searchParams.set("email", email);
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-    const EMAIL_FROM = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
-
-    // En dev/preview sans clé → log utile
-    if (!RESEND_API_KEY) {
-      console.log("[DEV] Verify link:", verifyUrl.toString());
-      return NextResponse.json(okResp(), { status: 200 });
+    const shouldLogLink = process.env.EMAIL_DEBUG_LOG === "1" || process.env.NODE_ENV !== "production";
+    if (shouldLogLink) {
+      console.log("[RESEND VERIFY][DEBUG] link:", verifyUrl.toString(), "for", email);
     }
 
-    // Email HTML (dark)
     const html = renderVerifyEmailHTML({
       verifyUrl: verifyUrl.toString(),
       email,
       appName: "DigitalMeve",
     });
 
-    // Envoi via Resend (HTTP direct)
-    const sendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [email],
+    try {
+      await sendEmailNero({
+        to: email,
         subject: "Confirm your email",
         html,
         text: `Confirm your email: ${verifyUrl.toString()}`,
-      }),
-    });
-
-    if (!sendRes.ok) {
-      const errText = await sendRes.text().catch(() => "");
-      console.error("Resend error:", sendRes.status, errText);
-      return NextResponse.json(okResp(), { status: 200 });
+      });
+    } catch (e: any) {
+      console.error("[VERIFY RESEND][NERO] send error:", e?.message || e);
+      if (process.env.NODE_ENV !== "production") {
+        return NextResponse.json(
+          { ok: true, message: "Verification email failed (dev). Use debug link.", debugVerifyUrl: verifyUrl.toString() },
+          { status: 200 }
+        );
+      }
     }
 
-    return NextResponse.json(okResp(), { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: "If the address exists, a verification email will be sent." },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("verify-email/resend error:", err);
-    return NextResponse.json(okResp(), { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: "If the address exists, a verification email will be sent." },
+      { status: 200 }
+    );
   }
-}
-
-function okResp(message?: string) {
-  return { ok: true, message: message || "If the address exists, a verification email will be sent." };
 }
 
 /** -------- Email HTML (dark) -------- */
@@ -192,7 +147,7 @@ function renderVerifyEmailHTML({
           </a>
 
           <p style="margin:16px 0 0 0;font-size:12px;color:#93a4bf;">
-            This link expires in 24 hours. If you didn’t request this, you can safely ignore this email.
+            This link expires in 60 minutes. If you didn’t request this, you can safely ignore this email.
           </p>
 
           <hr style="border:none;border-top:1px solid #1f2a44;margin:20px 0" />
@@ -217,6 +172,6 @@ function escapeHtml(input: string) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+    .replaceAll('"", "&quot;")
     .replaceAll("'", "&#39;");
-}
+      }
