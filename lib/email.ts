@@ -4,44 +4,54 @@ import nodemailer from "nodemailer";
 type SendEmailArgs = {
   to: string | string[];
   subject: string;
-  html: string;
+  html?: string;
   text?: string;
+  from?: string;
 };
 
-export async function sendEmailNero({ to, subject, html, text }: SendEmailArgs) {
-  const host = process.env.NERO_SMTP_HOST;
-  const port = Number(process.env.NERO_SMTP_PORT || 587);
-  const user = process.env.NERO_SMTP_USER;
-  const pass = process.env.NERO_SMTP_PASS;
-  const from = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  from,
+}: SendEmailArgs) {
+  const host = process.env.SMTP_HOST || "";
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER || "";
+  const pass = process.env.SMTP_PASS || "";
+  const fromAddr = from || process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
 
-  if (!host || !user || !pass) {
-    throw new Error("Nero SMTP is not configured (NERO_SMTP_HOST / USER / PASS).");
+  if (!host || !port || !user || !pass) {
+    console.warn("[email] SMTP env missing → simulate send in logs.");
+    console.log({ to, subject, html, text });
+    return { ok: true, simulated: true };
   }
 
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // true pour 465, sinon TLS STARTTLS
+    secure: port === 465, // 465 = TLS implicite, sinon STARTTLS
     auth: { user, pass },
   });
 
-  const info = await transporter.sendMail({
-    from,
+  await transporter.sendMail({
+    from: fromAddr,
     to,
     subject,
     html,
-    text: text || stripHtml(html),
+    text,
   });
 
-  return info;
+  return { ok: true };
 }
 
-function stripHtml(input: string) {
+/** Petit helper pour éviter les injections HTML dans les emails */
+export function escapeHtml(input: string) {
   return input
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
