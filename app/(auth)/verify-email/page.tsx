@@ -1,187 +1,158 @@
 // app/(auth)/verify-email/page.tsx
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Verify your email — DigitalMeve",
-  description: "Confirm your email address to secure your DigitalMeve account.",
-};
+import { useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Mail,
+  RefreshCcw,
+  LogIn,
+  Home,
+} from "lucide-react";
 
-// Empêche le prerender statique afin d’appeler l’API côté serveur à la req.
-export const dynamic = "force-dynamic";
+type Status = "ok" | "expired" | "invalid" | "unknown";
 
-type SearchParamsPromise = Promise<Record<string, string | string[] | undefined>>;
+export default function VerifyEmailPage() {
+  const sp = useSearchParams();
+  const router = useRouter();
 
-function first(param?: string | string[]) {
-  if (Array.isArray(param)) return param[0];
-  return param;
-}
+  const status = (sp.get("status") as Status) || "unknown";
+  const emailFromUrl = (sp.get("email") || "").trim().toLowerCase();
 
-export default async function VerifyEmailPage({
-  searchParams,
-}: {
-  searchParams: SearchParamsPromise;
-}) {
-  const sp = await searchParams;
-  const token = first(sp.token);
-  const email = first(sp.email);
+  const [email, setEmail] = useState(emailFromUrl);
+  const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
-  // États possibles : 'needs_params' | 'ok' | 'already_verified' | 'expired' | 'invalid' | 'error'
-  let status: string = "needs_params";
+  const { title, desc, icon } = useMemo(() => {
+    switch (status) {
+      case "ok":
+        return {
+          title: "Email verified",
+          desc: "Your email has been confirmed. You can now sign in.",
+          icon: <CheckCircle2 className="h-6 w-6 text-emerald-400" aria-hidden />,
+        };
+      case "expired":
+        return {
+          title: "Link expired",
+          desc: "This verification link is no longer valid. Request a new one below.",
+          icon: <AlertTriangle className="h-6 w-6 text-amber-400" aria-hidden />,
+        };
+      case "invalid":
+        return {
+          title: "Invalid link",
+          desc: "We couldn’t validate this verification link. Request a new one below.",
+          icon: <XCircle className="h-6 w-6 text-rose-400" aria-hidden />,
+        };
+      default:
+        return {
+          title: "Check your inbox",
+          desc: "If you requested verification, look for our email and click the link inside.",
+          icon: <Mail className="h-6 w-6 text-sky-400" aria-hidden />,
+        };
+    }
+  }, [status]);
 
-  if (token && email) {
+  async function onResend(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setInfo(null);
+
+    const value = email.trim().toLowerCase();
+    if (!value) {
+      setErr("Please enter your email.");
+      return;
+    }
+
     try {
-      const base = process.env.NEXT_PUBLIC_APP_URL ?? "";
-      const url = `${base}/api/auth/verify-email?token=${encodeURIComponent(
-        token
-      )}&email=${encodeURIComponent(email)}`;
-
-      const res = await fetch(url, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        status = data.status ?? (data.ok ? "ok" : "invalid");
-      } else {
-        status = "error";
-      }
+      setBusy(true);
+      const res = await fetch("/api/auth/verify-email/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: value }),
+      });
+      await res.json().catch(() => ({}));
+      // L’API répond toujours 200 (anti-enum), on affiche un message neutre
+      setInfo("If the address exists, a verification email has been sent.");
     } catch {
-      status = "error";
+      setErr("Unable to send verification email. Please try again later.");
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-16 text-slate-900">
-      <h1 className="text-2xl font-semibold tracking-tight">Email verification</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Confirm your email to finish securing your account.
-      </p>
+    <main className="min-h-[70vh] bg-[var(--bg)] text-[var(--fg)]">
+      <section className="border-b border-[var(--border)] bg-[var(--bg)]">
+        <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
+          <div className="card p-6">
+            <div className="flex items-center gap-2">
+              {icon}
+              <h1 className="text-xl font-semibold">{title}</h1>
+            </div>
+            <p className="mt-2 text-sm text-[var(--fg-muted)]">{desc}</p>
 
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
-        {status === "needs_params" && (
-          <div>
-            <p className="text-sm text-slate-700">
-              The link seems incomplete. Open the link from the verification email we sent you.
-            </p>
-            <ResendForm />
+            {status === "ok" ? (
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/login" className="btn btn-primary inline-flex items-center gap-2">
+                  <LogIn className="h-4 w-4" /> Sign in
+                </Link>
+                <button
+                  onClick={() => router.push("/")}
+                  className="btn btn-ghost inline-flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" /> Home
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={onResend} className="mt-6 space-y-3">
+                <label className="block">
+                  <span className="text-sm text-[var(--fg-muted)]">Email</span>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-white/5 px-3 py-2 text-[var(--fg)] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </label>
+
+                {err && (
+                  <p className="rounded-lg bg-rose-500/10 p-2 text-sm text-rose-200">{err}</p>
+                )}
+                {info && (
+                  <p className="rounded-lg bg-emerald-500/10 p-2 text-sm text-emerald-200">{info}</p>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                  <button disabled={busy} className="btn inline-flex items-center gap-2">
+                    <RefreshCcw className="h-4 w-4" />
+                    {busy ? "Sending…" : "Resend verification email"}
+                  </button>
+
+                  <Link href="/login" className="btn btn-ghost inline-flex items-center gap-2">
+                    <LogIn className="h-4 w-4" /> Sign in
+                  </Link>
+                  <Link href="/" className="btn btn-ghost inline-flex items-center gap-2">
+                    <Home className="h-4 w-4" /> Home
+                  </Link>
+                </div>
+              </form>
+            )}
           </div>
-        )}
 
-        {status === "ok" && (
-          <Success
-            title="You're verified!"
-            tip="You can now sign in safely."
-            ctaHref="/signin"
-            ctaLabel="Continue"
-          />
-        )}
-
-        {status === "already_verified" && (
-          <Success
-            title="Already verified"
-            tip="Nothing else to do."
-            ctaHref="/signin"
-            ctaLabel="Sign in"
-          />
-        )}
-
-        {status === "expired" && (
-          <Problem
-            title="Link expired"
-            tip="No worries — request a fresh verification email."
-          >
-            <ResendForm email={email} />
-          </Problem>
-        )}
-
-        {status === "invalid" && (
-          <Problem
-            title="Invalid link"
-            tip="The link is not valid. Request a new verification email."
-          >
-            <ResendForm />
-          </Problem>
-        )}
-
-        {status === "error" && (
-          <Problem
-            title="Something went wrong"
-            tip="Please try again in a moment or request a new verification email."
-          >
-            <ResendForm />
-          </Problem>
-        )}
-      </div>
+          <p className="mt-4 text-center text-xs text-[var(--fg-muted)]">
+            Didn’t get the email? Check your spam folder or try again in a minute.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
-
-/* ---------- UI helpers ---------- */
-
-function Success({
-  title,
-  tip,
-  ctaHref,
-  ctaLabel,
-}: {
-  title: string;
-  tip: string;
-  ctaHref: string;
-  ctaLabel: string;
-}) {
-  return (
-    <div className="text-slate-800">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{tip}</p>
-      <a
-        href={ctaHref}
-        className="mt-4 inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-      >
-        {ctaLabel}
-      </a>
-    </div>
-  );
-}
-
-function Problem({
-  title,
-  tip,
-  children,
-}: {
-  title: string;
-  tip: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="text-slate-800">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{tip}</p>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
-
-function ResendForm({ email }: { email?: string }) {
-  return (
-    <form
-      action="/api/auth/verify-email/resend"
-      method="post"
-      className="flex flex-col gap-3"
-    >
-      <input
-        type="email"
-        name="email"
-        required
-        defaultValue={email}
-        placeholder="your@email.com"
-        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-      />
-      <button
-        type="submit"
-        className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-      >
-        Resend verification email
-      </button>
-      <p className="text-xs text-slate-500">
-        We’ll send a new link if the address exists.
-      </p>
-    </form>
-  );
-            }
