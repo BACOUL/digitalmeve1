@@ -4,18 +4,17 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma"; // ✅ Prisma singleton
 
 /**
- * ENV attendues :
- * - RESEND_API_KEY
- * - EMAIL_FROM                      (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
- * - NEXT_PUBLIC_APP_URL             (ex: 'https://digitalmeve.com' ou ton Vercel)
+ * ENV requises :
+ * - RESEND_API_KEY (optionnel en dev/preview : on logge le lien)
+ * - EMAIL_FROM (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
+ * - NEXT_PUBLIC_APP_URL (ex: 'https://digitalmeve.com' ou ton Vercel)
  *
- * Notes:
+ * Politique :
  * - Toujours répondre 200 pour éviter l’énumération d’emails.
- * - Throttle 60s + limite 5/jour/email.
- * - Invalide les anciens tokens avant de créer le nouveau.
- * - Expiration du token : 24 heures (recommandé pour un verify).
+ * - Throttle : 60s entre deux envois + plafond 5/jour/email.
+ * - On invalide les anciens tokens avant d’en créer un nouveau.
+ * - Token valable 24h. L’URL contient UNIQUEMENT le token (pas l’email).
  */
-
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
@@ -34,104 +33,93 @@ export async function POST(req: Request) {
       email = (body?.email || "").toString().trim().toLowerCase();
     }
 
-    // Validation minimale (mais on renvoie 200 quoi qu'il arrive)
+    // Validation simple (mais on renvoie 200 quoiqu’il arrive)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json(okResp(), { status: 200 });
     }
 
-    // IP best-effort (utile pour logs / throttling avancé si besoin)
+    // IP best-effort (pour logs / throttling avancé)
     const ip =
       (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
 
-    // Vérifie si l'utilisateur existe (sans révéler l'info)
+    // Vérifie l’existence de l’utilisateur (sans rien révéler)
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, status: true },
+      select: { id: true },
     });
-
-    // Toujours 200 si l'utilisateur n'existe pas
-    if (!user) return NextResponse.json(okResp(), { status: 200 });
-
-    // Si déjà actif, on renvoie 200 (idempotent)
-    if (user.status === "ACTIVE") {
-      return NextResponse.json(okResp("Already verified."), { status: 200 });
+    if (!user) {
+      return NextResponse.json(okResp(), { status: 200 });
     }
 
-    // —— Throttle: 60s depuis le dernier envoi & 5/jour max ——
-    const since = new Date(Date.now() - 60_000);
+    // —— Throttle & quotas ——
+    const since = new Date(Date.now() - 60_000); // 60s
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // ⚠️ Remarque : selon ton schéma Prisma, la colonne peut s'appeler createdAt ou created_at.
-    // Si besoin, remplace "createdAt" par "created_at" ci-dessous.
-    const [recent, countToday] = await Promise.all([
-      prisma.verificationToken.findFirst({
-        where: {
-          email,
-          type: "email_verification",
-          // @ts-ignore — adapte si ton champ est `created_at`
-          createdAt: { gt: since },
-        },
-        select: { id: true },
-      }),
-      prisma.verificationToken.count({
-        where: {
-          email,
-          type: "email_verification",
-          // @ts-ignore — adapte si ton champ est `created_at`
-          createdAt: { gte: today },
-        },
-      }),
-    ]);
-
+    // 1) Dernier envoi récent (<60s)
+    const recent = await prisma.verificationToken.findFirst({
+      where: {
+        email,
+        type: "email_verification",
+        // @ts-ignore (schéma snake_case)
+        created_at: { gt: since },
+      },
+      select: { id: true },
+    });
     if (recent) {
-      // 429 serait logique, mais on renvoie 200 pour ne rien révéler à l'extérieur
       return NextResponse.json(okResp("Please wait before retrying."), { status: 200 });
     }
+
+    // 2) Max 5 envois dans la journée
+    const countToday = await prisma.verificationToken.count({
+      where: {
+        email,
+        type: "email_verification",
+        // @ts-ignore (schéma snake_case)
+        created_at: { gte: today },
+      },
+    });
     if (countToday >= 5) {
       return NextResponse.json(okResp("Daily limit reached."), { status: 200 });
     }
 
-    // Invalide les tokens précédents pour cet email
+    // Invalide les tokens précédents
     await prisma.verificationToken.deleteMany({
       where: { email, type: "email_verification" },
     });
 
-    // Génère un nouveau token (base64url)
+    // Nouveau token (base64url), valable 24h
     const token = crypto.randomBytes(32).toString("base64url");
+    const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Expiration: 24h recommandées pour verify
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    // ⚠️ Adapte les noms de champs si nécessaire (expiresAt vs expires_at)
     await prisma.verificationToken.create({
       data: {
         email,
         token,
         type: "email_verification",
-        // @ts-ignore — adapte si ton champ est `expires_at`
-        expiresAt,
+        // @ts-ignore (schéma snake_case)
+        expires_at,
         ip,
       },
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
     const verifyUrl = new URL(`${appUrl}/verify-email`);
-    verifyUrl.searchParams.set("token", token); // ✅ on n'envoie plus l'email dans l'URL
+    verifyUrl.searchParams.set("token", token); // ✅ pas d’email dans l’URL
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
     const EMAIL_FROM = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
 
-    // En dev/preview sans clé: on log le lien (utile pour tests)
+    // En dev/preview sans clé → log utile
     if (!RESEND_API_KEY) {
       console.log("[DEV] Verify link:", verifyUrl.toString());
       return NextResponse.json(okResp(), { status: 200 });
     }
 
-    // Email HTML
+    // Email HTML (dark)
     const html = renderVerifyEmailHTML({
       verifyUrl: verifyUrl.toString(),
       email,
@@ -231,4 +219,4 @@ function escapeHtml(input: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-      }
+}
