@@ -9,9 +9,9 @@ export const runtime = "nodejs";
 /**
  * Flux :
  * - POST { email, password }
- * - Création User si inexistant (ou 409 si email déjà pris)
+ * - Création User si inexistant (409 si email déjà pris)
  * - Génération token "email_verification" (24h) + envoi email via Resend
- * - Réponse neutre (pas d’info sensible)
+ * - Réponse neutre
  *
  * ENV:
  * - RESEND_API_KEY (optionnel en dev/preview → on log le lien)
@@ -49,9 +49,11 @@ export async function POST(req: Request) {
     }
 
     // Email déjà pris ?
-    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
     if (existing) {
-      // Rester explicite côté UX : on peut renvoyer 409 pour que le front affiche "already registered"
       return NextResponse.json(
         { ok: false, error: "Email already registered." },
         { status: 409 }
@@ -83,22 +85,31 @@ export async function POST(req: Request) {
         token,
         type: "email_verification",
         expiresAt, // camelCase côté Prisma
-        ip: (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || "unknown",
+        ip:
+          (req.headers.get("x-forwarded-for") || "")
+            .split(",")[0]
+            ?.trim() || "unknown",
       },
     });
 
-    // Compose URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
+    // Compose URL (⚠️ on ajoute email + token pour matcher ta route /api/auth/verify-email actuelle)
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
     const verifyUrl = new URL(`${appUrl}/verify-email`);
-    verifyUrl.searchParams.set("token", token); // pas d'email dans l'URL
+    verifyUrl.searchParams.set("token", token);
+    verifyUrl.searchParams.set("email", email);
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-    const EMAIL_FROM = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
+    const EMAIL_FROM =
+      process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
 
     // En dev/preview sans clé → on log le lien
     if (!RESEND_API_KEY) {
       console.log("[REGISTER][DEV] Verify link:", verifyUrl.toString());
-      return NextResponse.json({ ok: true, message: "Account created. Check your email to verify." }, { status: 200 });
+      return NextResponse.json(
+        { ok: true, message: "Account created. Check your email to verify." },
+        { status: 200 }
+      );
     }
 
     // Email HTML
@@ -108,6 +119,7 @@ export async function POST(req: Request) {
       appName: "DigitalMeve",
     });
 
+    // Envoi via Resend (sans SDK)
     const sendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -129,10 +141,16 @@ export async function POST(req: Request) {
       // On ne révèle rien au client
     }
 
-    return NextResponse.json({ ok: true, message: "Account created. Check your email to verify." }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: "Account created. Check your email to verify." },
+      { status: 200 }
+    );
   } catch (e) {
     console.error("[REGISTER] error:", e);
-    return NextResponse.json({ ok: false, error: "Unable to register." }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Unable to register." },
+      { status: 500 }
+    );
   }
 }
 
