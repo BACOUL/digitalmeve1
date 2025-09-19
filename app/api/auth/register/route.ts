@@ -3,21 +3,9 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { sendEmailNero } from "@/lib/email";
 
 export const runtime = "nodejs";
-
-/**
- * Flux :
- * - POST { email, password }
- * - Création User si inexistant (409 si email déjà pris)
- * - Génération token "email_verification" (24h) + envoi email via Resend
- * - Réponse neutre
- *
- * ENV:
- * - RESEND_API_KEY (optionnel en dev/preview → on log le lien)
- * - EMAIL_FROM (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
- * - NEXT_PUBLIC_APP_URL (ex: 'https://digitalmeve1.vercel.app')
- */
 
 export async function POST(req: Request) {
   try {
@@ -39,7 +27,7 @@ export async function POST(req: Request) {
       password = (body?.password || "").toString();
     }
 
-    // Validation basique
+    // Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email) || !password || password.length < 8) {
       return NextResponse.json(
@@ -49,10 +37,7 @@ export async function POST(req: Request) {
     }
 
     // Email déjà pris ?
-    const existing = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
+    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
     if (existing) {
       return NextResponse.json(
         { ok: false, error: "Email already registered." },
@@ -66,11 +51,11 @@ export async function POST(req: Request) {
       data: {
         email,
         password: hash,
-        // role par défaut = "INDIVIDUAL" (défini dans le schema)
+        // role par défaut = "INDIVIDUAL"
       },
     });
 
-    // Invalide tokens précédents (s'il y en a)
+    // Invalider anciens tokens vérif
     await prisma.verificationToken.deleteMany({
       where: { email, type: "email_verification" },
     });
@@ -84,32 +69,20 @@ export async function POST(req: Request) {
         email,
         token,
         type: "email_verification",
-        expiresAt, // camelCase côté Prisma
-        ip:
-          (req.headers.get("x-forwarded-for") || "")
-            .split(",")[0]
-            ?.trim() || "unknown",
+        expiresAt,
+        ip: (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || "unknown",
       },
     });
 
-    // Compose URL (⚠️ on ajoute email + token pour matcher ta route /api/auth/verify-email actuelle)
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
+    // URL de vérification
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
     const verifyUrl = new URL(`${appUrl}/verify-email`);
     verifyUrl.searchParams.set("token", token);
     verifyUrl.searchParams.set("email", email);
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-    const EMAIL_FROM =
-      process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
-
-    // En dev/preview sans clé → on log le lien
-    if (!RESEND_API_KEY) {
-      console.log("[REGISTER][DEV] Verify link:", verifyUrl.toString());
-      return NextResponse.json(
-        { ok: true, message: "Account created. Check your email to verify." },
-        { status: 200 }
-      );
+    const shouldLogLink = process.env.EMAIL_DEBUG_LOG === "1" || process.env.NODE_ENV !== "production";
+    if (shouldLogLink) {
+      console.log("[REGISTER][DEBUG] Verify link:", verifyUrl.toString(), "for", email);
     }
 
     // Email HTML
@@ -119,26 +92,27 @@ export async function POST(req: Request) {
       appName: "DigitalMeve",
     });
 
-    // Envoi via Resend (sans SDK)
-    const sendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [email],
+    try {
+      await sendEmailNero({
+        to: email,
         subject: "Confirm your email",
         html,
         text: `Confirm your email: ${verifyUrl.toString()}`,
-      }),
-    });
-
-    if (!sendRes.ok) {
-      const errText = await sendRes.text().catch(() => "");
-      console.error("[REGISTER] Resend error:", sendRes.status, errText);
-      // On ne révèle rien au client
+      });
+    } catch (e: any) {
+      console.error("[REGISTER][NERO] send error:", e?.message || e);
+      // En dev/preview, renvoie le lien pour test
+      if (process.env.NODE_ENV !== "production") {
+        return NextResponse.json(
+          {
+            ok: true,
+            message: "Account created. Email failed to send (dev). Use the debug link.",
+            debugVerifyUrl: verifyUrl.toString(),
+          },
+          { status: 200 }
+        );
+      }
+      // En prod: on reste neutre
     }
 
     return NextResponse.json(
@@ -147,10 +121,7 @@ export async function POST(req: Request) {
     );
   } catch (e) {
     console.error("[REGISTER] error:", e);
-    return NextResponse.json(
-      { ok: false, error: "Unable to register." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "Unable to register." }, { status: 500 });
   }
 }
 
