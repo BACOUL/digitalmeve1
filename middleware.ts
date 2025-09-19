@@ -18,20 +18,18 @@ function absoluteUrl(req: NextRequest, path: string) {
   return `${req.nextUrl.origin}${path}`;
 }
 
-/**
- * IMPORTANT : on exclut TOUTES les routes API de ce middleware pour éviter les 404.
- * On exclut aussi les assets Next et fichiers publics.
- */
 export const config = {
+  // ❗️ N’APPLIQUE PAS le middleware aux routes API.
+  // On exclut aussi les assets & fichiers publics.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|og/|icons/|api/).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|og/|icons/).*)",
   ],
 };
 
 export function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
-  // --- Request ID (réutilise si fourni en amont) ---
+  // Request ID
   const upstreamId = req.headers.get("x-request-id");
   const requestId =
     upstreamId ||
@@ -40,7 +38,7 @@ export function middleware(req: NextRequest) {
       : Math.random().toString(36).slice(2));
   res.headers.set("X-Request-ID", requestId);
 
-  // --- Security Headers (socle) ---
+  // Security headers
   if (isProd) {
     res.headers.set(
       "Strict-Transport-Security",
@@ -54,7 +52,7 @@ export function middleware(req: NextRequest) {
   res.headers.set("X-XSS-Protection", "0");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  // ✅ OAuth / popups-friendly
+  // OAuth / popups-friendly
   res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 
@@ -86,7 +84,7 @@ export function middleware(req: NextRequest) {
     ].join(", ")
   );
 
-  // --- CSP Report-Only (observabilité sans blocage) ---
+  // CSP Report-Only (observabilité)
   if (enableCspReportOnly) {
     const reportingEndpoint = absoluteUrl(req, "/api/csp-report");
 
@@ -126,10 +124,10 @@ export function middleware(req: NextRequest) {
     res.headers.set("Content-Security-Policy-Report-Only", cspReportOnly);
   }
 
-  // --- Exception d'iframe si besoin ---
+  // Exception d’iframe si besoin (ex: /status)
   if (req.nextUrl.pathname.startsWith("/status")) {
     res.headers.set("X-Frame-Options", "SAMEORIGIN");
   }
 
   return res;
-      }
+}
