@@ -1,48 +1,59 @@
 // app/api/auth/verify-email/resend/route.ts
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { prisma } from "@prisma/client"; // <-- si tu as déjà un export central, remplace par "@/lib/prisma"
-import { sendEmailNero } from "@/lib/email";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+/**
+ * ENV attendues :
+ * - RESEND_API_KEY (optionnel en dev/preview → si absent on log seulement)
+ * - EMAIL_FROM                      (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
+ * - NEXT_PUBLIC_APP_URL             (ex: 'https://digitalmeve.com' ou ton Vercel)
+ *
+ * Notes:
+ * - Toujours répondre 200 pour éviter l’énumération d’emails.
+ * - Invalide les anciens tokens pour cet email.
+ * - Expiration du token : 60 minutes.
+ */
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
     let email = "";
 
     if (contentType.includes("application/json")) {
-      const body = await req.json().catch(() => ({}));
+      const body = (await req.json().catch(() => ({}))) as any;
       email = (body?.email || "").toString().trim().toLowerCase();
     } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
       email = String(form.get("email") || "").trim().toLowerCase();
     } else {
-      const body = await req.json().catch(() => ({}));
+      const body = (await req.json().catch(() => ({}))) as any;
       email = (body?.email || "").toString().trim().toLowerCase();
     }
 
+    // Validation minimale de l'email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email)) {
-      // Réponse neutre
       return NextResponse.json(
         { ok: true, message: "If the address exists, a verification email will be sent." },
         { status: 200 }
       );
     }
 
+    // IP best-effort
     const ip =
       (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
 
-    // L'utilisateur existe ?
+    // Vérifie si l'utilisateur existe (sans révéler)
     const user = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
     });
 
-    // Toujours 200 même si l'utilisateur n'existe pas (pas d’énumération)
+    // Toujours 200, même si l'utilisateur n'existe pas
     if (!user) {
       return NextResponse.json(
         { ok: true, message: "If the address exists, a verification email will be sent." },
@@ -50,20 +61,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Invalide anciens tokens
+    // Invalide les précédents tokens pour cet email
     await prisma.verificationToken.deleteMany({
       where: { email, type: "email_verification" },
     });
 
-    // Nouveau token (60 min)
+    // Génère un nouveau token (base64url)
     const tokenRaw = crypto.randomBytes(32).toString("base64url");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Stocke le token (en clair ici – possible de hasher en prod)
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 min
     await prisma.verificationToken.create({
       data: {
         email,
         token: tokenRaw,
         type: "email_verification",
-        expiresAt,
+        expiresAt, // camelCase selon Prisma
         ip,
       },
     });
@@ -73,32 +86,45 @@ export async function POST(req: Request) {
     verifyUrl.searchParams.set("token", tokenRaw);
     verifyUrl.searchParams.set("email", email);
 
-    const shouldLogLink = process.env.EMAIL_DEBUG_LOG === "1" || process.env.NODE_ENV !== "production";
-    if (shouldLogLink) {
-      console.log("[RESEND VERIFY][DEBUG] link:", verifyUrl.toString(), "for", email);
+    const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+    const EMAIL_FROM = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
+
+    // Si pas de clé Resend → log en dev/preview, mais renvoyer 200
+    if (!RESEND_API_KEY) {
+      console.log("[RESEND VERIFY][DEV] Link:", verifyUrl.toString());
+      return NextResponse.json(
+        { ok: true, message: "If the address exists, a verification email will be sent." },
+        { status: 200 }
+      );
     }
 
+    // Email HTML
     const html = renderVerifyEmailHTML({
       verifyUrl: verifyUrl.toString(),
       email,
       appName: "DigitalMeve",
     });
 
-    try {
-      await sendEmailNero({
-        to: email,
+    // Envoi via Resend (sans SDK)
+    const sendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [email],
         subject: "Confirm your email",
         html,
         text: `Confirm your email: ${verifyUrl.toString()}`,
-      });
-    } catch (e: any) {
-      console.error("[VERIFY RESEND][NERO] send error:", e?.message || e);
-      if (process.env.NODE_ENV !== "production") {
-        return NextResponse.json(
-          { ok: true, message: "Verification email failed (dev). Use debug link.", debugVerifyUrl: verifyUrl.toString() },
-          { status: 200 }
-        );
-      }
+      }),
+    });
+
+    if (!sendRes.ok) {
+      const errText = await sendRes.text().catch(() => "");
+      console.error("Resend error:", sendRes.status, errText);
+      // Toujours 200 pour ne rien révéler côté client
     }
 
     return NextResponse.json(
@@ -172,6 +198,6 @@ function escapeHtml(input: string) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"", "&quot;")
+    .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-      }
+}
