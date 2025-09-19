@@ -11,7 +11,7 @@ function makeTransport() {
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure: port === 465, // true pour 465, false pour 587 (STARTTLS)
     auth: { user, pass },
   });
 }
@@ -25,7 +25,8 @@ export async function GET(req: Request) {
 
   try {
     const transporter = makeTransport();
-    const verifyRes = await transporter.verify(); // test login/STARTTLS
+    const verifyRes = await transporter.verify(); // vérifie login/STARTTLS
+
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.SMTP_USER!,
       to,
