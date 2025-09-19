@@ -3,9 +3,22 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { sendEmailNero } from "@/lib/email";
+import { sendEmail } from "@/lib/email"; // ← ICI: on importe sendEmail (pas sendEmailNero)
 
 export const runtime = "nodejs";
+
+/**
+ * Flux :
+ * - POST { email, password }
+ * - Création User si inexistant (ou 409 si email déjà pris)
+ * - Génération token "email_verification" (24h) + envoi email via SMTP (Nero) via sendEmail()
+ * - Réponse neutre (pas d’info sensible)
+ *
+ * ENV:
+ * - SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS
+ * - EMAIL_FROM (ex: 'DigitalMeve <no-reply@digitalmeve.com>')
+ * - NEXT_PUBLIC_APP_URL (ex: 'https://digitalmeve1.vercel.app')
+ */
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +40,7 @@ export async function POST(req: Request) {
       password = (body?.password || "").toString();
     }
 
-    // Validation
+    // Validation basique
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!email || !emailRegex.test(email) || !password || password.length < 8) {
       return NextResponse.json(
@@ -51,11 +64,10 @@ export async function POST(req: Request) {
       data: {
         email,
         password: hash,
-        // role par défaut = "INDIVIDUAL"
       },
     });
 
-    // Invalider anciens tokens vérif
+    // Invalide anciens tokens
     await prisma.verificationToken.deleteMany({
       where: { email, type: "email_verification" },
     });
@@ -74,45 +86,32 @@ export async function POST(req: Request) {
       },
     });
 
-    // URL de vérification
+    // Lien de vérification
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
     const verifyUrl = new URL(`${appUrl}/verify-email`);
     verifyUrl.searchParams.set("token", token);
-    verifyUrl.searchParams.set("email", email);
 
-    const shouldLogLink = process.env.EMAIL_DEBUG_LOG === "1" || process.env.NODE_ENV !== "production";
-    if (shouldLogLink) {
-      console.log("[REGISTER][DEBUG] Verify link:", verifyUrl.toString(), "for", email);
-    }
-
-    // Email HTML
+    // Corps email
     const html = renderVerifyEmailHTML({
       verifyUrl: verifyUrl.toString(),
       email,
       appName: "DigitalMeve",
     });
 
+    const from = process.env.EMAIL_FROM || "DigitalMeve <no-reply@digitalmeve.com>";
+
+    // Envoi via SMTP (Nero) – via sendEmail()
     try {
-      await sendEmailNero({
+      await sendEmail({
         to: email,
         subject: "Confirm your email",
         html,
         text: `Confirm your email: ${verifyUrl.toString()}`,
+        from,
       });
-    } catch (e: any) {
-      console.error("[REGISTER][NERO] send error:", e?.message || e);
-      // En dev/preview, renvoie le lien pour test
-      if (process.env.NODE_ENV !== "production") {
-        return NextResponse.json(
-          {
-            ok: true,
-            message: "Account created. Email failed to send (dev). Use the debug link.",
-            debugVerifyUrl: verifyUrl.toString(),
-          },
-          { status: 200 }
-        );
-      }
-      // En prod: on reste neutre
+    } catch (e) {
+      console.error("[REGISTER] SMTP send error:", e);
+      // On n’échoue pas le flux côté client pour éviter de révéler la config
     }
 
     return NextResponse.json(
@@ -183,4 +182,4 @@ function escapeHtml(input: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-  }
+                }
