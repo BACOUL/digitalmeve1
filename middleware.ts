@@ -18,10 +18,13 @@ function absoluteUrl(req: NextRequest, path: string) {
   return `${req.nextUrl.origin}${path}`;
 }
 
+/**
+ * IMPORTANT : on exclut TOUTES les routes API de ce middleware pour éviter les 404.
+ * On exclut aussi les assets Next et fichiers publics.
+ */
 export const config = {
-  // On applique partout sauf assets statiques / fichiers publics / endpoint de report
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|og/|icons/|api/csp-report).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|og/|icons/|api/).*)",
   ],
 };
 
@@ -129,4 +132,4 @@ export function middleware(req: NextRequest) {
   }
 
   return res;
-}
+      }
