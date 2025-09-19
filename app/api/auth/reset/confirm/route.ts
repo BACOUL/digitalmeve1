@@ -1,128 +1,57 @@
 // app/api/auth/reset/confirm/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
-export const runtime = "nodejs"; // bcryptjs OK côté Node
-const prisma = new PrismaClient();
+export const runtime = "nodejs";
 
 /**
- * Reçoit: { email, token, password }
- * - Valide le token (existe, type=password_reset, non expiré, email match)
- * - Hash le mot de passe et met à jour l'utilisateur
- * - Invalide tous les tokens "password_reset" pour cet email
+ * POST { token, email, password }
+ * - Vérifie token `password_reset` non expiré
+ * - Met à jour password (bcrypt)
+ * - Supprime tous les tokens `password_reset` de cet email
  */
 export async function POST(req: Request) {
   try {
-    // 1) Lire le corps (JSON ou x-www-form-urlencoded)
-    const contentType = req.headers.get("content-type") || "";
-    let email = "";
-    let token = "";
-    let password = "";
+    const { token = "", email = "", password = "" } = await req.json().catch(() => ({}));
+    const valueEmail = String(email).trim().toLowerCase();
+    const valueToken = String(token).trim();
+    const valuePass = String(password);
 
-    if (contentType.includes("application/json")) {
-      const body = await req.json().catch(() => ({}));
-      email = String(body?.email || "").trim().toLowerCase();
-      token = String(body?.token || "").trim();
-      password = String(body?.password || "");
-    } else if (contentType.includes("application/x-www-form-urlencoded")) {
-      const form = await req.formData();
-      email = String(form.get("email") || "").trim().toLowerCase();
-      token = String(form.get("token") || "").trim();
-      password = String(form.get("password") || "");
-    } else {
-      const body = await req.json().catch(() => ({}));
-      email = String(body?.email || "").trim().toLowerCase();
-      token = String(body?.token || "").trim();
-      password = String(body?.password || "");
+    if (!valueEmail || !valueToken || valuePass.length < 8) {
+      return NextResponse.json({ ok: false, error: "Invalid payload." }, { status: 400 });
     }
 
-    // 2) Validations minimales
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid email." },
-        { status: 400 },
-      );
-    }
-    if (!token) {
-      return NextResponse.json(
-        { ok: false, error: "Missing token." },
-        { status: 400 },
-      );
-    }
-    if (typeof password !== "string" || password.length < 8) {
-      return NextResponse.json(
-        { ok: false, error: "Password must be at least 8 characters." },
-        { status: 400 },
-      );
-    }
-
-    // 3) Récupérer le token
-    const vt = await prisma.verificationToken.findFirst({
+    // 1) Token check
+    const record = await prisma.verificationToken.findFirst({
       where: {
-        email,
-        token,
+        email: valueEmail,
+        token: valueToken,
         type: "password_reset",
+        expiresAt: { gt: new Date() },
       },
+      select: { id: true, email: true },
     });
 
-    if (!vt) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid or already used token." },
-        { status: 400 },
-      );
+    if (!record) {
+      return NextResponse.json({ ok: false, error: "Invalid or expired link." }, { status: 400 });
     }
 
-    // 4) Vérifier expiration
-    const now = new Date();
-    if (vt.expiresAt && vt.expiresAt.getTime() < now.getTime()) {
-      // Token expiré -> on le supprime pour propreté
-      await prisma.verificationToken.deleteMany({
-        where: { email, type: "password_reset" },
-      });
-      return NextResponse.json(
-        { ok: false, error: "This link has expired. Please request a new reset email." },
-        { status: 400 },
-      );
-    }
-
-    // 5) Vérifier que l'utilisateur existe (sécurité: on peut répondre générique,
-    //    mais ici on a déjà un token valide -> on peut être explicite)
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
+    // 2) Update password
+    const hash = await bcrypt.hash(valuePass, 12);
+    await prisma.user.update({
+      where: { email: valueEmail },
+      data: { password: hash },
     });
-    if (!user) {
-      // Nettoyage conservateur des tokens
-      await prisma.verificationToken.deleteMany({
-        where: { email, type: "password_reset" },
-      });
-      return NextResponse.json(
-        { ok: false, error: "User not found." },
-        { status: 404 },
-      );
-    }
 
-    // 6) Hash + update
-    const hash = await bcrypt.hash(password, 12);
+    // 3) Consume tokens
+    await prisma.verificationToken.deleteMany({
+      where: { email: valueEmail, type: "password_reset" },
+    });
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { email },
-        data: { password: hash },
-      }),
-      prisma.verificationToken.deleteMany({
-        where: { email, type: "password_reset" },
-      }),
-    ]);
-
-    return NextResponse.json({ ok: true, message: "Password updated successfully." });
-  } catch (err) {
-    console.error("reset/confirm error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Unexpected error." },
-      { status: 500 },
-    );
+    return NextResponse.json({ ok: true, message: "Password updated." }, { status: 200 });
+  } catch (e) {
+    console.error("[RESET CONFIRM] error:", e);
+    return NextResponse.json({ ok: false, error: "Unable to reset password." }, { status: 500 });
   }
 }
