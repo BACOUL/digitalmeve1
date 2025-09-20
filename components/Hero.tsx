@@ -1,4 +1,4 @@
-// components/Hero.tsx — v5 (seeded live counters + simulated random growth until backend ready)
+// components/Hero.tsx — v6 (mobile safe area + clickable dropzone + seeded random growth)
 "use client";
 
 import Link from "next/link";
@@ -21,7 +21,7 @@ export default function Hero() {
   const [totalDelta, setTotalDelta] = useState(0);
   const [today, setToday] = useState(0);
 
-  // Simulate growth every 5 min: add random 5–20
+  // Simulate growth every 5 min: add random 5–20 (temporary until backend stats are wired)
   useEffect(() => {
     const id = setInterval(() => {
       const bump = Math.floor(Math.random() * 16) + 5; // 5–20
@@ -37,12 +37,14 @@ export default function Hero() {
     setToday((t) => t + 1);
   }, []);
 
+  // 👉 plug your real local protect/verify here
   const handleFile = useCallback(
     async (file: File) => {
       try {
         setBusy(true);
         setStatus("Verifying in your browser…");
-        await new Promise((r) => setTimeout(r, 1200)); // simulate verify
+        // TODO: replace this simulation with your in-browser verification
+        await new Promise((r) => setTimeout(r, 1200));
         setStatus("Verified ✔ — tamper-proof certificate ready.");
         bumpCounters();
       } catch {
@@ -69,7 +71,7 @@ export default function Hero() {
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
       if (f) await handleFile(f);
-      e.currentTarget.value = "";
+      e.currentTarget.value = ""; // allow same file re-selection
     },
     [handleFile]
   );
@@ -80,7 +82,7 @@ export default function Hero() {
     <section
       id="hero"
       aria-label="DigitalMeve — Invisible proof. Visible trust."
-      className="relative overflow-hidden min-h-[100svh] pb-24"
+      className="relative overflow-hidden min-h-[100svh] pb-[calc(104px+env(safe-area-inset-bottom))]"
     >
       {/* Background FX */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
@@ -152,6 +154,7 @@ export default function Hero() {
           tabIndex={0}
           aria-label="Drop a file here or press Enter to choose a file"
           aria-describedby="demo-formats"
+          onClick={() => fileInputRef.current?.click()} // make the whole card open the chooser
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
           }}
@@ -176,8 +179,7 @@ export default function Hero() {
             or pick one.
           </div>
           <div id="demo-formats" className="mt-1.5 text-xs text-slate-400">
-            Private-first. Your file never leaves your device.{" "}
-            <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
+            Private-first. Your file never leaves your device. <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
           </div>
 
           {/* Status (ARIA live) */}
@@ -251,4 +253,4 @@ export default function Hero() {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </section>
   );
-}
+            }
