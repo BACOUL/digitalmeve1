@@ -1,4 +1,4 @@
-// components/Hero.tsx — v9 (EN · frozen spec · CTAs + live counter + direct link)
+// components/Hero.tsx — v10 (EN · frozen spec · cleaned badges, no extra link)
 "use client";
 
 import Link from "next/link";
@@ -60,14 +60,14 @@ export default function Hero() {
           </span>
         </h1>
 
-        {/* Subheadline (2 lines) */}
+        {/* Subheadline */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
           Every file becomes a universal proof of authenticity.
           <br className="hidden sm:block" />
           Certify in seconds, verify anywhere — without ever sharing your data.
         </p>
 
-        {/* CTAs — frozen */}
+        {/* CTAs */}
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
           <Link
             href="/generate"
@@ -88,7 +88,7 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Social proof (live counter) */}
+        {/* Social proof */}
         <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-300/90">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
             {formatNumber(totalDisplay)} documents already certified
@@ -96,16 +96,6 @@ export default function Hero() {
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
             No storage — 100% on-device
           </span>
-        </div>
-
-        {/* Direct creation link */}
-        <div className="mt-3">
-          <Link
-            href="/generate"
-            className="text-[13px] text-slate-200 underline decoration-dotted underline-offset-4 hover:opacity-90"
-          >
-            📄 Create your certified DigitalMeve document for free
-          </Link>
         </div>
 
         {/* Trust badges */}
@@ -116,7 +106,7 @@ export default function Hero() {
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <ShieldCheck aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Certificate included (PDF)
+            Certificate included
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80 max-[360px]:hidden">
             <ArrowRight aria-hidden className="h-3.5 w-3.5 opacity-80" />
