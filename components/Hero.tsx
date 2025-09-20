@@ -1,11 +1,11 @@
-// components/Hero.tsx — v6 (mobile safe area + clickable dropzone + seeded random growth)
+// components/Hero.tsx — v7 (no min-h, safe padding; demo links to /generate)
 "use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ShieldCheck, Radar, Sparkles, ArrowRight } from "lucide-react";
 
-const BASELINE_TOTAL = 23573; // credible starting number
+const BASELINE_TOTAL = 23573; // starting number
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat(undefined).format(n);
@@ -17,34 +17,30 @@ export default function Hero() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  // Counters
+  // counters (with temporary simulated growth every 5 min, remove when backend is ready)
   const [totalDelta, setTotalDelta] = useState(0);
   const [today, setToday] = useState(0);
-
-  // Simulate growth every 5 min: add random 5–20 (temporary until backend stats are wired)
   useEffect(() => {
     const id = setInterval(() => {
       const bump = Math.floor(Math.random() * 16) + 5; // 5–20
       setTotalDelta((x) => x + bump);
       setToday((t) => t + bump);
-    }, 300_000); // 5 min
+    }, 300_000);
     return () => clearInterval(id);
   }, []);
 
-  // Local bump (when user actually verifies)
   const bumpCounters = useCallback(() => {
     setTotalDelta((x) => x + 1);
     setToday((t) => t + 1);
   }, []);
 
-  // 👉 plug your real local protect/verify here
+  // keep for the primary CTA (optional) — verifies then bumps
   const handleFile = useCallback(
     async (file: File) => {
       try {
         setBusy(true);
         setStatus("Verifying in your browser…");
-        // TODO: replace this simulation with your in-browser verification
-        await new Promise((r) => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1200)); // simulate
         setStatus("Verified ✔ — tamper-proof certificate ready.");
         bumpCounters();
       } catch {
@@ -71,7 +67,7 @@ export default function Hero() {
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
       if (f) await handleFile(f);
-      e.currentTarget.value = ""; // allow same file re-selection
+      e.currentTarget.value = "";
     },
     [handleFile]
   );
@@ -82,7 +78,7 @@ export default function Hero() {
     <section
       id="hero"
       aria-label="DigitalMeve — Invisible proof. Visible trust."
-      className="relative overflow-hidden min-h-[100svh] pb-[calc(104px+env(safe-area-inset-bottom))]"
+      className="relative overflow-visible pb-[calc(112px+env(safe-area-inset-bottom))]"
     >
       {/* Background FX */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
@@ -145,66 +141,42 @@ export default function Hero() {
         {/* Micro-copy */}
         <div className="mt-1 text-xs text-slate-300/90">or drag & drop below</div>
 
-        {/* Hidden input */}
+        {/* Hidden input (for the primary CTA if needed) */}
         <input ref={fileInputRef} type="file" onChange={onChange} className="sr-only" aria-hidden="true" />
 
-        {/* Drop zone */}
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="Drop a file here or press Enter to choose a file"
-          aria-describedby="demo-formats"
-          onClick={() => fileInputRef.current?.click()} // make the whole card open the chooser
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
-          }}
-          onDragEnter={() => setDragging(true)}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
+        {/* Demo card — now just links to /generate (change to /verify if you prefer) */}
+        <Link
+          href="/generate"
           className={[
-            "mt-3 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border p-4 sm:p-5 transition-colors cursor-pointer",
-            isDragging ? "border-emerald-300 bg-emerald-300/10" : "border-white/10 bg-white/5 hover:bg-white/10",
+            "mt-3 mx-auto block w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border p-4 sm:p-5 transition-colors",
+            "border-white/10 bg-white/5 hover:bg-white/10",
           ].join(" ")}
+          aria-label="Open the demo to protect a file"
         >
           <div className="mx-auto mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] tracking-wide text-slate-300">
             <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
             Demo
           </div>
           <div className="text-sm sm:text-[15px] text-slate-200">
-            <span className="font-semibold underline decoration-dotted underline-offset-4">Drop any file</span> to try —
-            or pick one.
+            <span className="font-semibold underline decoration-dotted underline-offset-4">Drop any file</span> to try — or
+            pick one.
           </div>
           <div id="demo-formats" className="mt-1.5 text-xs text-slate-400">
-            Private-first. Your file never leaves your device. <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
+            Private-first. Your file never leaves your device.{" "}
+            <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
           </div>
 
-          {/* Status (ARIA live) */}
+          {/* Optional status line (kept for when you re-enable in-hero verify) */}
           {status && (
             <p className="mt-2 text-xs text-slate-200/90" role="status" aria-live="polite">
               {status}
             </p>
           )}
 
-          {/* Sample file action */}
-          <button
-            type="button"
-            onClick={async () => {
-              setBusy(true);
-              setStatus("Verifying sample in your browser…");
-              await new Promise((r) => setTimeout(r, 800));
-              setBusy(false);
-              setStatus("Verified ✔ — sample file OK.");
-              bumpCounters();
-            }}
-            className="mt-2 text-xs text-slate-200/90 underline decoration-dotted underline-offset-4 hover:opacity-90"
-          >
+          <div className="mt-2 text-xs text-slate-200/90 underline decoration-dotted underline-offset-4">
             Try with a sample file →
-          </button>
-        </div>
+          </div>
+        </Link>
 
         {/* Live counters */}
         <div className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-300/90">
