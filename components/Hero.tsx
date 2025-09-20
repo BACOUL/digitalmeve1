@@ -1,4 +1,5 @@
-// components/Hero.tsx — v10 (EN · frozen spec · cleaned badges, no extra link)
+
+// components/Hero.tsx — v11 (EN · polish: spacing fix, en-US counter, mobile buttons)
 "use client";
 
 import Link from "next/link";
@@ -8,11 +9,12 @@ import { ShieldCheck, Radar, Sparkles, ArrowRight } from "lucide-react";
 const BASELINE_TOTAL = 23573; // credible starting number
 
 function formatNumber(n: number) {
-  return new Intl.NumberFormat(undefined).format(n);
+  // English (US) thousands separators
+  return new Intl.NumberFormat("en-US").format(n);
 }
 
 export default function Hero() {
-  // Live counter (simulated +5..+20 every 5 minutes; replace with /api/stats later)
+  // Live counter (simulated +5..+20 every 5 minutes; replace with real /api/stats later)
   const [totalDelta, setTotalDelta] = useState(0);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function Hero() {
     <section
       id="hero"
       aria-label="DigitalMeve — Invisible proof. Visible trust."
-      className="relative overflow-visible pb-[calc(128px+env(safe-area-inset-bottom))]"
+      className="relative overflow-visible pb-[calc(96px+env(safe-area-inset-bottom))] sm:pb-20"
     >
       {/* Background FX */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
@@ -42,7 +44,7 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-5 pt-20 sm:pt-24 pb-5 sm:pb-20 text-center">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-5 pt-20 sm:pt-24 pb-5 text-center">
         {/* Eyebrow */}
         <div
           className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur"
@@ -60,10 +62,9 @@ export default function Hero() {
           </span>
         </h1>
 
-        {/* Subheadline */}
+        {/* Subheadline (space fixed) */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
-          Every file becomes a universal proof of authenticity.
-          <br className="hidden sm:block" />
+          Every file becomes a universal proof of authenticity.{" "}
           Certify in seconds, verify anywhere — without ever sharing your data.
         </p>
 
@@ -72,16 +73,16 @@ export default function Hero() {
           <Link
             href="/generate"
             aria-label="Try for free — 5 certificates included per month"
-            className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+            className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 max-[360px]:w-full"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
             Try for free
           </Link>
 
-          <Link
+        <Link
             href="/verify"
             aria-label="Verify a document"
-            className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 max-[360px]:w-full"
           >
             <Radar aria-hidden className="h-[18px] w-[18px]" />
             Verify a document
