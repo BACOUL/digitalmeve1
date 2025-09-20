@@ -8,10 +8,10 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      aria-label="DigitalMeve — Invisible proof. Visible trust."
+      aria-label="DigitalMeve — Digital proof of your documents"
       className="relative overflow-hidden"
     >
-      {/* FX de fond */}
+      {/* Background FX */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="aurora aurora-1" />
         <div className="aurora aurora-2" />
@@ -21,54 +21,39 @@ export default function Hero() {
         <div className="absolute inset-x-0 top-0 h-12 bg-white/90 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       </div>
 
-      {/* Contenu */}
+      {/* Content */}
       <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-5 text-center sm:px-5 sm:pt-24 sm:pb-20">
-        {/* Eyebrow */}
-        <div
-          className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur"
-          role="note"
-        >
-          <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          THE .MEVE STANDARD · Privacy-first · Certified integrity
-        </div>
-
-        {/* Titre */}
-        <h1 className="mt-2 font-extrabold tracking-tight text-white leading-[1.12] text-[clamp(1.9rem,6vw,3.25rem)] sm:leading-[1.06] sm:text-6xl md:text-7xl">
-          Invisible proof.
-          {/* espace de sécurité si le span repasse inline un jour */}
-          {" "}
-          <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
-            Visible trust.
-          </span>
+        {/* Title */}
+        <h1 className="font-extrabold tracking-tight text-white leading-[1.12] text-[clamp(2rem,6vw,3.25rem)] sm:leading-[1.06] sm:text-6xl md:text-7xl">
+          The digital proof of your documents
         </h1>
 
-        {/* Sous-titre */}
+        {/* Subtitle */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
-          Protect any file with an invisible <span className="font-semibold">.MEVE</span> certificate — 100% private,
-          verified anywhere in seconds.
+          Certify, protect and timestamp any file — instantly, with full privacy.
         </p>
 
-        {/* CTAs (hiérarchie renforcée) */}
+        {/* CTAs */}
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5">
           <Link
             href="/generate"
-            aria-label="Get started for free — add a .MEVE certificate"
+            aria-label="Protect a file — add a .MEVE certificate"
             className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
-            Get started for free
+            Protect a file
           </Link>
           <Link
             href="/verify"
-            aria-label="Verify a document"
+            aria-label="Verify a file"
             className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <Radar aria-hidden className="h-[18px] w-[18px]" />
-            Verify a document
+            Verify a file
           </Link>
         </div>
 
-        {/* Mini demo (clarifiée) */}
+        {/* Mini demo */}
         <div
           role="button"
           tabIndex={0}
@@ -91,11 +76,12 @@ export default function Hero() {
             to try — or pick one.
           </div>
           <div id="demo-formats" className="mt-1.5 text-xs text-slate-400">
-            Your file never leaves your device. <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
+            Your file never leaves your device.{" "}
+            <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
           </div>
         </div>
 
-        {/* Badges (ghost/flat, présence visuelle réduite) */}
+        {/* Badges */}
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <Sparkles aria-hidden className="h-3.5 w-3.5 opacity-80" />
@@ -111,13 +97,13 @@ export default function Hero() {
           </span>
         </div>
 
-        {/* Micro-preuve (texte simple) */}
+        {/* Micro-proof */}
         <p className="mx-auto mt-2 max-w-xl text-[12.5px] text-slate-400">
           Open standard · 100% transparent · Verify anywhere in seconds
         </p>
       </div>
 
-      {/* séparateur */}
+      {/* Separator */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </section>
   );
