@@ -1,37 +1,57 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+// app/api/test-email/route.ts
+import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const to = req.query.to as string;
+export const runtime = "nodejs"; // important pour Nodemailer (pas edge)
+
+function makeTransport() {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) throw new Error("Missing SMTP_USER / SMTP_PASS");
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+}
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const to = url.searchParams.get("to");
 
   if (!to) {
-    return res.status(400).json({ error: "Missing 'to' query parameter" });
-  }
-
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    return res.status(500).json({ error: "Missing SMTP_USER / SMTP_PASS" });
+    return NextResponse.json(
+      { ok: false, error: "Add ?to=you@example.com" },
+      { status: 400 }
+    );
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const transporter = makeTransport();
+    const verifyRes = await transporter.verify();
 
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_FROM || process.env.SMTP_USER!,
       to,
-      subject: "Test email depuis Vercel",
-      text: "Ceci est un test SMTP envoyé depuis ton API hébergée !",
+      subject: "DigitalMeve • Test email",
+      html: `<p>✅ Test OK. Si vous voyez cet email, SMTP fonctionne.</p>`,
+      text: "Test OK",
     });
 
-    res.status(200).json({ success: true, messageId: info.messageId });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    return NextResponse.json({
+      ok: true,
+      verify: verifyRes,
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+      envelope: info.envelope,
+    });
+  } catch (e: any) {
+    console.error("test-email error:", e);
+    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
 }
