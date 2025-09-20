@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 type VerifyStatus = "ok" | "invalid" | "expired";
 
-/** Redirige vers /verify-email avec un query param status (+ email optionnel) */
+/** Redirige vers /verify-email avec ?status=... (+ email optionnel) */
 function redirectToVerifyPage(status: VerifyStatus, email?: string | null) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalmeve.com";
   const url = new URL(`${appUrl}/verify-email`);
@@ -15,94 +15,67 @@ function redirectToVerifyPage(status: VerifyStatus, email?: string | null) {
   return NextResponse.redirect(url.toString(), 302);
 }
 
-/** Vérifie le token et le “consomme” (delete) s’il est valide. */
-async function checkAndConsumeToken(
-  email: string,
-  token: string
-): Promise<VerifyStatus> {
+/** Vérifie et consomme un token (lookup par token uniquement). */
+async function checkAndConsumeTokenByToken(token: string): Promise<{status: VerifyStatus; email?: string | null}> {
   const record = await prisma.verificationToken.findFirst({
-    where: { email, token, type: "email_verification" },
-    select: { id: true, expiresAt: true, email: true },
+    where: { token, type: "email_verification" },
+    select: { id: true, email: true, expiresAt: true },
   });
 
-  if (!record) return "invalid";
+  if (!record) return { status: "invalid" };
 
   if (record.expiresAt && record.expiresAt.getTime() < Date.now()) {
-    await prisma.verificationToken
-      .delete({ where: { id: record.id } })
-      .catch(() => {});
-    return "expired";
+    // Token expiré → on le supprime
+    await prisma.verificationToken.delete({ where: { id: record.id } }).catch(() => {});
+    return { status: "expired", email: record.email };
   }
 
-  // Succès → supprime tous les tokens de ce type pour cet email
+  // Succès → on supprime tous les tokens de ce type pour cet email
   await prisma.verificationToken
-    .deleteMany({ where: { email, type: "email_verification" } })
+    .deleteMany({ where: { email: record.email, type: "email_verification" } })
     .catch(() => {});
-  return "ok";
+  return { status: "ok", email: record.email };
 }
 
-/** GET /api/auth/verify-email?token=...&email=... (utilisé par le lien d’email) */
+/** GET /api/auth/verify-email?token=...  (utilisé par le lien d’email) */
 export async function GET(req: NextRequest) {
   try {
     const token = req.nextUrl.searchParams.get("token")?.trim() || "";
-    const email =
-      req.nextUrl.searchParams.get("email")?.trim().toLowerCase() || "";
+    if (!token) return redirectToVerifyPage("invalid");
 
-    if (!token || !email) return redirectToVerifyPage("invalid");
-
-    const status = await checkAndConsumeToken(email, token);
-    return redirectToVerifyPage(status, email);
+    const { status, email } = await checkAndConsumeTokenByToken(token);
+    return redirectToVerifyPage(status, email || undefined);
   } catch (e) {
     console.error("verify-email GET error:", e);
     return redirectToVerifyPage("invalid");
   }
 }
 
-/** POST /api/auth/verify-email  (body: { email, token }) — renvoie JSON {status} */
+/** POST /api/auth/verify-email  (body: { token }) → { status } */
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
-    let email = "";
     let token = "";
 
     if (contentType.includes("application/json")) {
       const body = (await req.json().catch(() => ({}))) as any;
-      email = (body?.email || "").toString().trim().toLowerCase();
       token = (body?.token || "").toString().trim();
     } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
-      email = String(form.get("email") || "").trim().toLowerCase();
       token = String(form.get("token") || "").trim();
     } else {
       const body = (await req.json().catch(() => ({}))) as any;
-      email = (body?.email || "").toString().trim().toLowerCase();
       token = (body?.token || "").toString().trim();
     }
 
-    if (!email || !token) {
-      return NextResponse.json(
-        { status: "invalid" as VerifyStatus },
-        { status: 400 }
-      );
+    if (!token) {
+      return NextResponse.json({ status: "invalid" as VerifyStatus }, { status: 400 });
     }
 
-    const status = await checkAndConsumeToken(email, token);
+    const { status } = await checkAndConsumeTokenByToken(token);
     return NextResponse.json({ status }, { status: 200 });
   } catch (e) {
     console.error("verify-email POST error:", e);
-    return NextResponse.json(
-      { status: "invalid" as VerifyStatus },
-      { status: 500 }
-    );
+    return NextResponse.json({ status: "invalid" as VerifyStatus }, { status: 500 });
   }
-}
-
-/** (Présent pour homogénéité, même si non utilisé ici) */
-function escapeHtml(input: string) {
-  return input
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
