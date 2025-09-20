@@ -1,175 +1,146 @@
+// components/HowItWorks.tsx — v1 (world-class: simple, accessible, animated, no libs)
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { Upload, ShieldCheck, Download } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Upload, ShieldCheck, Radar } from "lucide-react";
 
 type Step = {
-  icon: React.ReactNode;
-  eyebrow: string;
+  icon: JSX.Element;
   title: string;
-  desc: string;
-  cta?: { href: string; label: string };
+  text: string;
 };
 
-const STEPS: Step[] = [
-  {
-    icon: <Upload className="h-6 w-6" />,
-    eyebrow: "Step 1",
-    title: "Drop your file",
-    desc: "Works with common formats; your file never leaves your device.",
-    cta: { href: "/generate", label: "Get started for free" },
-  },
-  {
-    icon: <ShieldCheck className="h-6 w-6" />,
-    eyebrow: "Step 2",
-    title: "Invisible proof + certificate",
-    desc: "We embed a lightweight, invisible proof and issue an official .MEVE certificate.",
-    cta: { href: "/generate", label: "Get started for free" },
-  },
-  {
-    icon: <Download className="h-6 w-6" />,
-    eyebrow: "Step 3",
-    title: "Share & verify anywhere",
-    desc: "Distribute your file and certificate. Anyone can confirm it in seconds.",
-    cta: { href: "/verify", label: "Verify a document" },
-  },
-];
-
 export default function HowItWorks() {
-  const lineRef = useRef<HTMLDivElement | null>(null);
+  const steps: Step[] = [
+    {
+      icon: <Upload className="h-6 w-6 opacity-90" aria-hidden />,
+      title: "Drop your file",
+      text: "Your file never leaves your device. Work privately in your browser.",
+    },
+    {
+      icon: <ShieldCheck className="h-6 w-6 opacity-90" aria-hidden />,
+      title: "Invisible .MEVE certificate added",
+      text: "SHA-256 fingerprint, timestamp, and issuer identity — fully self-contained.",
+    },
+    {
+      icon: <Radar className="h-6 w-6 opacity-90" aria-hidden />,
+      title: "Verify anywhere",
+      text: "Open standard. Anyone can verify in seconds — zero servers required.",
+    },
+  ];
+
+  // Reveal-on-scroll, no external libs, respects prefers-reduced-motion
+  const ref = useRef<HTMLElement | null>(null);
+  const [on, setOn] = useState(false);
 
   useEffect(() => {
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReduced) {
+      setOn(true);
+      return;
+    }
+    if (!ref.current) return;
+
     const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const el = e.target as HTMLElement;
-            const i = Number(el.dataset.index || 0);
-            el.classList.add("opacity-100", "translate-y-0");
-            el.style.transitionDelay = `${80 + i * 90}ms`;
-            io.unobserve(el);
-          }
-        });
-      },
-      { threshold: 0.18 }
+      ([e]) => e.isIntersecting && setOn(true),
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.12 }
     );
-    document.querySelectorAll<HTMLElement>(".hiw-step").forEach((el) => io.observe(el));
-
-    const ioLine = new IntersectionObserver(
-      (entries) => {
-        const ent = entries[0];
-        if (ent?.isIntersecting && lineRef.current) {
-          lineRef.current.style.width = "100%";
-          ioLine.disconnect();
-        }
-      },
-      { threshold: 0.25 }
-    );
-    if (lineRef.current) ioLine.observe(lineRef.current.parentElement as Element);
-
-    return () => {
-      io.disconnect();
-      ioLine.disconnect();
-    };
+    io.observe(ref.current);
+    return () => io.disconnect();
   }, []);
 
   return (
-    <section className="relative overflow-hidden px-4 py-16 sm:py-20">
-      {/* arrière-plan doux */}
+    <section
+      id="how-it-works"
+      ref={ref}
+      aria-label="How DigitalMeve works"
+      className="relative overflow-hidden px-4 py-12 sm:py-16"
+    >
+      {/* Subtle background veil to match Hero auroras */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-35"
         style={{
           background:
-            "radial-gradient(1000px 500px at 20% 0%, rgba(16,185,129,.12), transparent 60%), radial-gradient(900px 500px at 90% 20%, rgba(56,189,248,.10), transparent 60%)",
+            "radial-gradient(900px 420px at 12% -10%, rgba(16,185,129,.06), transparent 42%), radial-gradient(840px 360px at 88% 10%, rgba(56,189,248,.05), transparent 44%)",
         }}
       />
 
-      <div className="mx-auto max-w-6xl relative">
-        <div className="text-center">
-          <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-            3 steps · under 20s · same device
-          </p>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Proof in 3 steps
-          </h2>
-          <p className="sub mt-2 text-slate-400">
-            From file to certificate — in seconds.
-          </p>
+      <div className="relative mx-auto max-w-6xl">
+        {/* Eyebrow */}
+        <div className="mx-auto w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] tracking-wide text-slate-300 backdrop-blur">
+          HOW IT WORKS
         </div>
 
-        {/* ligne de progression */}
-        <div className="relative mt-10 hidden md:block">
-          <div className="absolute left-[10%] right-[10%] top-10 h-[2px] bg-white/5" />
-          <div
-            ref={lineRef}
-            className="absolute left-[10%] top-10 h-[2px] w-0 rounded-full transition-[width] duration-[1200ms] ease-out shadow-[0_0_15px_rgba(56,189,248,.3)]"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(16,185,129,.8), rgba(56,189,248,.8))",
-            }}
-          />
-        </div>
+        {/* Heading + subheading */}
+        <h2 className="mt-3 text-center text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+          3 simple steps to protect and verify any file.
+        </h2>
+        <p className="mx-auto mt-2 max-w-3xl text-center text-[15px] sm:text-[17px] text-[var(--fg-muted)]">
+          Invisible by design, universal by default — no storage, no accounts required to try.
+        </p>
 
-        {/* cartes */}
-        <div className="mt-6 grid gap-6 md:mt-10 md:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <article
+        {/* Steps */}
+        <ol
+          className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
+          aria-label="Steps"
+        >
+          {steps.map((s, i) => (
+            <li
               key={s.title}
-              data-index={i}
-              className="hiw-step group relative isolate opacity-0 translate-y-6 transition-all duration-700"
+              className={[
+                "group relative rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur",
+                "hover:bg-white/10 transition-colors",
+                // reveal micro-motion
+                "motion-safe:transform motion-safe:transition-all",
+                on ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3",
+                on ? `motion-safe:[transition-delay:${i * 90}ms]` : "",
+              ].join(" ")}
             >
-              <div className="rounded-2xl p-[1px] bg-gradient-to-br from-emerald-500/40 via-emerald-500/0 to-sky-500/40">
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-sky-500/20 text-emerald-300 ring-1 ring-white/10 transition group-hover:scale-105">
-                      {s.icon}
-                    </div>
-                    <span className="text-xs font-medium text-slate-400">{s.eyebrow}</span>
-                  </div>
-
-                  <h3 className="mt-3 text-xl font-bold tracking-tight">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{s.desc}</p>
-
-                  {s.cta && (
-                    <Link
-                      href={s.cta.href}
-                      className="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 hover:brightness-110"
-                    >
-                      {s.cta.label} <span aria-hidden>→</span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-
+              {/* Tiny halo */}
               <div
-                className="pointer-events-none absolute inset-0 -z-[1] rounded-2xl opacity-0 transition group-hover:opacity-100"
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-2xl"
                 style={{
-                  boxShadow:
-                    "0 20px 60px rgba(56,189,248,.08), 0 8px 30px rgba(16,185,129,.06)",
+                  background:
+                    "radial-gradient(60% 120% at 50% -20%, rgba(56,189,248,.06), transparent 60%)",
+                  mask:
+                    "linear-gradient(#000, #000) content-box, linear-gradient(#000, #000)",
+                  WebkitMask:
+                    "linear-gradient(#000, #000) content-box, linear-gradient(#000, #000)",
+                  padding: 1,
                 }}
               />
-            </article>
+              <div className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2 text-emerald-300">
+                {s.icon}
+              </div>
+              <h3 className="mt-3 font-semibold text-slate-100">
+                {i + 1}. {s.title}
+              </h3>
+              <p className="mt-1 text-sm text-slate-300/90">{s.text}</p>
+            </li>
           ))}
-        </div>
+        </ol>
 
-        {/* CTA bas */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+        {/* CTA row */}
+        <div className="mt-6 flex items-center justify-center">
           <Link
             href="/generate"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_30px_rgba(56,189,248,.25)] hover:brightness-105"
+            aria-label="Try DigitalMeve now"
+            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_rgba(56,189,248,.22)] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 max-[360px]:w-full"
           >
-            Get started for free
-          </Link>
-          <Link
-            href="/verify"
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
-          >
-            Verify a document
+            Try now
           </Link>
         </div>
+
+        {/* Micro-footnote */}
+        <p className="mt-3 text-center text-xs text-slate-400">
+          Files are processed on-device. Certificates are self-contained and verifiable anywhere.
+        </p>
       </div>
     </section>
   );
