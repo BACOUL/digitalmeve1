@@ -2,16 +2,16 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Radar, Sparkles, ArrowRight } from "lucide-react";
+import { ShieldCheck, Radar, Sparkles, Lock } from "lucide-react";
 
 export default function Hero() {
   return (
     <section
       id="hero"
-      aria-label="DigitalMeve — Invisible proof. Visible trust."
+      aria-label="DigitalMeve — Preuve invisible. Confiance visible."
       className="relative overflow-hidden"
     >
-      {/* FX de fond */}
+      {/* FX de fond (inchangé) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="aurora aurora-1" />
         <div className="aurora aurora-2" />
@@ -22,97 +22,58 @@ export default function Hero() {
       </div>
 
       {/* Contenu */}
-      <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-5 text-center sm:px-5 sm:pt-24 sm:pb-20">
-        {/* Eyebrow */}
-        <div
-          className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-bold tracking-wide text-slate-200 backdrop-blur"
-          role="note"
-        >
-          <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          THE .MEVE STANDARD · Privacy-first · Certified integrity
-        </div>
+      <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-12 text-center sm:px-5 sm:pt-24 sm:pb-20">
+        {/* (Eyebrow supprimé) */}
 
-        {/* Titre */}
+        {/* Titre (inchangé) */}
         <h1 className="mt-2 font-extrabold tracking-tight text-white leading-[1.12] text-[clamp(1.9rem,6vw,3.25rem)] sm:leading-[1.06] sm:text-6xl md:text-7xl">
-          Invisible proof.{" "}
+          Preuve invisible.
+          {" "}
           <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
-            Visible trust.
+            Confiance visible.
           </span>
         </h1>
 
-        {/* Sous-titre */}
+        {/* Nouveau sous-titre (FR) */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
-          Protect any file with an invisible <span className="font-semibold">.MEVE</span> certificate — 100% private,
-          verified anywhere in seconds.
+          Certifiez, protégez et horodatez n’importe quel fichier — instantanément, en toute confidentialité.
         </p>
 
-        {/* CTAs */}
-        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5">
+        {/* CTAs (inchangés) */}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
           <Link
             href="/generate"
-            aria-label="Get started for free — add a .MEVE certificate"
+            aria-label="Commencez gratuitement — ajouter un certificat .MEVE"
             className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
-            Get started for free
+            Commencez gratuitement
           </Link>
           <Link
             href="/verify"
-            aria-label="Verify a document"
+            aria-label="Vérifier un document"
             className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <Radar aria-hidden className="h-[18px] w-[18px]" />
-            Verify a document
+            Vérifier un document
           </Link>
         </div>
 
-        {/* Mini demo */}
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="Demo — try DigitalMeve"
-          aria-describedby="demo-formats"
-          className="mt-2.5 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-5 hover:bg-white/10 transition-colors cursor-pointer"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") window.location.assign("/generate");
-          }}
-          onClick={() => window.location.assign("/generate")}
-        >
-          <div className="mx-auto mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] tracking-wide text-slate-300">
-            <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Demo
-          </div>
-          <div className="text-sm sm:text-[15px] text-slate-200">
-            <span className="font-semibold underline decoration-dotted underline-offset-4">
-              Drop a file
-            </span>{" "}
-            to try — or pick one.
-          </div>
-          <div id="demo-formats" className="mt-1.5 text-xs text-slate-400">
-            Your file never leaves your device. <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+        {/* Badges (3 items, dont “Aucun stockage”) */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <Sparkles aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Privacy by design
+            Confidentialité dès la conception
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <ShieldCheck aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Certificate included
+            Certificat inclus
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80 max-[360px]:hidden">
-            <ArrowRight aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            All file types
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
+            <Lock aria-hidden className="h-3.5 w-3.5 opacity-80" />
+            Aucun stockage — vos fichiers restent sur votre appareil
           </span>
         </div>
-
-        {/* Micro-preuve */}
-        <p className="mx-auto mt-2 max-w-xl text-[12.5px] text-slate-400">
-          Open standard · 100% transparent · Verify anywhere in seconds
-        </p>
       </div>
 
       {/* séparateur */}
