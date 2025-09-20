@@ -1,4 +1,4 @@
-// components/Hero.tsx — v8 (no demo card, clean CTAs, generous mobile padding)
+// components/Hero.tsx — v9 (EN · frozen spec · CTAs + live counter + direct link)
 "use client";
 
 import Link from "next/link";
@@ -12,15 +12,13 @@ function formatNumber(n: number) {
 }
 
 export default function Hero() {
-  // Counters (temporary simulated growth every 5 min; remove when backend is ready)
+  // Live counter (simulated +5..+20 every 5 minutes; replace with /api/stats later)
   const [totalDelta, setTotalDelta] = useState(0);
-  const [today, setToday] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => {
       const bump = Math.floor(Math.random() * 16) + 5; // 5–20
       setTotalDelta((x) => x + bump);
-      setToday((t) => t + bump);
     }, 300_000); // 5 min
     return () => clearInterval(id);
   }, []);
@@ -31,7 +29,6 @@ export default function Hero() {
     <section
       id="hero"
       aria-label="DigitalMeve — Invisible proof. Visible trust."
-      // Pas de min-height forcée, pas d'overflow qui coupe; padding bas généreux + safe area
       className="relative overflow-visible pb-[calc(128px+env(safe-area-inset-bottom))]"
     >
       {/* Background FX */}
@@ -63,55 +60,63 @@ export default function Hero() {
           </span>
         </h1>
 
-        {/* Subheadline */}
+        {/* Subheadline (2 lines) */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
-          Protect & verify any file in seconds — <span className="font-semibold">right on your device</span>. Your file
-          never leaves your browser.
+          Every file becomes a universal proof of authenticity.
+          <br className="hidden sm:block" />
+          Certify in seconds, verify anywhere — without ever sharing your data.
         </p>
 
-        {/* CTAs — simples, sans doublon */}
+        {/* CTAs — frozen */}
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
           <Link
-            href="/verify"
-            aria-label="Verify a document"
+            href="/generate"
+            aria-label="Try for free — 5 certificates included per month"
             className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
-            Verify a document
+            Try for free
           </Link>
 
           <Link
-            href="/generate"
-            aria-label="Protect a file (.MEVE)"
+            href="/verify"
+            aria-label="Verify a document"
             className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <Radar aria-hidden className="h-[18px] w-[18px]" />
-            Protect a file (.MEVE)
+            Verify a document
           </Link>
         </div>
 
-        {/* Live counters */}
+        {/* Social proof (live counter) */}
         <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-300/90">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
-            {formatNumber(totalDisplay)} files verified
+            {formatNumber(totalDisplay)} documents already certified
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
-            {formatNumber(today)} today
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
-            On-device only
+            No storage — 100% on-device
           </span>
         </div>
 
-        {/* Badges */}
+        {/* Direct creation link */}
+        <div className="mt-3">
+          <Link
+            href="/generate"
+            className="text-[13px] text-slate-200 underline decoration-dotted underline-offset-4 hover:opacity-90"
+          >
+            📄 Create your certified DigitalMeve document for free
+          </Link>
+        </div>
+
+        {/* Trust badges */}
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <Sparkles aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Privacy by design
+            GDPR & Privacy by design
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
             <ShieldCheck aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Certificate included
+            Certificate included (PDF)
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80 max-[360px]:hidden">
             <ArrowRight aria-hidden className="h-3.5 w-3.5 opacity-80" />
@@ -119,17 +124,9 @@ export default function Hero() {
           </span>
         </div>
 
-        {/* Trust bar */}
-        <div className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-3 text-[12.5px] text-slate-300">
-          <span className="opacity-90">Trusted by creators & teams</span>
-          <Link href="/early-partner" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
-            Become an early partner →
-          </Link>
-        </div>
-
         {/* Micro-proof */}
         <p className="mx-auto mt-2 max-w-xl text-[12.5px] text-slate-400">
-          Open standard · 100% transparent · Verify anywhere in seconds
+          Open standard · Verify anywhere in seconds
         </p>
       </div>
 
