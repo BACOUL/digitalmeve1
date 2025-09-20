@@ -1,15 +1,12 @@
 // prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // Si tu as la variable d’intégration Neon, garde celle-ci :
-  url = env("POSTGRES_PRISMA_URL")
-  // Sinon, commente la ligne au-dessus et dé-commente celle-ci :
-  // url = env("DATABASE_URL")
+  // adapte à ton projet : DATABASE_URL ou POSTGRES_PRISMA_URL
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -17,15 +14,13 @@ model User {
   email         String    @unique
   password      String
   role          String    @default("INDIVIDUAL")
-
-  // Vérification d'email
+  // ⬇️ on utilise bien un booléen + une date, mappés aux colonnes SQL
   emailVerified Boolean   @default(false) @map("email_verified")
   verifiedAt    DateTime?                 @map("verified_at")
 
   createdAt     DateTime  @default(now()) @map("createdat")
   updatedAt     DateTime  @updatedAt      @map("updatedat")
 
-  @@index([emailVerified])
   @@map("User")
 }
 
@@ -36,7 +31,7 @@ model VerificationToken {
   type       String
   expiresAt  DateTime  @map("expires_at")
   ip         String?
-  createdAt  DateTime  @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now())    @map("created_at")
 
   @@index([email])
   @@index([type])
