@@ -6,8 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Utilise la variable d'env présente sur Vercel/Neon
-  // (si tu préfères POSTGRES_PRISMA_URL, remplace par env("POSTGRES_PRISMA_URL")).
+  // si ton projet lit POSTGRES_PRISMA_URL à la place, remplace ci-dessous par env("POSTGRES_PRISMA_URL")
   url      = env("DATABASE_URL")
 }
 
@@ -16,7 +15,7 @@ model User {
   email         String    @unique
   password      String
   role          String    @default("INDIVIDUAL")
-  emailVerified DateTime?                       // ← ajouté pour marquer l'email vérifié
+  emailVerified DateTime?            // ← important
   createdAt     DateTime  @default(now()) @map("createdat")
   updatedAt     DateTime  @updatedAt      @map("updatedat")
 
