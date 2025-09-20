@@ -6,8 +6,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // si ton projet lit POSTGRES_PRISMA_URL à la place, remplace ci-dessous par env("POSTGRES_PRISMA_URL")
-  url      = env("DATABASE_URL")
+  // Si tu as la variable d’intégration Neon, garde celle-ci :
+  url = env("POSTGRES_PRISMA_URL")
+  // Sinon, commente la ligne au-dessus et dé-commente celle-ci :
+  // url = env("DATABASE_URL")
 }
 
 model User {
@@ -15,21 +17,26 @@ model User {
   email         String    @unique
   password      String
   role          String    @default("INDIVIDUAL")
-  emailVerified DateTime?            // ← important
+
+  // Vérification d'email
+  emailVerified Boolean   @default(false) @map("email_verified")
+  verifiedAt    DateTime?                 @map("verified_at")
+
   createdAt     DateTime  @default(now()) @map("createdat")
   updatedAt     DateTime  @updatedAt      @map("updatedat")
 
+  @@index([emailVerified])
   @@map("User")
 }
 
 model VerificationToken {
-  id        Int      @id @default(autoincrement())
-  email     String
-  token     String   @unique
-  type      String
-  expiresAt DateTime @map("expires_at")
-  ip        String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id         Int       @id @default(autoincrement())
+  email      String
+  token      String    @unique
+  type       String
+  expiresAt  DateTime  @map("expires_at")
+  ip         String?
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([email])
   @@index([type])
