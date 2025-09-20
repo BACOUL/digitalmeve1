@@ -1,17 +1,16 @@
-// components/Hero.tsx
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Radar, Sparkles, ArrowRight } from "lucide-react";
+import { ShieldCheck, Radar } from "lucide-react";
 
 export default function Hero() {
   return (
     <section
       id="hero"
-      aria-label="DigitalMeve — Digital proof of your documents"
+      aria-label="DigitalMeve — The digital proof of your documents"
       className="relative overflow-hidden"
     >
-      {/* Background FX */}
+      {/* Background FX (conserve tes classes utilitaires si elles existent) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="aurora aurora-1" />
         <div className="aurora aurora-2" />
@@ -22,19 +21,19 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-5 text-center sm:px-5 sm:pt-24 sm:pb-20">
-        {/* Title */}
-        <h1 className="font-extrabold tracking-tight text-white leading-[1.12] text-[clamp(2rem,6vw,3.25rem)] sm:leading-[1.06] sm:text-6xl md:text-7xl">
+      <div className="relative mx-auto max-w-5xl px-4 pt-14 pb-12 text-center sm:pt-24 sm:pb-16">
+        {/* Headline */}
+        <h1 className="font-extrabold tracking-tight text-white leading-[1.12] text-[clamp(1.9rem,6vw,3.25rem)] sm:text-6xl md:text-[64px] sm:leading-[1.05]">
           The digital proof of your documents
         </h1>
 
-        {/* Subtitle */}
+        {/* Subhead */}
         <p className="mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)]">
           Certify, protect and timestamp any file — instantly, with full privacy.
         </p>
 
         {/* CTAs */}
-        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
           <Link
             href="/generate"
             aria-label="Protect a file — add a .MEVE certificate"
@@ -43,6 +42,7 @@ export default function Hero() {
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
             Protect a file
           </Link>
+
           <Link
             href="/verify"
             aria-label="Verify a file"
@@ -53,57 +53,13 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Mini demo */}
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="Demo — try DigitalMeve"
-          aria-describedby="demo-formats"
-          className="mt-2.5 mx-auto w-full max-w-md sm:max-w-xl rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-5 hover:bg-white/10 transition-colors cursor-pointer"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") window.location.assign("/generate");
-          }}
-          onClick={() => window.location.assign("/generate")}
-        >
-          <div className="mx-auto mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] tracking-wide text-slate-300">
-            <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Demo
-          </div>
-          <div className="text-sm sm:text-[15px] text-slate-200">
-            <span className="font-semibold underline decoration-dotted underline-offset-4">
-              Drop a file
-            </span>{" "}
-            to try — or pick one.
-          </div>
-          <div id="demo-formats" className="mt-1.5 text-xs text-slate-400">
-            Your file never leaves your device.{" "}
-            <span className="opacity-80">PNG, JPG, PDF, DOCX, ZIP…</span>
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
-            <Sparkles aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Privacy by design
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80">
-            <ShieldCheck aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            Certificate included
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5 text-xs text-slate-300/80 max-[360px]:hidden">
-            <ArrowRight aria-hidden className="h-3.5 w-3.5 opacity-80" />
-            All file types
-          </span>
-        </div>
-
         {/* Micro-proof */}
-        <p className="mx-auto mt-2 max-w-xl text-[12.5px] text-slate-400">
+        <p className="mx-auto mt-4 max-w-xl text-[12.5px] text-slate-400">
           Open standard · 100% transparent · Verify anywhere in seconds
         </p>
       </div>
 
-      {/* Separator */}
+      {/* Divider */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </section>
   );
