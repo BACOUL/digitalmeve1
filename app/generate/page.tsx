@@ -1,5 +1,9 @@
-// app/generate/page.tsx — Generate v1 (PDF/DOCX complets, autres formats en attente)
-// Aligne wording, quota mensuel, nom de sortie *.certified.ext, et prépare l’élargissement de formats.
+// app/generate/page.tsx — Generate (modern UI, consistent with site)
+// - No Issuer (paid-only)
+// - Simple wording (non-tech)
+// - Original file lightly stamped + invisible proof + HTML certificate
+// - Monthly quota (5/month) with soft anti-abuse (via checkFreeQuota)
+// - PDF/DOCX fully supported; other formats show "coming soon"
 
 "use client";
 
@@ -14,19 +18,21 @@ import {
   Clipboard,
   XCircle,
   Info,
+  CheckCircle2,
 } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
-// EXISTANTS (PDF/DOCX)
+
+// Existing libs (PDF/DOCX)
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
 import { sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";
 import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx";
-// QUOTA
+
+// Quota (monthly)
 import LimitModal from "@/components/LimitModal";
 import { checkFreeQuota } from "@/lib/quotaClient";
 
-// --- Détection étendue (placeholders pour futurs adaptateurs) ---
 type Kind =
   | "pdf" | "docx" | "pptx" | "xlsx"
   | "png" | "jpg" | "jpeg"
@@ -54,17 +60,14 @@ type GenResult = {
   whenISO?: string;
 };
 
-type Toast =
-  | { type: "success" | "error" | "info"; message: string }
-  | null;
+type Toast = { type: "success" | "error" | "info"; message: string } | null;
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
-  const [issuer, setIssuer] = useState("");
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<GenResult>({});
 
-  // quota (mensuel)
+  // Quota (monthly)
   const [limitOpen, setLimitOpen] = useState(false);
   const [quotaCount, setQuotaCount] = useState<number | undefined>();
   const [quotaResetDay, setQuotaResetDay] = useState<string | undefined>();
@@ -101,7 +104,7 @@ export default function GeneratePage() {
     };
 
     try {
-      // Quota check (mensuel)
+      // Monthly quota (5) — server sees only an anonymous token, never your file
       try {
         const q = await checkFreeQuota();
         setQuotaRemaining(q.remaining);
@@ -129,7 +132,7 @@ export default function GeneratePage() {
       let outName = file.name;
 
       if (k === "pdf") {
-        // Filigrane visible + marqueurs invisibles (PDF)
+        // Visible watermark + Invisible proof (hash + DM key)
         const watermarkedAB = await addWatermarkPdf(file);
         const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
         if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
@@ -137,21 +140,16 @@ export default function GeneratePage() {
         outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
           hash,
           ts: whenISO,
-          issuer: issuer || undefined,
+          // issuer reserved for paid → not included here
         });
         outName = toCertifiedName(file.name, "pdf");
-
       } else if (k === "docx") {
-        // Marqueurs invisibles (DOCX) + watermark selon implémentation
         outBlob = await embedInvisibleWatermarkDocx(file, {
           hash,
           ts: whenISO,
-          issuer: issuer || undefined,
         });
         outName = toCertifiedName(file.name, "docx");
-
       } else {
-        // Les autres formats seront ajoutés Pack 3
         return end({
           type: "info",
           message: "This file type will be supported soon (PNG, JPEG, MP4, ZIP, PPTX, XLSX). Try PDF or DOCX for now.",
@@ -162,8 +160,7 @@ export default function GeneratePage() {
 
       const elapsed = performance.now() - t0;
       const pretty = elapsed < 1000 ? `${Math.round(elapsed)} ms` : `${(elapsed / 1000).toFixed(1)} s`;
-
-      end({ type: "success", message: `Certificate generated in ${pretty}` });
+      end({ type: "success", message: `All set in ${pretty}` });
     } catch (e) {
       console.error(e);
       end({ type: "error", message: humanError(e) });
@@ -193,191 +190,234 @@ export default function GeneratePage() {
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     const base = res.fileName.replace(/\.(pdf|docx)$/i, "");
-    exportHtmlCertificate(base, res.hash, res.whenISO, issuer);
+    exportHtmlCertificate(base, res.hash, res.whenISO /* free: no named issuer */);
   }
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]" aria-busy={busy}>
-      <p aria-live="polite" className="sr-only">
-        {busy ? "Generating…" : res.hash ? "Certificate ready." : "Idle"}
-      </p>
+    <main className="min-h-screen bg-slate-950 text-slate-100" aria-busy={busy}>
+      {/* Subtle background FX to match hero */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-40">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(900px 400px at 20% 0%, rgba(16,185,129,.06), transparent 45%), radial-gradient(600px 300px at 90% 20%, rgba(56,189,248,.06), transparent 45%)",
+          }}
+        />
+      </div>
 
-      <section className="border-b border-[var(--border)] bg-[var(--bg)]">
-        <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Generate a <span className="text-[var(--accent-1)]">DigitalMeve</span> certificate
-          </h1>
-
-          <p className="mt-3 text-lg text-[var(--fg-muted)]">
-            We add a <strong>visible watermark</strong>, an <strong>invisible SHA-256</strong> and an{" "}
-            <strong>invisible DigitalMeve key</strong> to your file. You also get a portable{" "}
-            <strong>HTML certificate</strong>.
-          </p>
-
-          <p className="mt-2 text-sm text-[var(--fg-muted)]">
-            No upload — everything runs in your browser.
-          </p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-            <span className="badge">
-              <Lock className="h-4 w-4 text-[var(--accent-1)]" />
-              On-device · No storage
-            </span>
-            <span className="badge">
-              <ShieldCheck className="h-4 w-4 text-[var(--accent-2)]" />
-              Certificate included (HTML)
-            </span>
-            {file && kind !== "other" && (
-              <span className="badge">
-                <FileCheck2 className="h-4 w-4 text-[var(--accent-1)]" />
-                {kind.toUpperCase()} detected
+      {/* Header block */}
+      <section className="border-b border-white/10">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-18">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Protect your file & get a{" "}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-sky-400">
+                DigitalMeve certificate
               </span>
-            )}
-            {typeof quotaRemaining === "number" && (
-              <span
-                className="badge"
-                title={quotaResetDay ? `Resets on ${quotaResetDay}` : undefined}
-              >
-                {quotaRemaining} free left this month
-              </span>
-            )}
-          </div>
-
-          <div className="mt-8">
-            <FileDropzone
-              onSelected={setFile}
-              label="Choose a file"
-              maxSizeMB={10}
-              hint="Drag & drop or tap to select. Max 10 MB."
-              accept={[
-                ".pdf", "application/pdf",
-                ".docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                ".pptx","application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                ".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                ".png","image/png",
-                ".jpg",".jpeg","image/jpeg",
-                ".mp4","video/mp4",
-                ".zip","application/zip",
-              ].join(",")}
-              role="button"
-              tabIndex={0}
-            />
-          </div>
-
-          <div className="mt-5">
-            <label htmlFor="issuer" className="block text-sm font-medium">
-              Issuer (optional)
-            </label>
-            <input
-              id="issuer"
-              type="text"
-              placeholder="e.g. alice@company.com"
-              value={issuer}
-              onChange={(e) => setIssuer(e.target.value)}
-              className="input mt-1"
-              autoComplete="off"
-            />
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--fg-muted)]">
-              <Info className="h-3.5 w-3.5" /> Included in the certificate. Paid plans show the name/email or company.
+            </h1>
+            <p className="mt-4 max-w-3xl mx-auto text-lg text-slate-300/90">
+              A tiny visible mark is added to your file, plus an invisible proof. You also receive a portable
+              <span className="font-semibold"> HTML certificate</span>. Everything runs on your device.
             </p>
-          </div>
 
-          <div className="mt-6 flex items-center gap-3">
-            <button
-              onClick={onGenerate}
-              disabled={!file || busy}
-              className="btn btn-primary shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-disabled={!file || busy}
-              aria-label="Generate certificate"
-            >
-              <Upload className="h-5 w-5" />
-              {busy ? "Generating…" : "Generate certificate"}
-            </button>
-
-            <button
-              onClick={onCancel}
-              disabled={!busy}
-              className="btn btn-ghost"
-              aria-disabled={!busy}
-              aria-label="Cancel generation"
-            >
-              <XCircle className="h-5 w-5" />
-              Cancel
-            </button>
-          </div>
-
-          {res.outBlob && res.fileName && (
-            <div className="mt-8 card p-5">
-              <h2 className="text-lg font-semibold">Certificate / Integrity</h2>
-
-              <dl className="mt-3 grid gap-y-1 text-sm">
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">File</dt>
-                  <dd className="col-span-2 sm:col-span-3 break-words">{res.fileName}</dd>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">Date / Time</dt>
-                  <dd className="col-span-2 sm:col-span-3">
-                    {new Date(res.whenISO!).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" })} —{" "}
-                    {new Date(res.whenISO!).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-                  </dd>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">Issuer</dt>
-                  <dd className="col-span-2 sm:col-span-3">{issuer || "—"}</dd>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  <dt className="text-[var(--fg-muted)]">SHA-256</dt>
-                  <dd className="col-span-2 sm:col-span-3 break-words">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <code className="text-xs break-all">{res.hash}</code>
-                      <button
-                        onClick={() => {
-                          if (res.hash) {
-                            navigator.clipboard.writeText(res.hash);
-                            setToast({ type: "info", message: "SHA-256 copied to clipboard" });
-                            setTimeout(() => setToast(null), 2000);
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
-                        aria-label="Copy SHA-256 to clipboard"
-                      >
-                        <Clipboard className="h-3.5 w-3.5" /> Copy
-                      </button>
-                      {!busy && (
-                        <Link href={`/verify?hash=${encodeURIComponent(res.hash || "")}`} className="btn btn-ghost text-xs">
-                          Verify now →
-                        </Link>
-                      )}
-                    </div>
-                  </dd>
-                </div>
-              </dl>
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button onClick={downloadFile} className="btn" aria-label="Download certified file">
-                  <FileDown className="h-4 w-4 text-[var(--accent-1)]" />
-                  Download certified file
-                </button>
-                <button onClick={downloadCert} className="btn" aria-label="Download HTML certificate">
-                  <FileCheck2 className="h-4 w-4 text-[var(--accent-2)]" />
-                  Download certificate (.html)
-                </button>
-              </div>
-
-              <p className="mt-3 text-xs text-[var(--fg-muted)]">
-                The file downloads directly to preserve integrity. The certificate may briefly open in a new tab so you can save it.
-              </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <Lock className="h-4 w-4 text-emerald-300" />
+                On-device · No storage
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <ShieldCheck className="h-4 w-4 text-sky-300" />
+                Certificate included (HTML)
+              </span>
+              {typeof quotaRemaining === "number" && (
+                <span
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
+                  title={quotaResetDay ? `Resets on ${quotaResetDay}` : undefined}
+                >
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                  {quotaRemaining} free left this month
+                </span>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </section>
 
+      {/* Main grid */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+          {/* Left — main card */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-6 backdrop-blur">
+            <h2 className="text-lg font-semibold">1) Choose your file</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Supported today: <strong>PDF</strong> and <strong>DOCX</strong>. More formats are coming soon.
+            </p>
+
+            <div className="mt-4">
+              <FileDropzone
+                onSelected={setFile}
+                label="Drag & drop or click to select"
+                maxSizeMB={10}
+                hint="Max 10 MB • PDF or DOCX for now"
+                accept={[
+                  ".pdf", "application/pdf",
+                  ".docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  ".pptx","application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                  ".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                  ".png","image/png",
+                  ".jpg",".jpeg","image/jpeg",
+                  ".mp4","video/mp4",
+                  ".zip","application/zip",
+                ].join(",")}
+                role="button"
+                tabIndex={0}
+              />
+            </div>
+
+            {!!file && (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs">
+                <FileCheck2 className="h-4 w-4 text-emerald-300" />
+                {kind !== "other" ? `${kind.toUpperCase()} detected` : "File selected"}
+              </div>
+            )}
+
+            <h2 className="mt-6 text-lg font-semibold">2) Protect & certify</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              We lightly stamp your file and add an invisible proof. You also get a shareable HTML certificate.
+            </p>
+
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={onGenerate}
+                disabled={!file || busy}
+                className="btn btn-primary shadow-[0_0_40px_rgba(56,189,248,.18)] disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-disabled={!file || busy}
+                aria-label="Protect file & generate certificate"
+              >
+                <Upload className="h-5 w-5" />
+                {busy ? "Working…" : "Protect file & generate certificate"}
+              </button>
+
+              <button
+                onClick={onCancel}
+                disabled={!busy}
+                className="btn btn-ghost"
+                aria-disabled={!busy}
+                aria-label="Cancel"
+              >
+                <XCircle className="h-5 w-5" />
+                Cancel
+              </button>
+            </div>
+
+            {/* Result card */}
+            {res.outBlob && res.fileName && (
+              <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                <h3 className="text-base font-semibold">Certificate & Integrity</h3>
+
+                <dl className="mt-3 grid gap-y-1 text-sm">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <dt className="text-slate-400">File</dt>
+                    <dd className="col-span-2 sm:col-span-3 break-words">{res.fileName}</dd>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <dt className="text-slate-400">Date / Time</dt>
+                    <dd className="col-span-2 sm:col-span-3">
+                      {new Date(res.whenISO!).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" })} —{" "}
+                      {new Date(res.whenISO!).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                    </dd>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <dt className="text-slate-400">SHA-256</dt>
+                    <dd className="col-span-2 sm:col-span-3 break-words">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <code className="text-xs break-all">{res.hash}</code>
+                        <button
+                          onClick={() => {
+                            if (res.hash) {
+                              navigator.clipboard.writeText(res.hash);
+                              setToast({ type: "info", message: "SHA-256 copied to clipboard" });
+                              setTimeout(() => setToast(null), 2000);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
+                          aria-label="Copy SHA-256 to clipboard"
+                        >
+                          <Clipboard className="h-3.5 w-3.5" /> Copy
+                        </button>
+                        {!busy && (
+                          <Link href={`/verify?hash=${encodeURIComponent(res.hash || "")}`} className="btn btn-ghost text-xs">
+                            Verify now →
+                          </Link>
+                        )}
+                      </div>
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <button onClick={downloadFile} className="btn" aria-label="Download certified file">
+                    <FileDown className="h-4 w-4 text-emerald-300" />
+                    Download certified file
+                  </button>
+                  <button onClick={downloadCert} className="btn" aria-label="Download HTML certificate">
+                    <FileCheck2 className="h-4 w-4 text-sky-300" />
+                    Download certificate (.html)
+                  </button>
+                </div>
+
+                <p className="mt-3 text-xs text-slate-400">
+                  Your file stays fully readable. The HTML certificate is a tiny, portable summary you can share.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Right — side info / trust panel */}
+          <aside className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-6 backdrop-blur h-fit lg:sticky lg:top-20">
+            <h3 className="text-base font-semibold">What you’ll get</h3>
+            <ul className="mt-3 space-y-2 text-sm text-slate-300/90">
+              {[
+                "Your original file, lightly stamped",
+                "An invisible proof inside (privacy-first)",
+                "A portable HTML certificate",
+                "Verification in seconds — anywhere",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-300" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+
+            <h4 className="mt-6 text-sm font-semibold">Free plan</h4>
+            <p className="mt-2 text-sm text-slate-400">
+              Up to <strong>5 files/month</strong>, no account required. We use a small anonymous token to prevent abuse — your files never leave your device.
+            </p>
+
+            <div className="mt-4 text-sm">
+              <Link href="/pricing" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
+                Need more? See plans →
+              </Link>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs text-slate-400">
+                For named certificates (your name/email) or company-issued certificates (private key + DNS),
+                upgrade to a paid plan.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {/* Toasts */}
       {toast && (
         <div
           role="status"
           className={`fixed bottom-4 left-1/2 -translate-x-1/2 rounded-md px-3 py-2 text-white text-sm shadow-lg ${
-            toast.type === "error" ? "bg-red-600/90" : toast.type === "success" ? "bg-emerald-600/90" : "bg-sky-600/90"
+            toast.type === "error" ? "bg-rose-600/90" : toast.type === "success" ? "bg-emerald-600/90" : "bg-sky-600/90"
           }`}
         >
           {toast.message}
@@ -387,4 +427,4 @@ export default function GeneratePage() {
       <LimitModal open={limitOpen} onClose={() => setLimitOpen(false)} count={quotaCount} resetDayUTC={quotaResetDay} />
     </main>
   );
-    }
+      }
