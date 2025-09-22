@@ -1,39 +1,30 @@
-// app/generate/page.tsx — v2 (Premium UX: mesh + parallax, morphing button, sticky aside)
-// - No Issuer (paid-only)
-// - Simple wording, consistent with site (subtle visible mark + invisible proof)
-// - Original file lightly stamped + invisible proof + HTML certificate
-// - Monthly quota (5) with anti-abuse note (anonymous token)
-// - PDF/DOCX supported today; others “coming soon” message
-// - A11y: aria-live, prefers-reduced-motion guards
+// app/generate/page.tsx — v2.1 Safe (dynamic imports to prevent runtime crash)
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
-  Upload,
-  FileDown,
-  FileCheck2,
-  ShieldCheck,
-  Lock,
-  Clipboard,
-  XCircle,
-  CheckCircle2,
-  BadgeCheck,
-  AlertCircle,
+  Upload, FileDown, FileCheck2, ShieldCheck, Lock,
+  Clipboard, XCircle, CheckCircle2, BadgeCheck, AlertCircle,
 } from "lucide-react";
-import FileDropzone from "@/components/FileDropzone";
 
-// Existing libs (PDF/DOCX)
-import { addWatermarkPdf } from "@/lib/watermark-pdf";
-import { sha256Hex } from "@/lib/meve-xmp";
-import { exportHtmlCertificate } from "@/lib/certificate-html";
-import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";
-import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx";
+// ⚠️ Charge la Dropzone en dynamique (pas d’évaluation au top-level)
+const FileDropzone = dynamic(() => import("@/components/FileDropzone"), {
+  ssr: false,
+  // petit fallback de politesse
+  loading: () => (
+    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.05] p-6 text-sm text-slate-400">
+      Loading…
+    </div>
+  ),
+});
 
-// Quota (monthly)
+// Quota (mensuel)
 import LimitModal from "@/components/LimitModal";
 import { checkFreeQuota } from "@/lib/quotaClient";
 
+// Types
 type Kind =
   | "pdf" | "docx" | "pptx" | "xlsx"
   | "png" | "jpg" | "jpeg"
@@ -66,26 +57,24 @@ function guessKind(f: File): Kind {
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<number>(0); // UI-only progress (morph)
+  const [progress, setProgress] = useState<number>(0);
   const [res, setRes] = useState<GenResult>({});
 
-  // Quota (monthly)
+  // Quota (mensuel)
   const [limitOpen, setLimitOpen] = useState(false);
   const [quotaCount, setQuotaCount] = useState<number | undefined>();
   const [quotaResetDay, setQuotaResetDay] = useState<string | undefined>();
   const [quotaRemaining, setQuotaRemaining] = useState<number | undefined>();
 
-  // UX bits
+  // UX
   const [toast, setToast] = useState<Toast>(null);
   const [dragOver, setDragOver] = useState(false);
   const [showSkeleton, setShowSkeleton] = useState(false);
 
   const cancelRef = useRef(false);
-  const headerRef = useRef<HTMLDivElement | null>(null);
-
   const kind = useMemo<Kind>(() => (file ? guessKind(file) : "other"), [file]);
 
-  // Mesh parallax (scroll)
+  // Parallaxe & animations
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY || 0;
@@ -97,7 +86,6 @@ export default function GeneratePage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Intersection animations (stagger) — respect reduced motion
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const io = new IntersectionObserver(
@@ -121,14 +109,12 @@ export default function GeneratePage() {
     return () => io.disconnect();
   }, []);
 
-  // Skeleton if heavy processing (>300ms)
   useEffect(() => {
     if (!busy) { setShowSkeleton(false); return; }
     const id = setTimeout(() => setShowSkeleton(true), 300);
     return () => clearTimeout(id);
   }, [busy]);
 
-  // Dropzone hover handlers
   const onDZEnter = () => setDragOver(true);
   const onDZLeave = () => setDragOver(false);
 
@@ -157,25 +143,20 @@ export default function GeneratePage() {
       setProgress(100);
       if (opts) setToast(opts);
       if (opts) setTimeout(() => setToast(null), 3500);
-      // return focus to the button for a11y
-      try {
-        const btn = document.getElementById("btn-protect");
-        btn?.focus();
-      } catch {}
+      try { document.getElementById("btn-protect")?.focus(); } catch {}
     };
 
-    // UI progress ticker (fake but pleasing)
+    // barre de progression “soft”
     const progId = window.setInterval(() => {
       setProgress((p) => {
         if (!busy) return p;
-        // slow approach to ~85% until completion
         const next = p < 85 ? p + Math.max(1, (85 - p) * 0.08) : p + 0.5;
         return Math.min(95, next);
       });
     }, 120);
 
     try {
-      // Monthly quota (5) — server sees only an anonymous token, never your file
+      // Quota (5/mois)
       try {
         const q = await checkFreeQuota();
         setQuotaRemaining(q.remaining);
@@ -197,7 +178,13 @@ export default function GeneratePage() {
       }
 
       const k = kind;
-      const t0 = performance.now();
+
+      // ⚠️ Imports lourds **au moment du clic** (évite les erreurs au rendu)
+      const [{ sha256Hex }, { exportHtmlCertificate }] = await Promise.all([
+        import("@/lib/meve-xmp"),
+        import("@/lib/certificate-html"),
+      ]);
+
       const hash = await sha256Hex(file);
       const whenISO = new Date().toISOString();
 
@@ -210,7 +197,9 @@ export default function GeneratePage() {
       let outName = file.name;
 
       if (k === "pdf") {
-        // Visible watermark + Invisible proof (hash + DM key)
+        const [{ addWatermarkPdf }] = await Promise.all([import("@/lib/watermark-pdf")]);
+        const [{ embedInvisibleWatermarkPdf }] = await Promise.all([import("@/lib/wm/pdf")]);
+
         const watermarkedAB = await addWatermarkPdf(file);
         const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
 
@@ -219,17 +208,11 @@ export default function GeneratePage() {
           return end({ type: "info", message: "Cancelled." });
         }
 
-        outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
-          hash,
-          ts: whenISO,
-          // issuer reserved for paid → not included here
-        });
+        outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, { hash, ts: whenISO });
         outName = toCertifiedName(file.name, "pdf");
       } else if (k === "docx") {
-        outBlob = await embedInvisibleWatermarkDocx(file, {
-          hash,
-          ts: whenISO,
-        });
+        const [{ embedInvisibleWatermarkDocx }] = await Promise.all([import("@/lib/wm/docx")]);
+        outBlob = await embedInvisibleWatermarkDocx(file, { hash, ts: whenISO });
         outName = toCertifiedName(file.name, "docx");
       } else {
         window.clearInterval(progId);
@@ -241,12 +224,9 @@ export default function GeneratePage() {
 
       setRes({ outBlob, fileName: outName, hash, whenISO });
 
-      const elapsed = performance.now() - t0;
-      const pretty = elapsed < 1000 ? `${Math.round(elapsed)} ms` : `${(elapsed / 1000).toFixed(1)} s`;
-
       window.clearInterval(progId);
       setProgress(100);
-      end({ type: "success", message: `Certificate ready in ${pretty}` });
+      end({ type: "success", message: `Certificate ready` });
     } catch (e) {
       console.error(e);
       window.clearInterval(progId);
@@ -274,10 +254,11 @@ export default function GeneratePage() {
     (window as any).requestIdleCallback ? (window as any).requestIdleCallback(revoke) : setTimeout(revoke, 15000);
   }
 
-  function downloadCert() {
+  async function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     const base = res.fileName.replace(/\.(pdf|docx)$/i, "");
-    // 4th argument = issuer (free tier: empty string)
+    const { exportHtmlCertificate } = await import("@/lib/certificate-html");
+    // free-tier: issuer vide
     exportHtmlCertificate(base, res.hash!, res.whenISO!, "");
   }
 
@@ -305,16 +286,16 @@ export default function GeneratePage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 relative" aria-busy={busy}>
-      {/* Background mesh + parallax */}
+      {/* Fond premium */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="mesh-layer layer1" />
         <div className="mesh-layer layer2" />
         <div className="vignette" />
       </div>
 
-      {/* Header block */}
+      {/* En-tête */}
       <section className="border-b border-white/10">
-        <div ref={headerRef} className="mx-auto max-w-6xl px-4 py-16 sm:py-20 text-center">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl io">
             Protect your file & get a{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-sky-400">
@@ -329,10 +310,10 @@ export default function GeneratePage() {
         </div>
       </section>
 
-      {/* Main grid */}
+      {/* Grille principale */}
       <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <div className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
-          {/* Left — main card */}
+          {/* Carte action */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-6 backdrop-blur io">
             <h2 className="text-lg font-semibold">1) Choose your file</h2>
             <p className="mt-1 text-sm text-slate-400">
@@ -349,13 +330,10 @@ export default function GeneratePage() {
                 accept={[
                   ".pdf","application/pdf",
                   ".docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                  // accept shows more to educate, but we guard in logic:
                   ".pptx","application/vnd.openxmlformats-officedocument.presentationml.presentation",
                   ".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                  ".png","image/png",
-                  ".jpg",".jpeg","image/jpeg",
-                  ".mp4","video/mp4",
-                  ".zip","application/zip",
+                  ".png","image/png",".jpg",".jpeg","image/jpeg",
+                  ".mp4","video/mp4",".zip","application/zip",
                 ].join(",")}
                 role="button"
                 tabIndex={0}
@@ -382,11 +360,10 @@ export default function GeneratePage() {
                 id="btn-protect"
                 onClick={onGenerate}
                 disabled={!file || busy}
-                className={`relative btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden`}
+                className="relative btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
                 aria-disabled={!file || busy}
                 aria-label="Protect file & generate certificate"
               >
-                {/* Progress bar top (morph) */}
                 {busy && (
                   <span
                     className="absolute left-0 top-0 h-[2px] bg-white/70"
@@ -394,7 +371,6 @@ export default function GeneratePage() {
                     aria-hidden
                   />
                 )}
-                {/* Icon + Label morph */}
                 <span className="inline-flex items-center gap-2">
                   {busy ? (
                     <>
@@ -422,7 +398,6 @@ export default function GeneratePage() {
               </button>
             </div>
 
-            {/* Skeleton while processing (if >300ms) */}
             {busy && showSkeleton && !res.outBlob && (
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <div className="skeleton h-4 w-40" />
@@ -434,7 +409,6 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* Result card */}
             {res.outBlob && res.fileName && (
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 io">
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300">
@@ -497,7 +471,6 @@ export default function GeneratePage() {
                   Your file stays fully readable. The HTML certificate is a tiny, portable summary you can share.
                 </p>
 
-                {/* Decorative ribbon */}
                 <div aria-hidden className="pointer-events-none absolute -right-2 top-2 rotate-12">
                   <span className="inline-block rounded px-2 py-0.5 text-[10px] font-semibold text-emerald-300/90 ring-1 ring-emerald-400/30 bg-emerald-400/10">
                     .MEVE inside
@@ -506,7 +479,6 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* Error helper (inline) */}
             {!busy && !res.outBlob && file && kind === "other" && (
               <div className="mt-6 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
                 <div className="flex items-start gap-2">
@@ -517,7 +489,7 @@ export default function GeneratePage() {
             )}
           </div>
 
-          {/* Right — side info / trust panel */}
+          {/* Aside confiance */}
           <aside className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-6 backdrop-blur h-fit lg:sticky lg:top-24 io">
             <h3 className="text-base font-semibold">What you’ll get</h3>
             <ul className="mt-3 space-y-2 text-sm text-slate-300/90">
@@ -556,10 +528,7 @@ export default function GeneratePage() {
       </section>
 
       {/* Toasts */}
-      <div
-        aria-live="polite"
-        className="pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[60]"
-      >
+      <div aria-live="polite" className="pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[60]">
         {toast && (
           <div
             role="status"
@@ -574,15 +543,11 @@ export default function GeneratePage() {
 
       <LimitModal open={Boolean(limitOpen)} onClose={() => setLimitOpen(false)} count={quotaCount} resetDayUTC={quotaResetDay} />
 
-      {/* Local styles (mesh, parallax, skeleton, IO transitions) */}
+      {/* Styles locaux */}
       <style jsx global>{`
         .mesh-layer {
-          position: absolute;
-          inset: 0;
-          background-size: 200% 200%;
-          filter: blur(30px);
-          opacity: 0.55;
-          will-change: transform, background-position;
+          position: absolute; inset: 0; background-size: 200% 200%;
+          filter: blur(30px); opacity: 0.55; will-change: transform, background-position;
           animation: meshMove 20s ease-in-out infinite alternate;
         }
         .layer1 {
@@ -599,20 +564,14 @@ export default function GeneratePage() {
           mix-blend-mode: screen;
         }
         .vignette {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
+          position: absolute; inset: 0; pointer-events: none;
           background: radial-gradient(80% 80% at 50% 20%, transparent 0%, transparent 55%, rgba(0,0,0,0.35) 100%);
         }
-        @keyframes meshMove {
-          0% { background-position: 0% 0%; }
-          100% { background-position: 100% 100%; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .mesh-layer { animation: none !important; }
-        }
+        @keyframes meshMove { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
+        @media (prefers-reduced-motion: reduce) { .mesh-layer { animation: none !important; } }
 
-        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06)); background-size: 200% 100%; animation: sk 1.2s ease-in-out infinite; border-radius: 8px; }
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+          background-size: 200% 100%; animation: sk 1.2s ease-in-out infinite; border-radius: 8px; }
         @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
         .io { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease, filter .7s ease; }
@@ -620,4 +579,4 @@ export default function GeneratePage() {
       `}</style>
     </main>
   );
-          }
+    }
