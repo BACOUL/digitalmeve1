@@ -1,4 +1,4 @@
-// app/generate/page.tsx — Generate (modern UI, no Issuer, 5/mois, build fix for exportHtmlCertificate)
+// app/generate/page.tsx — Generate (modern UI, no Issuer, 5/mois, build fix with empty string)
 "use client";
 
 import { useMemo, useRef, useState } from "react";
@@ -196,8 +196,8 @@ export default function GeneratePage() {
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     const base = res.fileName.replace(/\.(pdf|docx)$/i, "");
-    // Build fix: exportHtmlCertificate attend 4 arguments → passer undefined pour l’issuer (free)
-    exportHtmlCertificate(base, res.hash!, res.whenISO!, undefined);
+    // 4ᵉ argument requis (issuer) → chaîne vide pour le palier gratuit
+    exportHtmlCertificate(base, res.hash!, res.whenISO!, "");
   }
 
   return (
@@ -431,7 +431,12 @@ export default function GeneratePage() {
         </div>
       )}
 
-      <LimitModal open={limitOpen} onClose={() => setLimitOpen(false)} count={quotaCount} resetDayUTC={quotaResetDay} />
+      <LimitModal open={openFix(limitOpen)} onClose={() => setLimitOpen(false)} count={quotaCount} resetDayUTC={quotaResetDay} />
     </main>
   );
-      }
+}
+
+/** Small runtime guard: Vercel sometimes renders during hydration with undefined props */
+function openFix(v: boolean | undefined) {
+  return Boolean(v);
+    }
