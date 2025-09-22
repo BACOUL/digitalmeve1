@@ -1,10 +1,4 @@
-// app/generate/page.tsx — Generate (modern UI, consistent with site)
-// - No Issuer (paid-only)
-// - Simple wording (non-tech)
-// - Original file lightly stamped + invisible proof + HTML certificate
-// - Monthly quota (5/month) with soft anti-abuse (via checkFreeQuota)
-// - PDF/DOCX fully supported; other formats show "coming soon"
-
+// app/generate/page.tsx — Generate (modern UI, no Issuer, 5/mois, build fix for exportHtmlCertificate)
 "use client";
 
 import { useMemo, useRef, useState } from "react";
@@ -43,9 +37,18 @@ function guessKindFromNameAndType(f: File): Kind {
   const name = (f.name || "").toLowerCase();
   const mt = (f.type || "").toLowerCase();
   if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
-  if (mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || name.endsWith(".docx")) return "docx";
-  if (mt === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || name.endsWith(".pptx")) return "pptx";
-  if (mt === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || name.endsWith(".xlsx")) return "xlsx";
+  if (
+    mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    name.endsWith(".docx")
+  ) return "docx";
+  if (
+    mt === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+    name.endsWith(".pptx")
+  ) return "pptx";
+  if (
+    mt === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    name.endsWith(".xlsx")
+  ) return "xlsx";
   if (mt.startsWith("image/png") || name.endsWith(".png")) return "png";
   if (mt.startsWith("image/jpeg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) return "jpeg";
   if (mt.startsWith("video/mp4") || name.endsWith(".mp4")) return "mp4";
@@ -143,12 +146,15 @@ export default function GeneratePage() {
           // issuer reserved for paid → not included here
         });
         outName = toCertifiedName(file.name, "pdf");
+
       } else if (k === "docx") {
         outBlob = await embedInvisibleWatermarkDocx(file, {
           hash,
           ts: whenISO,
+          // issuer reserved for paid → not included here
         });
         outName = toCertifiedName(file.name, "docx");
+
       } else {
         return end({
           type: "info",
@@ -190,7 +196,8 @@ export default function GeneratePage() {
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     const base = res.fileName.replace(/\.(pdf|docx)$/i, "");
-    exportHtmlCertificate(base, res.hash, res.whenISO /* free: no named issuer */);
+    // Build fix: exportHtmlCertificate attend 4 arguments → passer undefined pour l’issuer (free)
+    exportHtmlCertificate(base, res.hash!, res.whenISO!, undefined);
   }
 
   return (
