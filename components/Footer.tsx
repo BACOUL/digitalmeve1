@@ -1,13 +1,15 @@
-// components/Footer.tsx
+// components/Footer.tsx — v3 (aligned routes, GitHub docs, a11y, dark theme)
 "use client";
 
 import Link from "next/link";
 
 export default function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-[var(--bg)] text-[var(--fg)] border-t border-white/10">
+    <footer className="bg-slate-950 text-slate-100 border-t border-white/10">
       <div className="mx-auto max-w-6xl px-4 py-12">
-        {/* Grille centrale (dark) */}
+        {/* Grid */}
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Branding */}
           <div>
@@ -24,120 +26,92 @@ export default function Footer() {
               </span>
             </Link>
             <p className="mt-3 text-sm text-slate-400">
-              Proof your documents in seconds. Invisible, portable, secure.
+              Invisible proof. Visible trust. Protect & verify files with on-device certification.
             </p>
             <p className="mt-2 text-xs text-slate-500">
               No storage • In-browser • Verifiable anywhere
             </p>
           </div>
 
-          {/* Explore (évite la redite avec le header) */}
-          <div>
+          {/* Explore */}
+          <nav aria-label="Explore">
             <h4 className="text-sm font-semibold text-white">Explore</h4>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li>
-                <Link href="/generate" className="hover:text-white">
-                  Protect a file
-                </Link>
-              </li>
-              <li>
-                <Link href="/verify" className="hover:text-white">
-                  Verify a document
-                </Link>
-              </li>
-              <li>
-                <Link href="/#how-it-works" className="hover:text-white">
-                  How it works
-                </Link>
-              </li>
-              <li>
-                <Link href="/use-cases" className="hover:text-white">
-                  Use cases
-                </Link>
-              </li>
+              <li><Link href="/generate" className="hover:text-white">Protect a file</Link></li>
+              <li><Link href="/verify" className="hover:text-white">Verify a document</Link></li>
+              <li><Link href="/individuals" className="hover:text-white">For Individuals</Link></li>
+              <li><Link href="/professionals" className="hover:text-white">For Professionals</Link></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Resources */}
-          <div>
+          {/* Resources (site ↔ GitHub) */}
+          <nav aria-label="Resources">
             <h4 className="text-sm font-semibold text-white">Resources</h4>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
+              <li><Link href="/docs" className="hover:text-white">Standard</Link></li>
+              <li><Link href="/security" className="hover:text-white">Security</Link></li>
+              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
+              <li><Link href="/roadmap" className="hover:text-white">Roadmap</Link></li>
+              <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
               <li>
-                <Link href="/developers" className="hover:text-white">
-                  Developers
-                </Link>
-              </li>
-              <li>
-                <Link href="/security" className="hover:text-white">
-                  Security
-                </Link>
-              </li>
-              <li>
-                <Link href="/status" className="hover:text-white">
-                  Status
-                </Link>
-              </li>
-              <li>
-                <Link href="/changelog" className="hover:text-white">
-                  Changelog
-                </Link>
+                <a
+                  href="https://github.com/BACOUL/Digitalmeve-standard-"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white"
+                  aria-label="Open GitHub repository in a new tab"
+                >
+                  GitHub
+                </a>
               </li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Company + Legal (sans doublon) */}
+          {/* Company + Legal */}
           <div>
-            <h4 className="text-sm font-semibold text-white">Company</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li>
-                <Link href="/about" className="hover:text-white">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white">
-                  Contact
-                </Link>
-              </li>
-            </ul>
+            <nav aria-label="Company">
+              <h4 className="text-sm font-semibold text-white">Company</h4>
+              <ul className="mt-3 space-y-2 text-sm text-slate-400">
+                <li>
+                  <a
+                    href="mailto:support@digitalmeve.org"
+                    className="underline hover:text-white"
+                    aria-label="Contact support via email"
+                  >
+                    support@digitalmeve.org
+                  </a>
+                </li>
+                <li>
+                  <Link href="/partners" className="hover:text-white">
+                    Partners
+                  </Link>
+                </li>
+              </ul>
+            </nav>
 
-            <h4 className="mt-6 text-sm font-semibold text-white">Legal</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li>
-                <Link href="/terms" className="hover:text-white">
-                  Terms
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:text-white">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="/cookies" className="hover:text-white">
-                  Cookies
-                </Link>
-              </li>
-            </ul>
-
-            {/* Support direct */}
-            <p className="mt-4 text-xs text-slate-500">
-              Support:{" "}
-              <a
-                href="mailto:support@digitalmeve.com"
-                className="underline hover:text-white"
-              >
-                support@digitalmeve.com
-              </a>
-            </p>
+            <nav aria-label="Legal" className="mt-6">
+              <h4 className="text-sm font-semibold text-white">Legal</h4>
+              <ul className="mt-3 space-y-2 text-sm text-slate-400">
+                <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
+                <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
+                <li><Link href="/refunds" className="hover:text-white">Refund Policy</Link></li>
+                <li><Link href="/cookies" className="hover:text-white">Cookies</Link></li>
+              </ul>
+            </nav>
           </div>
         </div>
 
-        {/* Badge blanc premium en bas */}
-        <div className="mt-12 flex justify-center">
+        {/* Bottom bar */}
+        <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <div className="rounded-full bg-white px-5 py-2 text-xs font-semibold text-slate-900 shadow-sm">
-            © {new Date().getFullYear()} DigitalMeve
+            © {year} DigitalMeve
           </div>
+          <p className="text-xs text-slate-500">
+            Security reports →{" "}
+            <Link href="/security" className="underline hover:text-white">
+              Responsible Disclosure
+            </Link>
+          </p>
         </div>
       </div>
     </footer>
