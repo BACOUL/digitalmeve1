@@ -1,377 +1,332 @@
+// app/professionals/page.tsx — Professionals (enterprise-grade, aligned with GitHub & site)
+"use client";
+
 import Link from "next/link";
 import {
-  Briefcase,
-  ShieldCheck,
-  Zap,
-  Layers,
   ArrowRight,
-  CheckCircle2,
+  ShieldCheck,
   Lock,
-  ServerCog,
-  GlobeLock,
-  FileCode2,
-  LineChart,
+  Globe,
+  KeyRound,
+  Fingerprint,
+  FileCheck2,
+  Building2,
+  CheckCircle2,
+  ServerOff,
 } from "lucide-react";
 
-export default function BusinessPage() {
+export default function ProfessionalsPage() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
-      {/* Hero */}
-      <section className="border-b border-[var(--border)] bg-[var(--bg)]">
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      {/* HERO */}
+      <section className="border-b border-white/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs ring-1 ring-white/10">
-            <Briefcase className="h-3.5 w-3.5" />
-            For Business
-          </div>
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Scale trust —{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">
-              at enterprise speed
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Trust at scale for{" "}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-sky-400">
+              teams & businesses
             </span>
           </h1>
-          <p className="mt-4 mx-auto max-w-3xl text-lg text-[var(--fg-muted)]">
-            Integrate invisible <strong>.MEVE</strong> proof at scale with APIs, dashboards,
-            and compliance controls. Secure, fast, and built for teams of any size.
+          <p className="mt-4 max-w-3xl mx-auto text-lg text-slate-300/90">
+            Issue enterprise-grade certificates with a{" "}
+            <strong>private key</strong>, bind them to your{" "}
+            <strong>DNS domain</strong>, and verify anywhere in seconds. All processing
+            runs in the browser — <strong>no storage</strong>, no vendor lock-in.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/contact" className="btn btn-primary inline-flex items-center gap-2">
-              Contact sales <ArrowRight className="h-4 w-4" />
+            <Link href="/pricing#professional" className="btn btn-primary inline-flex items-center gap-2">
+              View pricing <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/developers" className="btn btn-ghost inline-flex items-center gap-2">
-              Explore docs
+            <Link href="/generate" className="btn btn-outline inline-flex items-center gap-2">
+              Try with a file
             </Link>
-          </div>
-
-          {/* At-a-glance strip (nouveau) */}
-          <div className="mt-8 grid gap-3 sm:grid-cols-3 text-xs text-[var(--fg-muted)]">
-            <div className="rounded-xl ring-1 ring-white/10 bg-white/5 px-3 py-2">
-              <span className="font-medium text-white">99.9%+ SLA</span> — verification endpoints
-            </div>
-            <div className="rounded-xl ring-1 ring-white/10 bg-white/5 px-3 py-2">
-              <span className="font-medium text-white">&lt; 50 ms</span> typical per-doc processing
-            </div>
-            <div className="rounded-xl ring-1 ring-white/10 bg-white/5 px-3 py-2">
-              <span className="font-medium text-white">Hash-only</span> option (no content)
-            </div>
+            <Link href="/verify" className="btn btn-outline inline-flex items-center gap-2">
+              Verify a document
+            </Link>
           </div>
 
           {/* Trust badges */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs">
-            <span className="badge">
-              <ShieldCheck className="h-4 w-4 text-[var(--accent-2)]" />
-              Compliance ready
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <KeyRound className="h-4 w-4 text-emerald-300" />
+              Enterprise private key
             </span>
-            <span className="badge">
-              <Lock className="h-4 w-4 text-[var(--accent-1)]" />
-              Hash-only option
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <Globe className="h-4 w-4 text-sky-300" />
+              DNS domain binding
             </span>
-            <span className="badge">
-              <ServerCog className="h-4 w-4 text-[var(--accent-2)]" />
-              Webhooks & audit logs
-            </span>
-            <span className="badge">
-              <GlobeLock className="h-4 w-4 text-[var(--accent-1)]" />
-              Region pinning / SSO
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <ShieldCheck className="h-4 w-4 text-emerald-300" />
+              Certificate included (HTML)
             </span>
           </div>
         </div>
       </section>
 
-      {/* Key Features */}
+      {/* WHY (EXEC / TECH) */}
       <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-2xl font-semibold text-center">Built for teams, developers, and enterprises</h2>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Feature
-            icon={<Briefcase className="h-6 w-6 text-[var(--accent-2)]" />}
-            title="Team dashboard"
-            desc="Monitor usage, manage roles, track verification at scale."
-          />
-          <Feature
-            icon={<Layers className="h-6 w-6 text-[var(--accent-1)]" />}
-            title="APIs & SDKs"
-            desc="Clean REST/SDKs, bulk tools, and webhooks to fit your pipeline."
-          />
-          <Feature
-            icon={<Zap className="h-6 w-6 text-amber-400" />}
-            title="Fast & concurrent"
-            desc="High throughput with safe concurrency for large batches."
-          />
-          <Feature
-            icon={<ShieldCheck className="h-6 w-6 text-[var(--accent-2)]" />}
-            title="Security & SSO"
-            desc="SAML/SSO, SCIM, audit logs, and scoped keys for least privilege."
-          />
-          <Feature
-            icon={<GlobeLock className="h-6 w-6 text-[var(--accent-1)]" />}
-            title="Region pinning"
-            desc="Choose cloud regions or on-prem options for sensitive workloads."
-          />
-          <Feature
-            icon={<FileCode2 className="h-6 w-6 text-[var(--accent-2)]" />}
-            title="Developer-first"
-            desc="Copy-paste starters, examples, and a 5-minute quickstart."
-          />
+        <div className="grid gap-6 sm:grid-cols-3">
+          {[
+            {
+              icon: <KeyRound className="h-7 w-7 text-emerald-300" />,
+              title: "Signed by your company",
+              desc: "Certificates are issued with your enterprise private key — recipients immediately see your legal entity as issuer.",
+            },
+            {
+              icon: <Globe className="h-7 w-7 text-sky-300" />,
+              title: "DNS binding for trust",
+              desc: "Link verification to your domain (e.g., company.com) with a public record. No opaque servers required.",
+            },
+            {
+              icon: <Lock className="h-7 w-7 text-emerald-300" />,
+              title: "Privacy-first by design",
+              desc: "On-device processing. Files never leave the browser. No storage, no tracking, no lock-in.",
+            },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="mb-3">{icon}</div>
+              <h3 className="text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm text-slate-300/90">{desc}</p>
+            </div>
+          ))}
         </div>
-
-        {/* Stats */}
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
-          <Stat label="< 50 ms" hint="Typical per-doc processing budget in browser or edge." />
-          <Stat label="99.9%+" hint="Targeted uptime for verification endpoints." />
-          <Stat label="Zero content" hint="Hash-only option keeps your data private." />
+        <div className="mt-8 text-center text-sm">
+          <Link href="/security" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
+            Read the security model
+          </Link>{" "}
+          <span className="text-slate-500">·</span>{" "}
+          <Link href="/docs" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
+            Read the standard
+          </Link>
         </div>
       </section>
 
-      {/* Build fast */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-[var(--border)]">
-        <div className="grid items-center gap-8 lg:grid-cols-2">
-          <div className="order-2 lg:order-1">
-            <h3 className="text-xl font-semibold">Integrate in minutes</h3>
-            <p className="mt-2 text-[var(--fg-muted)]">
-              Ship a pilot quickly with our SDKs and examples. Add proof, verify anywhere,
-              and keep documents readable and portable.
-            </p>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-[var(--accent-1)]" />
-                Bulk verification & webhooks
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-[var(--accent-1)]" />
-                Sandbox & staging keys
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-[var(--accent-1)]" />
-                Hash-only mode (no file upload)
-              </li>
+      {/* HOW IT WORKS (BUSINESS) */}
+      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
+        <h2 className="text-2xl font-semibold text-center">How it works for businesses</h2>
+        <ol className="mt-10 grid gap-6 sm:grid-cols-3">
+          {[
+            {
+              step: "1",
+              title: "Issue",
+              icon: <Fingerprint className="h-6 w-6 text-emerald-300" />,
+              desc: (
+                <>
+                  Generate on-device: add a <strong>visible watermark</strong>, an{" "}
+                  <strong>invisible SHA-256</strong> fingerprint and an{" "}
+                  <strong>invisible DigitalMeve key</strong>. Certificate HTML is created and
+                  names your company as the issuer.
+                </>
+              ),
+            },
+            {
+              step: "2",
+              title: "Bind",
+              icon: <Globe className="h-6 w-6 text-sky-300" />,
+              desc: (
+                <>
+                  Bind your <strong>DNS domain</strong> to your public verification record. Clients can confirm
+                  authenticity against your domain — independently.
+                </>
+              ),
+            },
+            {
+              step: "3",
+              title: "Verify",
+              icon: <ShieldCheck className="h-6 w-6 text-emerald-300" />,
+              desc: (
+                <>
+                  Recipients drag & drop the file at <code>/verify</code>. Validation runs in the browser —{" "}
+                  <strong>no servers</strong>, no uploads.
+                </>
+              ),
+            },
+          ].map(({ step, title, icon, desc }) => (
+            <li key={step} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-semibold">
+                {step}
+              </div>
+              <div className="mb-2">{icon}</div>
+              <h3 className="text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm text-slate-300/90">{desc}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* USE CASES */}
+      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
+        <h2 className="text-2xl font-semibold text-center">Where businesses use DigitalMeve</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          {[
+            {
+              icon: <Building2 className="h-7 w-7 text-emerald-300" />,
+              title: "Contracts & invoices",
+              desc: "Certify agreements and billing documents with enterprise identity.",
+            },
+            {
+              icon: <FileCheck2 className="h-7 w-7 text-sky-300" />,
+              title: "Reports & certificates",
+              desc: "Issue audit reports, compliance confirmations, HR letters.",
+            },
+            {
+              icon: <ServerOff className="h-7 w-7 text-emerald-300" />,
+              title: "No-server workflows",
+              desc: "Embed proofs in-browser; verify anywhere without central services.",
+            },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="mb-3">{icon}</div>
+              <h3 className="text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm text-slate-300/90">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PRICING (mirror of PRICING.md) */}
+      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
+        <h2 className="text-2xl font-semibold text-center">Professional plan</h2>
+        <p className="mt-3 text-center text-slate-300/90">
+          Unlimited certifications with enterprise identity and DNS binding.
+        </p>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2">
+          {/* Free (for teams to try) */}
+          <div className="relative rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold">Free</h3>
+            <p className="mt-1 text-3xl font-bold">€0</p>
+            <p className="mt-2 text-sm text-slate-400">Evaluate the standard. No account required.</p>
+            <ul className="mt-4 space-y-1 text-sm">
+              {[
+                "5 files / month",
+                "Visible watermark",
+                "Invisible SHA-256 + DigitalMeve key",
+                "On-device processing · No storage",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" /> {f}
+                </li>
+              ))}
             </ul>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/developers" className="btn btn-ghost inline-flex items-center gap-2">
-                Explore docs
-              </Link>
-              <Link href="/contact" className="btn inline-flex items-center gap-2">
-                Talk to an engineer <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+            <Link href="/generate" className="mt-6 inline-flex w-full justify-center rounded-xl ring-1 ring-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5">
+              Get started free
+            </Link>
           </div>
 
-          <div className="order-1 lg:order-2">
-            <div className="card p-5">
-              <div className="flex items-center gap-2">
-                <LineChart className="h-5 w-5 text-[var(--accent-2)]" />
-                <h4 className="font-semibold">Observability</h4>
-              </div>
-              <p className="mt-2 text-sm text-[var(--fg-muted)]">
-                Track generation/verification, latency percentiles, and error budgets with
-                privacy-first analytics. No document content ever leaves your control.
-              </p>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-xl ring-1 ring-[var(--border)] p-3">
-                  <p className="text-xs text-[var(--fg-muted)]">p95 latency</p>
-                  <p className="mt-1 text-lg font-semibold">42 ms</p>
-                </div>
-                <div className="rounded-xl ring-1 ring-[var(--border)] p-3">
-                  <p className="text-xs text-[var(--fg-muted)]">tamper rate</p>
-                  <p className="mt-1 text-lg font-semibold">0.02%</p>
-                </div>
-                <div className="rounded-xl ring-1 ring-[var(--border)] p-3">
-                  <p className="text-xs text-[var(--fg-muted)]">SLA</p>
-                  <p className="mt-1 text-lg font-semibold">99.9%+</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs text-[var(--fg-muted)]">
-                Example metrics. Actual performance depends on file size, network, and region.
-              </p>
-            </div>
+          {/* Professional */}
+          <div className="relative rounded-2xl border border-emerald-400/40 bg-white/5 p-6 shadow-[0_0_30px_rgba(16,185,129,.08)]">
+            <span className="absolute -top-3 right-4 inline-flex items-center rounded-full bg-gradient-to-r from-emerald-500 to-sky-500 px-2.5 py-1 text-xs font-medium text-white shadow">
+              Recommended
+            </span>
+            <h3 className="text-lg font-semibold">Professional</h3>
+            <p className="mt-1 text-3xl font-bold">
+              €29.90 <span className="ml-1 align-middle text-sm font-normal text-slate-400">/ month · or €299/year</span>
+            </p>
+            <p className="mt-2 text-sm text-slate-400">Unlimited certifications with enterprise identity.</p>
+            <ul className="mt-4 space-y-1 text-sm">
+              {[
+                "Unlimited files · Priority checks",
+                "Enterprise private key (per org)",
+                "DNS binding (domain-level trust)",
+                "Certificates naming your company (HTML)",
+                "Optional branded watermark",
+                "Support & onboarding",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" /> {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/pricing#professional"
+              className="mt-6 inline-flex w-full justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow hover:brightness-105"
+            >
+              Subscribe
+            </Link>
+            <p className="mt-3 text-xs text-slate-500 text-center">
+              Secure payments via Stripe · Pricing adapts by country · Cancel anytime
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Trust & Compliance */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-[var(--border)]">
-        <h3 className="text-xl font-semibold text-center">Security, privacy, and compliance</h3>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Trust title="SAML/SSO & SCIM" desc="Centralized identity, least-privilege access, and off-boarding at scale." />
-          <Trust title="Region pinning" desc="Choose EU/US regions or on-prem deployment options." />
-          <Trust title="Audit & webhooks" desc="Immutable audit logs and reliable, signed webhooks." />
-          <Trust title="DPA & SLAs" desc="Data Processing Addendum and enterprise-grade SLAs." />
-          <Trust title="Key management" desc="Scoped API keys, rotation guidance, and IP allow-lists." />
-          <Trust title="No content by default" desc="Hash-only mode keeps your data private by design." />
+      {/* COMPLIANCE */}
+      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
+        <h2 className="text-2xl font-semibold text-center">Security & Compliance</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          {[
+            { title: "GDPR (EU)", desc: "Privacy by design. No storage or tracking; on-device processing." },
+            { title: "CCPA (US-CA)", desc: "Transparent data handling with user control and opt-out." },
+            { title: "PCI DSS / PSD2", desc: "Payments processed by Stripe; card data never touches our servers." },
+          ].map(({ title, desc }) => (
+            <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+              <h3 className="text-base font-semibold">{title}</h3>
+              <p className="mt-2 text-sm text-slate-300/90">{desc}</p>
+            </div>
+          ))}
         </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="business-pricing" className="mx-auto max-w-6xl px-4 py-16 border-t border-[var(--border)]">
-        <h2 className="text-2xl font-semibold text-center">Business plans</h2>
-        <p className="mt-2 text-center text-[var(--fg-muted)]">
-          Choose a plan that fits your organization. Scale as you grow.
-        </p>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          <PricingCard
-            name="Starter"
-            price="$19/mo"
-            hint="billed yearly"
-            desc="For small teams getting started."
-            features={[
-              "Dashboard & roles",
-              "API & SDK access",
-              "Basic rate limits",
-              "Email support",
-            ]}
-            cta="Start now"
-            href="/register?plan=starter-business"
-          />
-          <PricingCard
-            name="Growth"
-            price="$79/mo"
-            hint="billed yearly"
-            desc="For growing businesses."
-            features={[
-              "Higher limits & concurrency",
-              "Bulk verification tools",
-              "Webhooks & audit logs",
-              "Priority support",
-            ]}
-            cta="Upgrade"
-            href="/register?plan=growth-business"
-            highlight
-          />
-          <PricingCard
-            name="Enterprise"
-            price="Custom"
-            desc="For large organizations."
-            features={[
-              "Custom SLAs & DPA",
-              "SAML/SSO & SCIM",
-              "On-prem / region pinning",
-              "Dedicated support",
-            ]}
-            cta="Contact sales"
-            href="/contact"
-          />
-        </div>
-        <p className="mt-3 text-center text-xs text-[var(--fg-muted)]">
-          Prices in USD. Taxes/VAT may apply. Volume pricing available.
+        <p className="mt-8 text-center text-sm">
+          Read more in <Link href="/security" className="underline decoration-dotted underline-offset-4 hover:opacity-90">Security</Link> and{" "}
+          <Link href="/docs" className="underline decoration-dotted underline-offset-4 hover:opacity-90">Standard</Link>.
         </p>
       </section>
 
-      {/* Final CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-16 text-center border-t border-[var(--border)]">
-        <h2 className="text-2xl font-semibold">
-          Ready to integrate <span className="text-[var(--accent-1)]">.MEVE</span> into your workflow?
-        </h2>
-        <p className="mt-2 text-[var(--fg-muted)]">
-          From startups to enterprises — scale trust and authenticity in every file.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href="/contact" className="btn btn-primary inline-flex items-center gap-2">
-            Contact sales <ArrowRight className="h-4 w-4" />
+      {/* FAQ (PRO) */}
+      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
+        <h2 className="text-2xl font-semibold text-center">FAQ for professionals</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          {[
+            {
+              q: "Where is the private key stored?",
+              a: "Keys are generated and stored client-side. We do not keep private keys. Rotation & revocation are supported.",
+            },
+            {
+              q: "How does DNS binding work?",
+              a: "You publish a public verification record under your domain. Verifiers can check authenticity against it independently.",
+            },
+            {
+              q: "What is embedded in each file?",
+              a: "A visible watermark, an invisible SHA-256 fingerprint, and an invisible DigitalMeve key. Certificates (HTML) name your company.",
+            },
+            {
+              q: "Can we integrate with workflows?",
+              a: "Yes. Today via the web app; API & dashboard are planned (see Roadmap).",
+            },
+          ].map(({ q, a }) => (
+            <div key={q} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h3 className="text-base font-semibold">{q}</h3>
+              <p className="mt-2 text-sm text-slate-300/90">{a}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 text-center">
+          <Link href="/faq" className="text-sm underline decoration-dotted underline-offset-4 hover:opacity-90">
+            Read the full FAQ
           </Link>
-          <Link href="#business-pricing" className="btn btn-ghost inline-flex items-center gap-2">
-            View pricing
-          </Link>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 pt-8">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-sky-500/10 p-6 text-center">
+          <h3 className="text-xl font-semibold">Start issuing enterprise certificates today</h3>
+          <p className="mt-1 text-sm text-slate-300/90">
+            Sign with your company identity, bind to your domain, and verify anywhere — in seconds.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <Link href="/pricing#professional" className="btn btn-primary inline-flex items-center gap-2">
+              Subscribe <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/generate" className="btn btn-outline inline-flex items-center gap-2">
+              Try with a file
+            </Link>
+            <Link href="/verify" className="btn btn-outline inline-flex items-center gap-2">
+              Verify
+            </Link>
+          </div>
         </div>
       </section>
     </main>
   );
-}
-
-/* ——— UI bits ——— */
-
-function Feature({
-  icon,
-  title,
-  desc,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h3 className="text-base font-semibold">{title}</h3>
-      </div>
-      <p className="mt-2 text-sm text-[var(--fg-muted)]">{desc}</p>
-    </div>
-  );
-}
-
-function Trust({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="card p-5">
-      <div className="flex items-center gap-2">
-        <ShieldCheck className="h-5 w-5 text-[var(--accent-2)]" />
-        <h4 className="font-semibold">{title}</h4>
-      </div>
-      <p className="mt-2 text-sm text-[var(--fg-muted)]">{desc}</p>
-    </div>
-  );
-}
-
-function Stat({ label, hint }: { label: string; hint: string }) {
-  return (
-    <div className="rounded-2xl ring-1 ring-[var(--border)] bg-white/5 p-5 text-center">
-      <p className="text-2xl font-bold">{label}</p>
-      <p className="mt-1 text-xs text-[var(--fg-muted)]">{hint}</p>
-    </div>
-  );
-}
-
-function PricingCard({
-  name,
-  price,
-  hint,
-  desc,
-  features,
-  cta,
-  href,
-  highlight,
-}: {
-  name: string;
-  price: string;
-  hint?: string;
-  desc: string;
-  features: string[];
-  cta: string;
-  href: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`flex flex-col rounded-2xl border bg-white/5 p-6 shadow-sm ${
-        highlight ? "border-[var(--accent-2)] ring-2 ring-[var(--accent-2)]/30" : "border-[var(--border)]"
-      }`}
-    >
-      <h3 className="text-lg font-semibold">{name}</h3>
-      <p className="mt-1 text-sm text-[var(--fg-muted)]">{desc}</p>
-      <div className="mt-4 flex items-end gap-2">
-        <p className="text-3xl font-bold">{price}</p>
-        {hint && <span className="pb-1 text-xs text-[var(--fg-muted)]">{hint}</span>}
-      </div>
-
-      <ul className="mt-6 flex-1 space-y-2 text-sm">
-        {features.map((f, i) => (
-          <li key={i} className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--accent-1)]" /> {f}
-          </li>
-        ))}
-      </ul>
-
-      <Link
-        href={href}
-        className={`mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium ${
-          highlight
-            ? "bg-gradient-to-r from-emerald-500 to-sky-500 text-white hover:brightness-105"
-            : "ring-1 ring-[var(--border)] hover:bg-white/5"
-        }`}
-      >
-        {cta}
-      </Link>
-    </div>
-  );
-          }
+              }
