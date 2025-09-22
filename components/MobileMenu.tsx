@@ -1,10 +1,10 @@
-// components/MobileMenu.tsx
+// components/MobileMenu.tsx — v2 (aligned with agreed routes, a11y, swipe-to-close)
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { X, LogIn, UserPlus, LogOut, LayoutDashboard, User2 } from "lucide-react";
+import { X, LogIn, UserPlus, LogOut, LayoutDashboard, User2, ExternalLink } from "lucide-react";
 import { useSessionSafe as useSession, signOutSafe as signOut } from "@/lib/safe-auth";
 
 type Props = { open: boolean; onClose: () => void };
@@ -25,7 +25,7 @@ export default function MobileMenu({ open, onClose }: Props) {
   const firstFocusRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
-  // scroll lock + focus trap + Esc
+  // scroll lock + focus trap + Esc/Tab loop
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -76,26 +76,34 @@ export default function MobileMenu({ open, onClose }: Props) {
     dx.current = 0;
   };
 
-  const products = useMemo(() => [
-    { href: "/generate", label: "Generate" },
-    { href: "/verify", label: "Verify" },
-  ], []);
-  const solutions = useMemo(() => [
-    { href: "/personal", label: "For Individuals" },
-    { href: "/pro", label: "For Business" },
-  ], []);
-  const resources = useMemo(() => [
-    { href: "/pricing", label: "Pricing" },
-    { href: "/developers", label: "Developers" },
-    { href: "/security", label: "Security" },
-    { href: "/status", label: "Status" },
-    { href: "/changelog", label: "Changelog" },
-  ], []);
-  const company = useMemo(() => [
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-    { href: "/legal", label: "Legal" },
-  ], []);
+  // Sections alignées avec la nav desktop
+  const primary = useMemo(
+    () => [
+      { href: "/docs", label: "Standard" },
+      { href: "/security", label: "Security" },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/roadmap", label: "Roadmap" },
+      { href: "/faq", label: "FAQ" },
+      { href: "https://github.com/BACOUL/Digitalmeve-standard-", label: "GitHub", external: true },
+    ],
+    []
+  );
+
+  const solutions = useMemo(
+    () => [
+      { href: "/individuals", label: "For Individuals" },
+      { href: "/professionals", label: "For Professionals" },
+    ],
+    []
+  );
+
+  const quickActions = useMemo(
+    () => [
+      { href: "/generate", label: "Generate", variant: "primary" as const },
+      { href: "/verify", label: "Verify", variant: "outline" as const },
+    ],
+    []
+  );
 
   if (!open) return null;
 
@@ -121,7 +129,8 @@ export default function MobileMenu({ open, onClose }: Props) {
         {/* Top */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-4">
           <Link href="/" onClick={onClose} className="text-lg font-semibold">
-            <span className="text-emerald-400">Digital</span><span className="text-sky-400">Meve</span>
+            <span className="text-emerald-400">Digital</span>
+            <span className="text-sky-400">Meve</span>
           </Link>
           <button
             ref={firstFocusRef}
@@ -138,33 +147,58 @@ export default function MobileMenu({ open, onClose }: Props) {
           <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-6">
             <h2 id="mobilemenu-title" className="sr-only">Main navigation</h2>
 
+            {/* Quick actions */}
             <div className="mb-6 grid grid-cols-2 gap-3">
-              <Link href="/generate" onClick={onClose} className="text-center rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white hover:brightness-110">Generate</Link>
-              <Link href="/verify" onClick={onClose} className="text-center rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800">Verify</Link>
+              {quickActions.map((a) =>
+                a.variant === "primary" ? (
+                  <Link
+                    key={a.href}
+                    href={a.href}
+                    onClick={onClose}
+                    className="text-center rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white hover:brightness-110"
+                  >
+                    {a.label}
+                  </Link>
+                ) : (
+                  <Link
+                    key={a.href}
+                    href={a.href}
+                    onClick={onClose}
+                    className="text-center rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800"
+                  >
+                    {a.label}
+                  </Link>
+                )
+              )}
             </div>
 
-            <Section title="Products">
-              {products.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
-            </Section>
-
+            {/* Solutions */}
             <Section title="Solutions">
               {solutions.map((it) => (
                 <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
               ))}
             </Section>
 
-            <Section title="Resources">
-              {resources.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
-            </Section>
-
-            <Section title="Company">
-              {company.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
+            {/* Primary */}
+            <Section title="Explore">
+              {primary.map((it) =>
+                it.external ? (
+                  <li key={it.href}>
+                    <a
+                      href={it.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={onClose}
+                      className="flex items-center justify-between rounded-lg px-2 py-2 text-[15px] text-slate-200 hover:bg-slate-900 hover:text-white transition"
+                    >
+                      <span>GitHub</span>
+                      <ExternalLink className="h-4 w-4 opacity-70" aria-hidden />
+                    </a>
+                  </li>
+                ) : (
+                  <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+                )
+              )}
             </Section>
           </nav>
 
@@ -184,7 +218,11 @@ export default function MobileMenu({ open, onClose }: Props) {
                   </div>
                 </div>
 
-                <Link href="/dashboard" onClick={onClose} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800">
+                <Link
+                  href="/dashboard"
+                  onClick={onClose}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+                >
                   <LayoutDashboard className="h-4 w-4" /> Dashboard
                 </Link>
 
@@ -198,10 +236,18 @@ export default function MobileMenu({ open, onClose }: Props) {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <Link href="/login" onClick={onClose} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800">
+                <Link
+                  href="/login"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+                >
                   <LogIn className="h-4 w-4" /> Login
                 </Link>
-                <Link href="/register" onClick={onClose} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:brightness-105">
+                <Link
+                  href="/register"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:brightness-105"
+                >
                   <UserPlus className="h-4 w-4" /> Register
                 </Link>
               </div>
@@ -262,8 +308,9 @@ function getFocusable(root: HTMLElement | null): HTMLElement[] {
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
   return nodes.filter(el => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden") && el.tabIndex !== -1);
 }
+
 function isActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-          }
+       }
