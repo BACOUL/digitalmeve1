@@ -1,80 +1,39 @@
-// app/generate/page.tsx — v2.1 Safe (dynamic imports to prevent runtime crash)
+// app/generate/page.tsx — V3 SafeBare: always renders, dynamic-imports on click only
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import {
   Upload, FileDown, FileCheck2, ShieldCheck, Lock,
   Clipboard, XCircle, CheckCircle2, BadgeCheck, AlertCircle,
 } from "lucide-react";
 
-// ⚠️ Charge la Dropzone en dynamique (pas d’évaluation au top-level)
-const FileDropzone = dynamic(() => import("@/components/FileDropzone"), {
-  ssr: false,
-  // petit fallback de politesse
-  loading: () => (
-    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.05] p-6 text-sm text-slate-400">
-      Loading…
-    </div>
-  ),
-});
-
-// Quota (mensuel)
-import LimitModal from "@/components/LimitModal";
-import { checkFreeQuota } from "@/lib/quotaClient";
-
-// Types
-type Kind =
-  | "pdf" | "docx" | "pptx" | "xlsx"
-  | "png" | "jpg" | "jpeg"
-  | "mp4" | "zip"
-  | "other";
-
-type GenResult = {
-  outBlob?: Blob;
-  fileName?: string;
-  hash?: string;
-  whenISO?: string;
-};
-
+type Kind = "pdf" | "docx" | "other";
+type GenResult = { outBlob?: Blob; fileName?: string; hash?: string; whenISO?: string };
 type Toast = { type: "success" | "error" | "info"; message: string } | null;
 
 function guessKind(f: File): Kind {
   const name = (f.name || "").toLowerCase();
   const mt = (f.type || "").toLowerCase();
   if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
-  if (mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || name.endsWith(".docx")) return "docx";
-  if (mt === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || name.endsWith(".pptx")) return "pptx";
-  if (mt === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || name.endsWith(".xlsx")) return "xlsx";
-  if (mt.startsWith("image/png") || name.endsWith(".png")) return "png";
-  if (mt.startsWith("image/jpeg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) return "jpeg";
-  if (mt.startsWith("video/mp4") || name.endsWith(".mp4")) return "mp4";
-  if (mt === "application/zip" || name.endsWith(".zip")) return "zip";
+  if (
+    mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    name.endsWith(".docx")
+  ) return "docx";
   return "other";
 }
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<number>(0);
+  const [progress, setProgress] = useState(0);
   const [res, setRes] = useState<GenResult>({});
-
-  // Quota (mensuel)
-  const [limitOpen, setLimitOpen] = useState(false);
-  const [quotaCount, setQuotaCount] = useState<number | undefined>();
-  const [quotaResetDay, setQuotaResetDay] = useState<string | undefined>();
-  const [quotaRemaining, setQuotaRemaining] = useState<number | undefined>();
-
-  // UX
   const [toast, setToast] = useState<Toast>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(false);
 
-  const cancelRef = useRef(false);
   const kind = useMemo<Kind>(() => (file ? guessKind(file) : "other"), [file]);
+  const cancelRef = useRef(false);
 
-  // Parallaxe & animations
+  // Parallaxe subtile
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY || 0;
@@ -86,41 +45,30 @@ export default function GeneratePage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Fade-in on scroll
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const el = e.target as HTMLElement;
-            const i = Number(el.getAttribute("data-io") || 0);
-            el.style.transitionDelay = `${80 + i * 90}ms`;
-            el.classList.add("io-in");
-            io.unobserve(el);
-          }
-        });
-      },
+      (entries) => entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const el = e.target as HTMLElement;
+        el.classList.add("io-in");
+        io.unobserve(el);
+      }),
       { threshold: 0.12 }
     );
-    document.querySelectorAll<HTMLElement>(".io").forEach((el, i) => {
-      el.setAttribute("data-io", String(i));
-      io.observe(el);
-    });
+    document.querySelectorAll<HTMLElement>(".io").forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!busy) { setShowSkeleton(false); return; }
-    const id = setTimeout(() => setShowSkeleton(true), 300);
-    return () => clearTimeout(id);
-  }, [busy]);
-
-  const onDZEnter = () => setDragOver(true);
-  const onDZLeave = () => setDragOver(false);
+  function toastLater(t: Toast, ms = 3500) {
+    setToast(t);
+    if (t) setTimeout(() => setToast(null), ms);
+  }
 
   function humanError(e: unknown) {
     const msg = (e as any)?.message || "";
-    if (/pdf|docx|type/i.test(msg)) return "Only PDF or DOCX are supported right now. Other formats are coming soon.";
+    if (/pdf|docx|type/i.test(msg)) return "Only PDF or DOCX are supported right now.";
     if (/size|10 ?mb/i.test(msg)) return "Max size is 10 MB.";
     return "Something went wrong while generating the certificate.";
   }
@@ -134,63 +82,26 @@ export default function GeneratePage() {
   async function onGenerate() {
     if (!file || busy) return;
     setBusy(true);
-    setToast(null);
     setProgress(0);
     cancelRef.current = false;
 
-    const end = (opts?: Toast) => {
-      setBusy(false);
-      setProgress(100);
-      if (opts) setToast(opts);
-      if (opts) setTimeout(() => setToast(null), 3500);
-      try { document.getElementById("btn-protect")?.focus(); } catch {}
-    };
-
-    // barre de progression “soft”
+    // progress bar “soft”
     const progId = window.setInterval(() => {
-      setProgress((p) => {
-        if (!busy) return p;
-        const next = p < 85 ? p + Math.max(1, (85 - p) * 0.08) : p + 0.5;
-        return Math.min(95, next);
-      });
+      setProgress((p) => (p < 85 ? p + Math.max(1, (85 - p) * 0.08) : Math.min(95, p + 0.5)));
     }, 120);
 
     try {
-      // Quota (5/mois)
-      try {
-        const q = await checkFreeQuota();
-        setQuotaRemaining(q.remaining);
-        setQuotaCount(q.count);
-        setQuotaResetDay(q.resetDayUTC);
-      } catch (err: any) {
-        if (err?.quota?.reason === "limit_reached") {
-          setQuotaCount(err.quota.count);
-          setQuotaResetDay(err.quota.resetDayUTC);
-          setLimitOpen(true);
-          window.clearInterval(progId);
-          return end();
-        }
-      }
-
-      if (cancelRef.current) {
-        window.clearInterval(progId);
-        return end({ type: "info", message: "Cancelled." });
-      }
-
       const k = kind;
 
-      // ⚠️ Imports lourds **au moment du clic** (évite les erreurs au rendu)
-      const [{ sha256Hex }, { exportHtmlCertificate }] = await Promise.all([
-        import("@/lib/meve-xmp"),
-        import("@/lib/certificate-html"),
-      ]);
-
-      const hash = await sha256Hex(file);
+      // ⬇️ Import des fonctions lourdes UNIQUEMENT ici
+      const [{ sha256Hex }] = await Promise.all([import("@/lib/meve-xmp")]);
       const whenISO = new Date().toISOString();
+      const hash = await sha256Hex(file);
 
       if (cancelRef.current) {
         window.clearInterval(progId);
-        return end({ type: "info", message: "Cancelled." });
+        setBusy(false);
+        return toastLater({ type: "info", message: "Cancelled." });
       }
 
       let outBlob: Blob | undefined;
@@ -205,7 +116,8 @@ export default function GeneratePage() {
 
         if (cancelRef.current) {
           window.clearInterval(progId);
-          return end({ type: "info", message: "Cancelled." });
+          setBusy(false);
+          return toastLater({ type: "info", message: "Cancelled." });
         }
 
         outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, { hash, ts: whenISO });
@@ -216,29 +128,30 @@ export default function GeneratePage() {
         outName = toCertifiedName(file.name, "docx");
       } else {
         window.clearInterval(progId);
-        return end({
+        setBusy(false);
+        return toastLater({
           type: "info",
           message: "This file type will be supported soon (PNG, JPEG, MP4, ZIP, PPTX, XLSX). Try PDF or DOCX for now.",
         });
       }
 
       setRes({ outBlob, fileName: outName, hash, whenISO });
-
       window.clearInterval(progId);
       setProgress(100);
-      end({ type: "success", message: `Certificate ready` });
+      setBusy(false);
+      toastLater({ type: "success", message: "Certificate ready" });
     } catch (e) {
       console.error(e);
       window.clearInterval(progId);
-      end({ type: "error", message: humanError(e) });
+      setBusy(false);
+      toastLater({ type: "error", message: humanError(e) });
     }
   }
 
   function onCancel() {
     if (!busy) return;
     cancelRef.current = true;
-    setToast({ type: "info", message: "Cancelling…" });
-    setTimeout(() => setToast(null), 2000);
+    toastLater({ type: "info", message: "Cancelling…" }, 2000);
   }
 
   function downloadFile() {
@@ -258,31 +171,8 @@ export default function GeneratePage() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
     const base = res.fileName.replace(/\.(pdf|docx)$/i, "");
     const { exportHtmlCertificate } = await import("@/lib/certificate-html");
-    // free-tier: issuer vide
-    exportHtmlCertificate(base, res.hash!, res.whenISO!, "");
+    exportHtmlCertificate(base, res.hash, res.whenISO, ""); // issuer vide (free)
   }
-
-  const headerBadges = (
-    <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs io">
-      <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-        <Lock className="h-4 w-4 text-emerald-300" />
-        On-device · No storage
-      </span>
-      <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-        <ShieldCheck className="h-4 w-4 text-sky-300" />
-        Certificate included (HTML)
-      </span>
-      {typeof quotaRemaining === "number" && (
-        <span
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
-          title={quotaResetDay ? `Resets on ${quotaResetDay}` : undefined}
-        >
-          <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-          {quotaRemaining} free left this month
-        </span>
-      )}
-    </div>
-  );
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 relative" aria-busy={busy}>
@@ -293,7 +183,7 @@ export default function GeneratePage() {
         <div className="vignette" />
       </div>
 
-      {/* En-tête */}
+      {/* Hero */}
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl io">
@@ -306,40 +196,38 @@ export default function GeneratePage() {
             We add a subtle visible mark and an invisible proof. Your file stays fully readable. You also receive a
             <span className="font-semibold"> portable HTML certificate</span>. Everything runs on your device.
           </p>
-          {headerBadges}
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs io">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <Lock className="h-4 w-4 text-emerald-300" /> On-device · No storage
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <ShieldCheck className="h-4 w-4 text-sky-300" /> Certificate included (HTML)
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* Grille principale */}
+      {/* Body */}
       <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <div className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
-          {/* Carte action */}
+          {/* Action card */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-6 backdrop-blur io">
             <h2 className="text-lg font-semibold">1) Choose your file</h2>
             <p className="mt-1 text-sm text-slate-400">
               Today: <strong>PDF</strong> & <strong>DOCX</strong>.{" "}
-              <span className="opacity-80">Coming soon: PNG, JPEG, MP4, ZIP, PPTX, XLSX.</span>
+              <span className="opacity-80">More formats coming soon.</span>
             </p>
 
-            <div className={`mt-4 rounded-xl border ${dragOver ? "border-emerald-400/60 shadow-[0_0_0_3px_rgba(16,185,129,.15)]" : "border-white/10"} transition-all`}>
-              <FileDropzone
-                onSelected={setFile}
-                label={dragOver ? "Drop to protect" : "Drag & drop or click to select"}
-                maxSizeMB={10}
-                hint="Max 10 MB"
-                accept={[
-                  ".pdf","application/pdf",
-                  ".docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                  ".pptx","application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                  ".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                  ".png","image/png",".jpg",".jpeg","image/jpeg",
-                  ".mp4","video/mp4",".zip","application/zip",
-                ].join(",")}
-                role="button"
-                tabIndex={0}
-                onDragEnter={onDZEnter}
-                onDragLeave={onDZLeave}
-                onDrop={onDZLeave}
+            {/* Input natif ultra-fiable */}
+            <div className="mt-4">
+              <label htmlFor="file" className="sr-only">Choose a file</label>
+              <input
+                id="file"
+                type="file"
+                accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="block w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-2 file:text-white file:hover:brightness-110"
               />
             </div>
 
@@ -398,17 +286,6 @@ export default function GeneratePage() {
               </button>
             </div>
 
-            {busy && showSkeleton && !res.outBlob && (
-              <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                <div className="skeleton h-4 w-40" />
-                <div className="mt-3 space-y-2">
-                  <div className="skeleton h-3 w-3/5" />
-                  <div className="skeleton h-3 w-2/5" />
-                  <div className="skeleton h-3 w-4/5" />
-                </div>
-              </div>
-            )}
-
             {res.outBlob && res.fileName && (
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 io">
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300">
@@ -439,8 +316,7 @@ export default function GeneratePage() {
                           onClick={() => {
                             if (res.hash) {
                               navigator.clipboard.writeText(res.hash);
-                              setToast({ type: "info", message: "SHA-256 copied to clipboard" });
-                              setTimeout(() => setToast(null), 2000);
+                              toastLater({ type: "info", message: "SHA-256 copied to clipboard" }, 2000);
                             }
                           }}
                           className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
@@ -470,12 +346,6 @@ export default function GeneratePage() {
                 <p className="mt-3 text-xs text-slate-400">
                   Your file stays fully readable. The HTML certificate is a tiny, portable summary you can share.
                 </p>
-
-                <div aria-hidden className="pointer-events-none absolute -right-2 top-2 rotate-12">
-                  <span className="inline-block rounded px-2 py-0.5 text-[10px] font-semibold text-emerald-300/90 ring-1 ring-emerald-400/30 bg-emerald-400/10">
-                    .MEVE inside
-                  </span>
-                </div>
               </div>
             )}
 
@@ -489,7 +359,7 @@ export default function GeneratePage() {
             )}
           </div>
 
-          {/* Aside confiance */}
+          {/* Aside */}
           <aside className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-6 backdrop-blur h-fit lg:sticky lg:top-24 io">
             <h3 className="text-base font-semibold">What you’ll get</h3>
             <ul className="mt-3 space-y-2 text-sm text-slate-300/90">
@@ -498,8 +368,8 @@ export default function GeneratePage() {
                 "An invisible proof inside (privacy-first)",
                 "A portable HTML certificate",
                 "Verification in seconds — anywhere",
-              ].map((t, i) => (
-                <li key={t} className="flex items-start gap-2 io" data-io={i}>
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-300" />
                   <span>{t}</span>
                 </li>
@@ -508,20 +378,13 @@ export default function GeneratePage() {
 
             <h4 className="mt-6 text-sm font-semibold">Free plan</h4>
             <p className="mt-2 text-sm text-slate-400">
-              Up to <strong>5 files/month</strong>, no account required. We use a small anonymous token to prevent abuse — your files never leave your device.
+              Up to <strong>5 files/month</strong>, no account required. We may use a small anonymous token to prevent abuse — your files never leave your device.
             </p>
 
             <div className="mt-4 text-sm">
               <Link href="/pricing" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
                 Need more? See plans →
               </Link>
-            </div>
-
-            <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs text-slate-400">
-                For named certificates (your name/email) or company-issued certificates (private key + DNS),
-                upgrade to a paid plan.
-              </p>
             </div>
           </aside>
         </div>
@@ -533,7 +396,8 @@ export default function GeneratePage() {
           <div
             role="status"
             className={`rounded-md px-3 py-2 text-white text-sm shadow-lg ${
-              toast.type === "error" ? "bg-rose-600/90" : toast.type === "success" ? "bg-emerald-600/90" : "bg-sky-600/90"
+              toast.type === "error" ? "bg-rose-600/90" :
+              toast.type === "success" ? "bg-emerald-600/90" : "bg-sky-600/90"
             }`}
           >
             {toast.message}
@@ -541,42 +405,27 @@ export default function GeneratePage() {
         )}
       </div>
 
-      <LimitModal open={Boolean(limitOpen)} onClose={() => setLimitOpen(false)} count={quotaCount} resetDayUTC={quotaResetDay} />
-
       {/* Styles locaux */}
       <style jsx global>{`
-        .mesh-layer {
-          position: absolute; inset: 0; background-size: 200% 200%;
-          filter: blur(30px); opacity: 0.55; will-change: transform, background-position;
-          animation: meshMove 20s ease-in-out infinite alternate;
-        }
-        .layer1 {
-          background-image:
+        .mesh-layer { position:absolute; inset:0; background-size:200% 200%;
+          filter:blur(30px); opacity:.55; will-change:transform,background-position;
+          animation: meshMove 20s ease-in-out infinite alternate; }
+        .layer1 { background-image:
             radial-gradient(50% 60% at 10% 0%, rgba(16,185,129,0.12), transparent 55%),
             radial-gradient(40% 50% at 90% 20%, rgba(56,189,248,0.10), transparent 55%);
-          transform: translateY(var(--parallax-y1, 0px));
-        }
-        .layer2 {
-          background-image:
+          transform: translateY(var(--parallax-y1, 0px)); }
+        .layer2 { background-image:
             radial-gradient(45% 55% at 20% 80%, rgba(16,185,129,0.08), transparent 60%),
             radial-gradient(35% 45% at 80% 70%, rgba(56,189,248,0.08), transparent 60%);
-          transform: translateY(var(--parallax-y2, 0px));
-          mix-blend-mode: screen;
-        }
-        .vignette {
-          position: absolute; inset: 0; pointer-events: none;
-          background: radial-gradient(80% 80% at 50% 20%, transparent 0%, transparent 55%, rgba(0,0,0,0.35) 100%);
-        }
-        @keyframes meshMove { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
-        @media (prefers-reduced-motion: reduce) { .mesh-layer { animation: none !important; } }
+          transform: translateY(var(--parallax-y2, 0px)); mix-blend-mode: screen; }
+        .vignette { position:absolute; inset:0; pointer-events:none;
+          background: radial-gradient(80% 80% at 50% 20%, transparent 0%, transparent 55%, rgba(0,0,0,0.35) 100%); }
+        @keyframes meshMove { 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
+        @media (prefers-reduced-motion: reduce){ .mesh-layer{ animation:none !important; } }
 
-        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06));
-          background-size: 200% 100%; animation: sk 1.2s ease-in-out infinite; border-radius: 8px; }
-        @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        .io { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease, filter .7s ease; }
-        .io-in { opacity: 1; transform: translateY(0); }
+        .io { opacity:0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+        .io-in { opacity:1; transform: translateY(0); }
       `}</style>
     </main>
   );
-    }
+                }
