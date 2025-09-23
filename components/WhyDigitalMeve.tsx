@@ -1,4 +1,4 @@
-// components/WhyDigitalMeve.tsx — v3 (links to /individuals & /professionals)
+// components/WhyDigitalMeve.tsx — v4 (aligned with GitHub, no jargon, watermark included)
 "use client";
 
 import Link from "next/link";
@@ -10,22 +10,22 @@ export default function WhyDigitalMeve() {
     {
       icon: <Lock className="h-5 w-5" aria-hidden />,
       title: "No storage. Ever.",
-      desc: "All processing runs in your browser — files never leave your device.",
+      desc: "Everything runs on your device — your files never leave your computer or phone.",
     },
     {
       icon: <Globe className="h-5 w-5" aria-hidden />,
       title: "Universal & portable",
-      desc: "Self-contained .MEVE certificates — verifiable anywhere in seconds.",
+      desc: "Self-contained .MEVE proof + visible watermark — quick to confirm, easy to share.",
     },
     {
       icon: <ShieldCheck className="h-5 w-5" aria-hidden />,
-      title: "Cryptography that lasts",
-      desc: "SHA-256 fingerprint, signed timestamp, and issuer identity (personal or DNS).",
+      title: "Built to last",
+      desc: "Strong cryptography with signed time. Designed for long-term reliability.",
     },
     {
       icon: <Zap className="h-5 w-5" aria-hidden />,
-      title: "Built for real life",
-      desc: "All file types. Fast for daily use — and reliable at scale.",
+      title: "Made for real life",
+      desc: "Works with common formats (PDF, DOCX, PNG, JPG). Fast for daily use, solid at scale.",
     },
   ];
 
@@ -77,11 +77,11 @@ export default function WhyDigitalMeve() {
 
         {/* Heading */}
         <h2 className="mt-3 text-center text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-          Why this is different — and indispensable
+          The proof layer your files were missing
         </h2>
 
         <p className="mx-auto mt-2 max-w-3xl text-center text-[15px] sm:text-[17px] text-[var(--fg-muted)]">
-          A universal proof layer for every file: private by design, verifiable anywhere, owned by you.
+          Private by design and under your control — a lightweight proof that travels with your file.
         </p>
 
         {/* Benefits grid */}
@@ -115,7 +115,7 @@ export default function WhyDigitalMeve() {
           ))}
         </div>
 
-        {/* Dual audience teaser blocks (now linking to dedicated pages) */}
+        {/* Dual audience teaser blocks */}
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-xs text-slate-300">For Individuals</p>
@@ -123,7 +123,7 @@ export default function WhyDigitalMeve() {
               Protect CVs, invoices, photos, and creative work — in one click.
             </h3>
             <p className="mt-1 text-sm text-slate-300/90">
-              Free to start (5 certificates/month). No account, no storage.
+              Free to start (5 protected files/month). No account, no storage.
             </p>
             <Link
               href="/individuals"
@@ -136,10 +136,10 @@ export default function WhyDigitalMeve() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-xs text-slate-300">For Professionals</p>
             <h3 className="mt-1 text-sm font-semibold text-white">
-              DNS integration, private keys, and trusted certificates for your business.
+              DNS binding, keys, and trusted branding for your organization.
             </h3>
             <p className="mt-1 text-sm text-slate-300/90">
-              Reduce fraud, protect revenue, and pass audits faster — with instant verification.
+              Reduce fraud, protect revenue, and pass audits faster — with instant checks.
             </p>
             <Link
               href="/professionals"
@@ -150,7 +150,7 @@ export default function WhyDigitalMeve() {
           </div>
         </div>
 
-        {/* CTA row (routes toward the two dedicated pages) */}
+        {/* CTA row */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/individuals"
@@ -168,4 +168,4 @@ export default function WhyDigitalMeve() {
       </div>
     </section>
   );
-      }
+        }
