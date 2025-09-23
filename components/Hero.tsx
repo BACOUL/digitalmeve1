@@ -1,40 +1,39 @@
-// components/Hero.tsx — v15 premium (clean, mobile-first, coherent with globals.css)
+// components/Hero.tsx — v15.1 (TS fix for IntersectionObserver target)
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ShieldCheck, Radar, Sparkles } from "lucide-react";
 
-const BASELINE_TOTAL = 23573; // seed crédible; remplacera plus tard /api/stats
+const BASELINE_TOTAL = 23573;
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat("en-US").format(n);
 }
 
 export default function Hero() {
-  // compteur “vivant” (simulation +5..+20 / 5 min)
   const [totalDelta, setTotalDelta] = useState(0);
+
   useEffect(() => {
     const id = setInterval(() => {
-      const bump = Math.floor(Math.random() * 16) + 5;
+      const bump = Math.floor(Math.random() * 16) + 5; // 5–20
       setTotalDelta((x) => x + bump);
     }, 300_000);
     return () => clearInterval(id);
   }, []);
-  const totalDisplay = BASELINE_TOTAL + totalDelta;
 
-  // animation d’apparition douce sans framer
+  // ✅ TS-safe fade-in
   useEffect(() => {
     const els = document.querySelectorAll<HTMLElement>("[data-fade]");
     const io = new IntersectionObserver(
       (entries) =>
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const i = Number((e.target as HTMLElement).dataset.index || 0);
-            e.target.classList.remove("opacity-0", "translate-y-3");
-            e.target.style.transitionDelay = `${80 + i * 80}ms`;
-            io.unobserve(e.target);
-          }
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement; // <-- cast once
+          const i = Number(el.dataset.index || 0);
+          el.classList.remove("opacity-0", "translate-y-3");
+          el.style.transitionDelay = `${80 + i * 80}ms`;
+          io.unobserve(el);
         }),
       { threshold: 0.12 }
     );
@@ -42,13 +41,15 @@ export default function Hero() {
     return () => io.disconnect();
   }, []);
 
+  const totalDisplay = BASELINE_TOTAL + totalDelta;
+
   return (
     <section
       id="hero"
       aria-label="DigitalMeve — Invisible proof. Visible trust."
       className="relative overflow-hidden"
     >
-      {/* FX de fond (contraints au viewport pour éviter tout débordement) */}
+      {/* Background FX */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
           className="absolute inset-0 opacity-80"
@@ -70,9 +71,8 @@ export default function Hero() {
         />
       </div>
 
-      {/* Contenu */}
+      {/* Content */}
       <div className="relative mx-auto max-w-6xl px-4 sm:px-5 pt-16 sm:pt-24 pb-12 sm:pb-16 text-center">
-        {/* Eyebrow */}
         <div
           data-fade
           data-index={0}
@@ -83,7 +83,6 @@ export default function Hero() {
           THE .MEVE STANDARD · Privacy-first · Certified integrity
         </div>
 
-        {/* Titre */}
         <h1
           data-fade
           data-index={1}
@@ -93,7 +92,6 @@ export default function Hero() {
           <span className="block text-gradient">Visible trust.</span>
         </h1>
 
-        {/* Sous-titre (simple) */}
         <p
           data-fade
           data-index={2}
@@ -103,7 +101,6 @@ export default function Hero() {
           without storage.
         </p>
 
-        {/* CTAs */}
         <div
           data-fade
           data-index={3}
@@ -127,7 +124,6 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Social proof compact */}
         <div
           data-fade
           data-index={4}
@@ -141,7 +137,6 @@ export default function Hero() {
           </span>
         </div>
 
-        {/* Badges confiance (2 max pour rester clean) */}
         <div
           data-fade
           data-index={5}
@@ -157,7 +152,6 @@ export default function Hero() {
           </span>
         </div>
 
-        {/* Micro-claim */}
         <p
           data-fade
           data-index={6}
@@ -167,7 +161,6 @@ export default function Hero() {
         </p>
       </div>
 
-      {/* Séparateur */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </section>
   );
