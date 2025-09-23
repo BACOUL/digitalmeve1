@@ -1,4 +1,4 @@
-// components/FAQ.tsx
+// components/FAQ.tsx — v3.1 (public-friendly, product-true, on-device, 5/mo, PDF+DOCX now)
 "use client";
 
 import { useState } from "react";
@@ -7,27 +7,43 @@ import { ChevronDown } from "lucide-react";
 const FAQ_ITEMS = [
   {
     q: "Is it really free for individuals?",
-    a: "Yes. Anyone can protect their files with a .MEVE proof at no cost. Teams and organizations can scale with pro features.",
+    a: "Yes. You can protect up to 5 files per month for free. That’s a fair-use limit to prevent abuse — you can upgrade anytime if you need more.",
   },
   {
-    q: "Does my file stay private?",
-    a: "Absolutely. Everything happens in your browser. Your file never leaves your device — we never store or see it.",
+    q: "Do you store or see my files?",
+    a: "No. Everything runs on your device, in your browser. We never upload, store or access your files.",
   },
   {
     q: "Which file types are supported?",
-    a: "All common file types: PDFs, images, videos, audio, office docs… If it can be opened, it can be protected.",
+    a: "Today: PDF and DOCX. Your protected files remain fully readable and shareable. Image formats (PNG/JPG) and more are coming soon.",
   },
   {
-    q: "How can someone verify my file?",
-    a: "Verification is instant: drop the file in our verifier, and the embedded proof is checked against its certificate — in seconds.",
+    q: "What changes to my file?",
+    a: "We add a small visible watermark and embed an invisible .MEVE proof. Your content stays intact and opens exactly as usual. You can also download an optional shareable receipt (.html).",
   },
   {
-    q: "What’s the difference from a digital signature?",
-    a: ".MEVE proofs are invisible, universal and future-proof. Unlike signatures, they don’t alter your file and work across any format.",
+    q: "How does verification work?",
+    a: "Open the Verify page and drop the file. The built-in proof is checked in seconds — no account required, and it works offline.",
+  },
+  {
+    q: "How is this different from a digital signature?",
+    a: "It keeps your file simple to open and share, adds a durable proof that travels with the file, and makes checks instant for anyone. For businesses, you can add your issuer name and bind trust to your domain.",
   },
   {
     q: "Can I use it with my team or clients?",
-    a: "Yes. Teams, agencies and businesses can integrate DigitalMeve into their workflows for bulk protection and instant client verification.",
+    a: "Yes. Teams and organizations can protect documents at scale, brand their issuer, and enable instant client checks — with simple, privacy-first workflows.",
+  },
+  {
+    q: "Is it GDPR-friendly?",
+    a: "Yes. We process files on-device and don’t store your data. You stay in control — privacy by design.",
+  },
+  {
+    q: "What happens if I hit the free limit?",
+    a: "You’ll see a friendly notice. You can wait for the monthly reset or upgrade to a paid plan if you need more volume.",
+  },
+  {
+    q: "Do I need to be online to verify?",
+    a: "No. Local verification works offline. Some pro features (like domain trust checks) may use the network, but basic verification does not.",
   },
 ];
 
@@ -53,7 +69,7 @@ export default function FAQ() {
             Everything you need to know
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
-            Still have questions? Here are the answers to the most common ones.
+            Clear answers about privacy, formats, verification and pricing.
           </p>
         </div>
 
