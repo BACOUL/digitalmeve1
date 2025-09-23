@@ -1,9 +1,9 @@
-// components/TrustedByDesign.tsx — v3 (4 pillars, proofs bar, partners link, sync-ready counter)
+// components/TrustedByDesign.tsx — v4 (non-jargon, watermark inclus, “anywhere” retiré)
 "use client";
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { ShieldCheck, Eye, Infinity, Lock, Globe, Zap } from "lucide-react";
+import { ShieldCheck, Lock, Globe, Zap } from "lucide-react";
 
 type Props = {
   /** Optional: pass counters from a shared hook/context to stay perfectly in sync with the Hero */
@@ -16,17 +16,17 @@ export default function TrustedByDesign({ totalCertified, todayCreated }: Props)
     {
       icon: <Lock className="h-6 w-6" aria-hidden />,
       title: "Zero storage",
-      desc: "Your files never leave your device. No cloud copies, no leaks.",
+      desc: "Everything runs on your device. No cloud copies, no leaks.",
     },
     {
       icon: <Globe className="h-6 w-6" aria-hidden />,
       title: "Open standard",
-      desc: "Self-contained .MEVE certificates — verifiable by anyone, anywhere.",
+      desc: "Self-contained .MEVE proof + visible watermark — quick to confirm, easy to share.",
     },
     {
       icon: <ShieldCheck className="h-6 w-6" aria-hidden />,
-      title: "Proven cryptography",
-      desc: "SHA-256 fingerprint, signed timestamp, and issuer identity (personal or DNS).",
+      title: "Built to last",
+      desc: "Strong cryptography with signed time. Designed for long-term reliability.",
     },
     {
       icon: <Zap className="h-6 w-6" aria-hidden />,
@@ -35,7 +35,7 @@ export default function TrustedByDesign({ totalCertified, todayCreated }: Props)
     },
   ];
 
-  // Fade-in + scale on scroll (respects prefers-reduced-motion via user settings)
+  // Fade-in + scale on scroll (respects prefers-reduced-motion)
   useEffect(() => {
     const io = new IntersectionObserver(
       (entries) => {
@@ -82,9 +82,9 @@ export default function TrustedByDesign({ totalCertified, todayCreated }: Props)
           Security, transparency, and speed — built in.
         </h2>
 
-        {/* Subheading */}
+        {/* Subheading (non-tech) */}
         <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
-          DigitalMeve turns robust cryptography into an invisible, universal proof — so every file can be trusted without friction.
+          DigitalMeve turns modern cryptography into a lightweight, invisible proof that travels with your file.
         </p>
 
         {/* Pillars */}
@@ -118,19 +118,19 @@ export default function TrustedByDesign({ totalCertified, todayCreated }: Props)
           ))}
         </div>
 
-        {/* Proofs bar */}
+        {/* Proofs bar (claims safe) */}
         <ul className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-2 text-[12.5px] text-slate-300/90">
           <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">GDPR & Privacy by design</li>
           <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Works offline</li>
-          <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">All file types</li>
+          <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Common formats: PDF, DOCX, PNG, JPG</li>
           <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Made in Europe</li>
         </ul>
 
-        {/* Optional synced counter (only shown if you pass props from the same hook as Hero) */}
+        {/* Optional synced counter */}
         {typeof totalCertified === "number" && (
           <div className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-300/90">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
-              {new Intl.NumberFormat("en-US").format(totalCertified)} documents certified
+              {new Intl.NumberFormat("en-US").format(totalCertified)} documents protected
             </span>
             {typeof todayCreated === "number" && (
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
@@ -173,4 +173,4 @@ export default function TrustedByDesign({ totalCertified, todayCreated }: Props)
       </div>
     </section>
   );
-          }
+}
