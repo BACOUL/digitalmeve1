@@ -1,11 +1,12 @@
 /* =========================================
-   DigitalMeve — Global Styles (v3, safe)
+   DigitalMeve — Global Styles (v3.1, safe)
    Objectifs :
    - Zéro scroll horizontal / écran noir (mobile/desktop)
    - Base tokens cohérente avec le site
    - Composants utilitaires : .btn, .badge, .card, .input
    - Accessibilité & reduced motion
    - Compat Next.js 15 + Tailwind
+   - ⚠️ Aucune utilisation de `@apply sr-only`
    ========================================= */
 
 /* Tailwind layers */
@@ -80,7 +81,7 @@ a:hover { opacity: 0.96; }
 .container,
 .max-w-6xl {
   /* Surcouche safe pour empêcher tout dépassement discret */
-  overflow: clip; /* (fallback: hidden si besoin de compat anciens) */
+  overflow: clip; /* fallback possible: hidden */
 }
 
 /* ---------- FX boundary (fond aurora/beam/noise) ---------- */
@@ -112,7 +113,15 @@ small, .muted { color: var(--fg-muted); }
 
 /* Boutons */
 .btn {
-  @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition;
+  /* sans @apply pour éviter dépendances circulaires exotiques */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: filter .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.05);
   color: var(--fg);
@@ -146,7 +155,12 @@ small, .muted { color: var(--fg-muted); }
 
 /* Badges */
 .badge {
-  @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.05);
   color: var(--fg);
@@ -154,16 +168,21 @@ small, .muted { color: var(--fg-muted); }
 
 /* Cards */
 .card {
-  @apply rounded-2xl;
+  border-radius: 1rem;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.05);
   box-shadow: var(--shadow-md);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 
 /* Inputs */
 .input {
-  @apply w-full rounded-xl px-3 py-2 text-sm outline-none;
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.05);
   color: var(--fg);
@@ -174,9 +193,42 @@ small, .muted { color: var(--fg-muted); }
   box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
 }
 
-/* Skip link visible au focus (a11y) */
-.sr-only:not(:focus):not(:active) {
-  @apply sr-only;
+/* ---------- Accessibilité ---------- */
+
+/* Lien "Skip to content" accessible sans @apply sr-only */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  color: #0b1220;
+  z-index: 1001;
+  border-radius: 0.5rem;
+  outline: 2px solid rgba(56,189,248,0.6);
+  outline-offset: 2px;
+}
+
+/* Élément visuellement masqué mais lu par les lecteurs d'écran */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 /* Focus visible global (meilleur a11y) */
@@ -227,4 +279,4 @@ footer {
 /* Si un composant custom injecte un transform qui déborde, clippez-le */
 .overflow-clip {
   overflow: clip;
-  }
+}
