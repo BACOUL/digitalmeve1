@@ -1,4 +1,4 @@
-// components/HowItWorks.tsx — v1 (world-class: simple, accessible, animated, no libs)
+// components/HowItWorks.tsx — v2 (clear, non-jargon, a11y, no overflow)
 "use client";
 
 import Link from "next/link";
@@ -15,39 +15,40 @@ export default function HowItWorks() {
   const steps: Step[] = [
     {
       icon: <Upload className="h-6 w-6 opacity-90" aria-hidden />,
-      title: "Drop your file",
-      text: "Your file never leaves your device. Work privately in your browser.",
+      title: "Import your file",
+      text: "Everything happens on your device — nothing is uploaded or stored.",
     },
     {
       icon: <ShieldCheck className="h-6 w-6 opacity-90" aria-hidden />,
-      title: "Invisible .MEVE certificate added",
-      text: "SHA-256 fingerprint, timestamp, and issuer identity — fully self-contained.",
+      title: "Add the invisible proof",
+      text: "We embed a self-contained certificate and (optionally) a visible watermark.",
     },
     {
       icon: <Radar className="h-6 w-6 opacity-90" aria-hidden />,
-      title: "Verify anywhere",
-      text: "Open standard. Anyone can verify in seconds — zero servers required.",
+      title: "Verify in seconds",
+      text: "Open standard. Anyone can confirm authenticity instantly, anywhere.",
     },
   ];
 
-  // Reveal-on-scroll, no external libs, respects prefers-reduced-motion
+  // Reveal-on-scroll, respects prefers-reduced-motion
   const ref = useRef<HTMLElement | null>(null);
-  const [on, setOn] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const prefersReduced =
+    const reduced =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    if (prefersReduced) {
-      setOn(true);
+    if (reduced) {
+      setVisible(true);
       return;
     }
     if (!ref.current) return;
 
     const io = new IntersectionObserver(
-      ([e]) => e.isIntersecting && setOn(true),
-      { rootMargin: "0px 0px -10% 0px", threshold: 0.12 }
+      ([e]) => {
+        if (e.isIntersecting) setVisible(true);
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.15 }
     );
     io.observe(ref.current);
     return () => io.disconnect();
@@ -60,7 +61,7 @@ export default function HowItWorks() {
       aria-label="How DigitalMeve works"
       className="relative overflow-hidden px-4 py-12 sm:py-16"
     >
-      {/* Subtle background veil to match Hero auroras */}
+      {/* Subtle background veil (aligned with Hero/AudienceStrip) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-35"
@@ -78,27 +79,23 @@ export default function HowItWorks() {
 
         {/* Heading + subheading */}
         <h2 className="mt-3 text-center text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-          3 simple steps to protect and verify any file.
+          Protect and prove — in 3 simple steps.
         </h2>
         <p className="mx-auto mt-2 max-w-3xl text-center text-[15px] sm:text-[17px] text-[var(--fg-muted)]">
-          Invisible by design, universal by default — no storage, no accounts required to try.
+          Private by design, universal by default. No account, no storage — start in seconds.
         </p>
 
         {/* Steps */}
-        <ol
-          className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
-          aria-label="Steps"
-        >
+        <ol className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4" aria-label="Steps">
           {steps.map((s, i) => (
             <li
               key={s.title}
               className={[
                 "group relative rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur",
                 "hover:bg-white/10 transition-colors",
-                // reveal micro-motion
                 "motion-safe:transform motion-safe:transition-all",
-                on ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3",
-                on ? `motion-safe:[transition-delay:${i * 90}ms]` : "",
+                visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3",
+                visible ? `motion-safe:[transition-delay:${i * 90}ms]` : "",
               ].join(" ")}
             >
               {/* Tiny halo */}
@@ -137,9 +134,9 @@ export default function HowItWorks() {
           </Link>
         </div>
 
-        {/* Micro-footnote */}
+        {/* Micro-footnote (concise, non-tech) */}
         <p className="mt-3 text-center text-xs text-slate-400">
-          Files are processed on-device. Certificates are self-contained and verifiable anywhere.
+          Works with common formats (PDF, DOCX, images). The proof is embedded and travels with your file.
         </p>
       </div>
     </section>
