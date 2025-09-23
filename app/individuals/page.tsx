@@ -1,15 +1,24 @@
-// app/individuals/page.tsx — Individuals (developer-grade, aligned with GitHub)
+// app/individuals/page.tsx — Individuals v2 (accurate, simple, a11y, 9.6+)
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, ShieldCheck, Lock, ArrowRight, BadgeCheck, FileCheck, Fingerprint } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Lock, ArrowRight, BadgeCheck, FileCheck } from "lucide-react";
 
 export default function IndividualsPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       {/* Hero */}
-      <section className="border-b border-white/10 bg-slate-950">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20 text-center">
+      <section className="relative border-b border-white/10">
+        {/* BG veil */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            background:
+              "radial-gradient(900px 420px at 12% -10%, rgba(16,185,129,.06), transparent 55%), radial-gradient(800px 360px at 88% 0%, rgba(56,189,248,.06), transparent 55%)",
+          }}
+        />
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:py-20 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
             Protect your files —{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">
@@ -17,8 +26,8 @@ export default function IndividualsPage() {
             </span>
           </h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-300/90">
-            Add an invisible proof to any document with a visible watermark for trust.{" "}
-            <strong>All processing runs in your browser</strong> — no storage, no account required.
+            Add a <strong>visible watermark</strong> and an <strong>invisible proof</strong> to your documents.
+            Everything runs in your browser — <strong>no storage, no account</strong>.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -42,49 +51,42 @@ export default function IndividualsPage() {
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
               <BadgeCheck className="h-4 w-4 text-emerald-300" />
-              Works with PDF, DOCX, JPG, PNG, MP4
+              Works with PDF & DOCX today
             </span>
           </div>
         </div>
       </section>
 
-      {/* How it works (developer-grade clarity) */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
+      {/* How it works — simple, non-jargon */}
+      <section className="relative mx-auto max-w-6xl px-4 py-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 opacity-35"
+          style={{
+            background:
+              "radial-gradient(900px 420px at 12% -10%, rgba(16,185,129,.06), transparent 55%), radial-gradient(800px 360px at 88% 0%, rgba(56,189,248,.05), transparent 55%)",
+          }}
+        />
         <h2 className="text-2xl font-semibold text-center">How it works</h2>
         <ol className="mt-10 grid gap-6 sm:grid-cols-3">
           {[
             {
               step: "1",
-              title: "Generate",
-              desc: (
-                <>
-                  Drop your file. We compute a <strong>SHA-256</strong> fingerprint locally and attach an{" "}
-                  <strong>invisible DigitalMeve key</strong>, plus an optional <strong>visible watermark</strong>.
-                </>
-              ),
-              icon: <Fingerprint className="h-6 w-6 text-emerald-300" />,
+              title: "Drop your file",
+              desc: <>Your document stays on your device. No uploads, no storage.</>,
+              icon: <FileCheck className="h-6 w-6 text-emerald-300" />,
             },
             {
               step: "2",
-              title: "Certificate",
-              desc: (
-                <>
-                  A portable <strong>HTML certificate</strong> is produced with timestamp, issuer type and integrity
-                  details. Share it or keep it for your records.
-                </>
-              ),
-              icon: <FileCheck className="h-6 w-6 text-sky-300" />,
+              title: "We protect it",
+              desc: <>We add a visible watermark and an invisible proof with a unique fingerprint and time.</>,
+              icon: <ShieldCheck className="h-6 w-6 text-sky-300" />,
             },
             {
               step: "3",
-              title: "Verify",
-              desc: (
-                <>
-                  Anyone can verify in seconds at <code>/verify</code>. No server dependency — integrity checks run in
-                  the browser.
-                </>
-              ),
-              icon: <ShieldCheck className="h-6 w-6 text-emerald-300" />,
+              title: "Get a certificate",
+              desc: <>You receive a human-readable HTML certificate to keep or share.</>,
+              icon: <BadgeCheck className="h-6 w-6 text-emerald-300" />,
             },
           ].map(({ step, title, desc, icon }) => (
             <li key={step} className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -109,7 +111,7 @@ export default function IndividualsPage() {
         </div>
       </section>
 
-      {/* Benefits (why it matters) */}
+      {/* Benefits */}
       <section className="mx-auto max-w-6xl px-4 py-12 border-t border-white/10">
         <div className="grid gap-6 sm:grid-cols-3 text-center">
           <div className="flex flex-col items-center">
@@ -120,21 +122,21 @@ export default function IndividualsPage() {
           <div className="flex flex-col items-center">
             <ShieldCheck className="h-8 w-8 text-sky-300" />
             <p className="mt-2 text-sm font-medium">Universal</p>
-            <p className="text-xs text-slate-400">Verify anywhere, without vendor lock-in.</p>
+            <p className="text-xs text-slate-400">Verify in seconds — no vendor lock-in.</p>
           </div>
           <div className="flex flex-col items-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-300" />
             <p className="mt-2 text-sm font-medium">Zero friction</p>
-            <p className="text-xs text-slate-400">No account, no setup, start in seconds.</p>
+            <p className="text-xs text-slate-400">No account, start in seconds.</p>
           </div>
         </div>
       </section>
 
-      {/* Pricing — Individuals (aligned with PRICING.md) */}
+      {/* Pricing — Individuals */}
       <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
         <h2 className="text-2xl font-semibold text-center">Plans for individuals</h2>
         <p className="mt-3 text-center text-slate-300/90">
-          Start free. Upgrade anytime for unlimited certifications and named certificates.
+          Start free. Upgrade anytime for unlimited protections and named certificates.
         </p>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
@@ -144,7 +146,12 @@ export default function IndividualsPage() {
               price: "€0",
               period: "forever",
               desc: "Try the standard. No account required.",
-              features: ["5 files / month", "Visible watermark", "Invisible SHA-256 + DM key", "Browser-only processing"],
+              features: [
+                "5 files / month",
+                "Visible watermark",
+                "Invisible proof (embedded)",
+                "On-device processing",
+              ],
               cta: { href: "/generate", label: "Get started free" },
               highlight: false,
             },
@@ -152,11 +159,11 @@ export default function IndividualsPage() {
               name: "Individual",
               price: "€9.90",
               period: "month · or €99/year",
-              desc: "Unlimited certifications with named certificates.",
+              desc: "Unlimited protections with your name in the certificate.",
               features: [
                 "Unlimited files",
-                "Name/email in certificate",
-                "Visible watermark · Invisible SHA-256 + DM key",
+                "Named certificate (name/email)",
+                "Visible watermark + invisible proof",
                 "Priority support",
               ],
               cta: { href: "/pricing#individual", label: "Subscribe" },
@@ -208,7 +215,7 @@ export default function IndividualsPage() {
         </p>
       </section>
 
-      {/* FAQ (focused for Individuals) */}
+      {/* FAQ (Individuals) */}
       <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
         <h2 className="text-2xl font-semibold text-center">FAQ</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -218,16 +225,16 @@ export default function IndividualsPage() {
               a: "No. Everything runs locally in your browser — no signup, no storage.",
             },
             {
-              q: "What’s embedded in my file?",
-              a: "A visible watermark, an invisible SHA-256 fingerprint and an invisible DigitalMeve key. Paid users can include their name/email in the certificate.",
+              q: "What’s added to my file?",
+              a: "A visible watermark and an invisible proof with a unique fingerprint and time. Paid users can include their name/email in the certificate.",
             },
             {
               q: "Can anyone verify my file?",
               a: "Yes. Anyone can drag & drop your file at /verify and get a result in seconds.",
             },
             {
-              q: "What if I upgrade?",
-              a: "You get unlimited certifications and named certificates. You can cancel anytime.",
+              q: "Which file types are supported?",
+              a: "Today: PDF & DOCX. Support for images is coming soon.",
             },
           ].map(({ q, a }) => (
             <div key={q} className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -248,9 +255,7 @@ export default function IndividualsPage() {
       <section className="mx-auto max-w-6xl px-4 pb-20 pt-8">
         <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-sky-500/10 p-6 text-center">
           <h3 className="text-xl font-semibold">Protect your next document in seconds</h3>
-          <p className="mt-1 text-sm text-slate-300/90">
-            No account, no storage — your file never leaves your device.
-          </p>
+          <p className="mt-1 text-sm text-slate-300/90">No account, no storage — your file never leaves your device.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link href="/generate" className="btn btn-primary inline-flex items-center gap-2">
               Protect a file <ArrowRight className="h-4 w-4" />
@@ -263,4 +268,4 @@ export default function IndividualsPage() {
       </section>
     </main>
   );
-              }
+            }
