@@ -1,5 +1,5 @@
 /* =========================================
-   DigitalMeve — Global Styles (v3.1, safe)
+   DigitalMeve — Global Styles (v3.2, safe)
    Objectifs :
    - Zéro scroll horizontal / écran noir (mobile/desktop)
    - Base tokens cohérente avec le site
@@ -43,6 +43,8 @@ html, body {
   height: 100%;
   min-height: 100%;
   overflow-x: hidden;              /* bloque les débordements horizontaux */
+  overscroll-behavior-x: none;     /* évite les “glissements” latéraux iOS/Android */
+  touch-action: pan-y;             /* scroll vertical uniquement */
   background: var(--bg);
   color: var(--fg);
   -webkit-text-size-adjust: 100%;
@@ -78,9 +80,8 @@ a:hover { opacity: 0.96; }
 }
 
 /* ---------- Containers ---------- */
-.container,
-.max-w-6xl {
-  /* Surcouche safe pour empêcher tout dépassement discret */
+/* Surcouche safe pour empêcher tout dépassement discret, sans toucher Tailwind */
+.container-safe {
   overflow: clip; /* fallback possible: hidden */
 }
 
@@ -113,7 +114,6 @@ small, .muted { color: var(--fg-muted); }
 
 /* Boutons */
 .btn {
-  /* sans @apply pour éviter dépendances circulaires exotiques */
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -233,6 +233,13 @@ small, .muted { color: var(--fg-muted); }
 
 /* Focus visible global (meilleur a11y) */
 :focus-visible {
+  outline: 2px solid rgba(56,189,248,0.6);
+  outline-offset: 2px;
+}
+/* Renfort sur nos composants “clicables” */
+.btn:focus-visible,
+.card:focus-visible,
+.input:focus-visible {
   outline: 2px solid rgba(56,189,248,0.6);
   outline-offset: 2px;
 }
