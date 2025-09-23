@@ -1,5 +1,4 @@
-// components/AudienceStrip.tsx — FINAL (v6)
-// Goal: 9.6+ — ultra clair, cohérent GitHub, FX discrets, no overflow, a11y OK
+// components/AudienceStrip.tsx — FINAL v7 (aligned GitHub, /personal & /pro, world-class)
 
 "use client";
 
@@ -8,8 +7,12 @@ import { useEffect } from "react";
 import { User, Building2, Check } from "lucide-react";
 
 export default function AudienceStrip() {
-  // Révélation douce des cartes au scroll
+  // Révélation douce des cartes au scroll (respecte reduced-motion)
   useEffect(() => {
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -17,7 +20,7 @@ export default function AudienceStrip() {
           const el = entry.target as HTMLElement;
           const idx = Number(el.dataset.index || 0);
           el.classList.remove("opacity-0", "translate-y-3");
-          el.style.transitionDelay = `${100 + idx * 100}ms`;
+          if (!prefersReduced) el.style.transitionDelay = `${100 + idx * 100}ms`;
           io.unobserve(el);
         }
       },
@@ -33,8 +36,8 @@ export default function AudienceStrip() {
     eyebrow: string;
     title: string;
     bullets: string[];
-    primary: { href: string; label: string };
-    secondary: { href: string; label: string };
+    primary: { href: string; label: string; aria?: string };
+    secondary: { href: string; label: string; aria?: string };
     note?: string;
   }[] = [
     {
@@ -43,13 +46,14 @@ export default function AudienceStrip() {
       eyebrow: "For Individuals",
       title: "Protect your documents in seconds",
       bullets: [
-        "Add a visible watermark + invisible proof",
-        "No account, no storage — all on your device",
-        "Free plan: 5 protected files / month",
+        "Visible watermark + invisible protection (on-device)",
+        "No account, no storage — private by design",
+        "Free plan: 5 protected files/month",
       ],
-      primary: { href: "/generate", label: "Protect a file" },
-      secondary: { href: "/individuals", label: "Learn more" },
-      note: "Perfect for CVs, artworks, invoices, contracts.",
+      primary: { href: "/generate", label: "Protect a file", aria: "Protect a file now" },
+      // Aligné avec les routes réelles du site
+      secondary: { href: "/personal", label: "Learn more", aria: "Learn more for individuals" },
+      note: "Great for CVs, invoices, photos, and creative work.",
     },
     {
       key: "professionals",
@@ -57,19 +61,19 @@ export default function AudienceStrip() {
       eyebrow: "For Professionals",
       title: "Trust at scale for your business",
       bullets: [
-        "Enterprise key + certificate branding",
+        "Company-branded certificates",
         "DNS binding for instant verification",
-        "Team workflows — simple and fast",
+        "Simple team workflows",
       ],
-      primary: { href: "/generate", label: "Try with a file" },
-      secondary: { href: "/professionals", label: "Learn more" },
-      note: "Ideal for studios, agencies, legal, operations.",
+      primary: { href: "/generate", label: "Try with a file", aria: "Try protection with a file" },
+      secondary: { href: "/pro", label: "Learn more", aria: "Learn more for businesses" },
+      note: "Ideal for studios, agencies, legal, and operations teams.",
     },
   ];
 
   return (
     <section
-      aria-label="DigitalMeve — Solutions for individuals and professionals"
+      aria-label="DigitalMeve — Solutions for individuals and businesses"
       className="relative fx-boundary overflow-hidden px-4 py-12 sm:py-16"
     >
       {/* FX discrets, contraints au viewport */}
@@ -89,7 +93,7 @@ export default function AudienceStrip() {
           Choose your path
         </p>
         <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-          Individuals or Professionals — same invisible proof, tailored to you
+          Individuals or Businesses — same protection, tailored to you
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-sm sm:text-[15px] text-[var(--fg-muted)]">
           Start free in seconds, or scale trust across your company with enterprise features.
@@ -103,9 +107,11 @@ export default function AudienceStrip() {
             key={it.key}
             data-as-reveal="1"
             data-index={idx}
-            className="opacity-0 translate-y-3 transition-all duration-600
-                       rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur
-                       hover:bg-white/8 hover:shadow-[0_12px_30px_rgba(16,185,129,.10),0_6px_18px_rgba(56,189,248,.10)]"
+            className={[
+              "opacity-0 translate-y-3 transition-all duration-500",
+              "rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur",
+              "hover:bg-white/10 hover:shadow-[0_12px_30px_rgba(16,185,129,.10),0_6px_18px_rgba(56,189,248,.10)]",
+            ].join(" ")}
           >
             <header className="flex items-center gap-2 text-xs text-slate-300">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/10 to-sky-500/10 ring-1 ring-white/10 text-emerald-300">
@@ -130,12 +136,14 @@ export default function AudienceStrip() {
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
                 href={it.primary.href}
+                aria-label={it.primary.aria}
                 className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-3.5 py-2 text-sm font-medium text-white shadow-[0_0_24px_rgba(56,189,248,.22)] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
               >
                 {it.primary.label}
               </Link>
               <Link
                 href={it.secondary.href}
+                aria-label={it.secondary.aria}
                 className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               >
                 {it.secondary.label}
@@ -148,4 +156,4 @@ export default function AudienceStrip() {
       </div>
     </section>
   );
-}
+          }
