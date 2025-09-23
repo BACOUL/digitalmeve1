@@ -1,4 +1,4 @@
-// components/MobileMenu.tsx — v2 (aligned with agreed routes, a11y, swipe-to-close)
+// components/MobileMenu.tsx — v3 (world-class UX, no horizontal overflow, real routes, a11y, swipe-to-close)
 "use client";
 
 import Link from "next/link";
@@ -25,11 +25,20 @@ export default function MobileMenu({ open, onClose }: Props) {
   const firstFocusRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
-  // scroll lock + focus trap + Esc/Tab loop
+  // —— Close on route change (prevents stuck overlay) ——
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // —— Scroll lock + focus trap + Esc/Tab loop ——
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevOverscroll = document.body.style.overscrollBehaviorX;
     document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehaviorX = "none";
     const to = setTimeout(() => (firstFocusRef.current ?? panelRef.current)?.focus(), 0);
 
     const onKey = (e: KeyboardEvent) => {
@@ -51,11 +60,12 @@ export default function MobileMenu({ open, onClose }: Props) {
     return () => {
       window.removeEventListener("keydown", onKey);
       clearTimeout(to);
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
+      document.body.style.overscrollBehaviorX = prevOverscroll;
     };
   }, [open, onClose]);
 
-  // swipe-to-close
+  // —— Swipe-to-close (sans “tirer” au-delà et sans créer de scroll latéral) ——
   const startX = useRef<number | null>(null);
   const dx = useRef(0);
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -76,31 +86,36 @@ export default function MobileMenu({ open, onClose }: Props) {
     dx.current = 0;
   };
 
-  // Sections alignées avec la nav desktop
-  const primary = useMemo(
+  // —— Nav alignée avec tes routes EXISTANTES ——
+  const products = useMemo(
     () => [
-      { href: "/docs", label: "Standard" },
-      { href: "/security", label: "Security" },
-      { href: "/pricing", label: "Pricing" },
-      { href: "/roadmap", label: "Roadmap" },
-      { href: "/faq", label: "FAQ" },
-      { href: "https://github.com/BACOUL/Digitalmeve-standard-", label: "GitHub", external: true },
+      { href: "/generate", label: "Generate" },
+      { href: "/verify", label: "Verify" },
     ],
     []
   );
-
   const solutions = useMemo(
     () => [
-      { href: "/individuals", label: "For Individuals" },
-      { href: "/professionals", label: "For Professionals" },
+      { href: "/personal", label: "For Individuals" },
+      { href: "/pro", label: "For Business" },
     ],
     []
   );
-
-  const quickActions = useMemo(
+  const resources = useMemo(
     () => [
-      { href: "/generate", label: "Generate", variant: "primary" as const },
-      { href: "/verify", label: "Verify", variant: "outline" as const },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/developers", label: "Developers" },
+      { href: "/security", label: "Security" },
+      { href: "/status", label: "Status" },
+      { href: "/changelog", label: "Changelog" },
+    ],
+    []
+  );
+  const company = useMemo(
+    () => [
+      { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
+      { href: "/legal", label: "Legal" },
     ],
     []
   );
@@ -113,7 +128,7 @@ export default function MobileMenu({ open, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="mobilemenu-title"
-      className="fixed inset-0 z-[1000] flex bg-black/40 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[1000] flex bg-black/40 backdrop-blur-[2px] overflow-hidden touch-pan-y"
       onClick={onClose}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -122,9 +137,10 @@ export default function MobileMenu({ open, onClose }: Props) {
       <div
         ref={panelRef}
         role="document"
-        className="ml-auto flex h-dvh w-full max-w-sm flex-col bg-slate-950 outline-none md:rounded-l-2xl md:shadow-2xl animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] focus-visible:ring-2 focus-visible:ring-emerald-400/40"
+        className="ml-auto flex h-dvh w-full max-w-sm flex-col bg-slate-950 outline-none md:rounded-l-2xl md:shadow-2xl animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] focus-visible:ring-2 focus-visible:ring-emerald-400/40 overflow-x-hidden"
         onClick={(e) => e.stopPropagation()}
         tabIndex={-1}
+        style={{ overscrollBehaviorX: "none", touchAction: "pan-y" }}
       >
         {/* Top */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-4">
@@ -149,56 +165,56 @@ export default function MobileMenu({ open, onClose }: Props) {
 
             {/* Quick actions */}
             <div className="mb-6 grid grid-cols-2 gap-3">
-              {quickActions.map((a) =>
-                a.variant === "primary" ? (
-                  <Link
-                    key={a.href}
-                    href={a.href}
-                    onClick={onClose}
-                    className="text-center rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white hover:brightness-110"
-                  >
-                    {a.label}
-                  </Link>
-                ) : (
-                  <Link
-                    key={a.href}
-                    href={a.href}
-                    onClick={onClose}
-                    className="text-center rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800"
-                  >
-                    {a.label}
-                  </Link>
-                )
-              )}
+              <Link
+                href="/generate"
+                onClick={onClose}
+                className="text-center rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_rgba(56,189,248,.22)] hover:brightness-110"
+              >
+                Generate
+              </Link>
+              <Link
+                href="/verify"
+                onClick={onClose}
+                className="text-center rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800"
+              >
+                Verify
+              </Link>
             </div>
 
-            {/* Solutions */}
+            <Section title="Products">
+              {products.map((it) => (
+                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+              ))}
+            </Section>
+
             <Section title="Solutions">
               {solutions.map((it) => (
                 <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
               ))}
             </Section>
 
-            {/* Primary */}
-            <Section title="Explore">
-              {primary.map((it) =>
-                it.external ? (
-                  <li key={it.href}>
-                    <a
-                      href={it.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={onClose}
-                      className="flex items-center justify-between rounded-lg px-2 py-2 text-[15px] text-slate-200 hover:bg-slate-900 hover:text-white transition"
-                    >
-                      <span>GitHub</span>
-                      <ExternalLink className="h-4 w-4 opacity-70" aria-hidden />
-                    </a>
-                  </li>
-                ) : (
-                  <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-                )
-              )}
+            <Section title="Resources">
+              {resources.map((it) => (
+                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+              ))}
+              <li>
+                <a
+                  href="https://github.com/BACOUL/Digitalmeve-standard-"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-lg px-2 py-2 text-[15px] text-slate-200 hover:bg-slate-900 hover:text-white transition"
+                >
+                  <span>GitHub</span>
+                  <ExternalLink className="h-4 w-4 opacity-70" aria-hidden />
+                </a>
+              </li>
+            </Section>
+
+            <Section title="Company">
+              {company.map((it) => (
+                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+              ))}
             </Section>
           </nav>
 
@@ -261,6 +277,8 @@ export default function MobileMenu({ open, onClose }: Props) {
           from { transform: translateX(8%); opacity: 0.4; }
           to { transform: translateX(0%); opacity: 1; }
         }
+        /* Pas de débordement pendant l'anim */
+        .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] { will-change: transform, opacity; }
         @media (prefers-reduced-motion: reduce) {
           .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] { animation: none !important; }
         }
@@ -313,4 +331,4 @@ function isActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-       }
+                    }
