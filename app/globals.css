@@ -1,78 +1,230 @@
-/* app/globals.css — SAFE RESET (no lock, no surprises) */
+/* =========================================
+   DigitalMeve — Global Styles (v3, safe)
+   Objectifs :
+   - Zéro scroll horizontal / écran noir (mobile/desktop)
+   - Base tokens cohérente avec le site
+   - Composants utilitaires : .btn, .badge, .card, .input
+   - Accessibilité & reduced motion
+   - Compat Next.js 15 + Tailwind
+   ========================================= */
 
 /* Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ---------- Base ultra-stable ---------- */
-
+/* ---------- Design tokens ---------- */
 :root {
-  --bg: #0b1220;
-  --fg: #e5edf5;
-  --fg-muted: #94a3b8;
-  --border: rgba(255,255,255,0.12);
-  --ring: rgba(56,189,248,0.45);
-  --accent-1: #34d399;
-  --accent-2: #38bdf8;
+  color-scheme: dark;
+  /* Fond & texte */
+  --bg: #0b1220;            /* proche slate-950 */
+  --fg: #e5e7eb;            /* slate-200 */
+  --fg-muted: #94a3b8;      /* slate-400 */
+  --border: rgba(255,255,255,0.08);
+
+  /* Accents */
+  --accent-1: #34d399;      /* emerald-400 */
+  --accent-2: #38bdf8;      /* sky-400 */
+
+  /* Radius & elevation */
+  --radius: 0.75rem;        /* 12px */
+  --radius-xl: 1rem;        /* 16px */
+  --radius-2xl: 1.25rem;    /* 20px */
+  --shadow-sm: 0 0 24px rgba(56,189,248,0.18);
+  --shadow-md: 0 8px 30px rgba(16,185,129,0.12), 0 4px 18px rgba(56,189,248,0.12);
+
+  /* Safe-area */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ---------- Global resets & layout guards ---------- */
 html, body {
-  /* IMPORTANT : pas de lock vertical */
-  margin: 0;
-  padding: 0;
-  width: 100%;
+  height: 100%;
   min-height: 100%;
+  overflow-x: hidden;              /* bloque les débordements horizontaux */
   background: var(--bg);
   color: var(--fg);
-  overflow-y: auto;         /* scroll vertical toujours autorisé */
-  overflow-x: hidden;       /* coupe uniquement l’horizontal */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
 }
 
-/* Ne JAMAIS verrouiller via classe globale.
-   Si tu avais ajouté .mm-open quelque part, elle ne change plus rien ici. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-/* Liens / focus */
-a { color: inherit; text-decoration: none; }
-:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+/* Évite les surprises de largeur (cartes, images, grilles) */
+* { min-width: 0; }
+
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Liens */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover { opacity: 0.96; }
 
 /* Sélection */
-::selection { background: rgba(56,189,248,0.35); color: #0b1220; }
-
-/* ---------- Composants minimaux (cohérents avec le site) ---------- */
-
-@layer components {
-  .btn {
-    @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition
-           border border-[var(--border)] bg-white/5 text-[var(--fg)]
-           hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)];
-  }
-  .btn-primary {
-    @apply bg-gradient-to-r from-emerald-500 to-sky-500 text-white border-0
-           shadow-[0_0_24px_rgba(56,189,248,.22)] hover:brightness-110;
-  }
-  .btn-outline { @apply bg-transparent text-[var(--fg)] border border-[var(--border)] hover:bg-white/10; }
-  .btn-ghost   { @apply bg-transparent border border-transparent text-[var(--fg)] hover:bg-white/5; }
-
-  .badge {
-    @apply inline-flex items-center gap-2 rounded-full border border-[var(--border)]
-           bg-white/5 px-3 py-1 text-xs text-slate-300;
-  }
-  .card  { @apply rounded-2xl border border-[var(--border)] bg-slate-900/50 backdrop-blur p-4; }
-  .input {
-    @apply w-full rounded-xl border border-[var(--border)] bg-white/5 px-3 py-2 text-sm
-           placeholder:text-slate-400 text-[var(--fg)]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)];
-  }
-  .eyebrow { @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300; }
+::selection {
+  background: rgba(56,189,248,0.25);
+  color: #fff;
 }
 
-/* ---------- Helpers safe ---------- */
+/* ---------- Containers ---------- */
+.container,
+.max-w-6xl {
+  /* Surcouche safe pour empêcher tout dépassement discret */
+  overflow: clip; /* (fallback: hidden si besoin de compat anciens) */
+}
 
-main { overflow-x: hidden; }                 /* sécurité anti scroll latéral */
-.break-anywhere { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
+/* ---------- FX boundary (fond aurora/beam/noise) ---------- */
+/* Entoure les sections avec effets pour éviter tout débordement */
+.fx-boundary {
+  position: relative;
+  overflow: hidden;               /* empêche les débordements GPU */
+}
 
-/* Pas d’effets full-screen, pas d’overlays globaux ici.
-   On les réintroduira une fois que la navigation est confirmée OK. */
+/* Les layers décoratifs doivent être contraints à la largeur viewport */
+.fx-boundary [data-fx] {
+  position: absolute;
+  inset: 0;
+  max-width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ---------- Typo basique ---------- */
+h1,h2,h3,h4 {
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+p { color: var(--fg); }
+small, .muted { color: var(--fg-muted); }
+
+/* ---------- Composants utilitaires ---------- */
+
+/* Boutons */
+.btn {
+  @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--fg);
+}
+.btn:hover { background: rgba(255,255,255,0.08); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  border: none;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  color: #0b1220;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover { filter: brightness(1.08); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+.btn-outline:hover { background: rgba(255,255,255,0.06); }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.06); }
+
+.shadow-glow { box-shadow: var(--shadow-sm); }
+
+/* Badges */
+.badge {
+  @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--fg);
+}
+
+/* Cards */
+.card {
+  @apply rounded-2xl;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(6px);
+}
+
+/* Inputs */
+.input {
+  @apply w-full rounded-xl px-3 py-2 text-sm outline-none;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--fg);
+}
+.input::placeholder { color: var(--fg-muted); }
+.input:focus {
+  border-color: rgba(56,189,248,0.5);
+  box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
+}
+
+/* Skip link visible au focus (a11y) */
+.sr-only:not(:focus):not(:active) {
+  @apply sr-only;
+}
+
+/* Focus visible global (meilleur a11y) */
+:focus-visible {
+  outline: 2px solid rgba(56,189,248,0.6);
+  outline-offset: 2px;
+}
+
+/* ---------- Motion preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Layout helpers ---------- */
+/* Assure des paddings bas confortables sur mobiles à encoches */
+.pad-safe {
+  padding-bottom: calc(1rem + var(--safe-bottom));
+}
+
+/* Titres gradients (utilisés dans Hero) */
+.text-gradient {
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Fix spécifiques UI ---------- */
+/* Empêche les modales/menu d’étirer le layout horizontalement */
+[role="dialog"],
+[data-dialog],
+.mm-panel {
+  contain: layout;
+}
+
+/* Garantit que les sections pleine largeur ne dépassent jamais */
+section,
+header,
+footer {
+  max-width: 100vw;
+}
+
+/* Si un composant custom injecte un transform qui déborde, clippez-le */
+.overflow-clip {
+  overflow: clip;
+  }
