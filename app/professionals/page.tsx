@@ -1,4 +1,4 @@
-// app/professionals/page.tsx — Professionals (enterprise-grade, aligned with GitHub & site)
+// app/professionals/page.tsx — Professionals (enterprise-grade, 9.6+ polish, a11y & overflow-safe)
 "use client";
 
 import Link from "next/link";
@@ -28,10 +28,9 @@ export default function ProfessionalsPage() {
             </span>
           </h1>
           <p className="mt-4 max-w-3xl mx-auto text-lg text-slate-300/90">
-            Issue enterprise-grade certificates with a{" "}
-            <strong>private key</strong>, bind them to your{" "}
-            <strong>DNS domain</strong>, and verify anywhere in seconds. All processing
-            runs in the browser — <strong>no storage</strong>, no vendor lock-in.
+            Issue enterprise-grade certificates with a <strong>private key</strong>, bind them to your{" "}
+            <strong>DNS domain</strong>, and verify anywhere in seconds. All processing runs in the browser —{" "}
+            <strong>no storage</strong>, no vendor lock-in.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -61,12 +60,20 @@ export default function ProfessionalsPage() {
               Certificate included (HTML)
             </span>
           </div>
+
+          {/* Proofs micro-bar (cohérence Home) */}
+          <ul className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-300/90">
+            <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">On-device only</li>
+            <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">No storage</li>
+            <li className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">PDF & DOCX today</li>
+          </ul>
         </div>
       </section>
 
       {/* WHY (EXEC / TECH) */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="grid gap-6 sm:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-4 py-16" aria-labelledby="why-pro">
+        <h2 id="why-pro" className="text-2xl font-semibold text-center">Why it works for business</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3 overflow-hidden">
           {[
             {
               icon: <KeyRound className="h-7 w-7 text-emerald-300" />,
@@ -103,8 +110,11 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* HOW IT WORKS (BUSINESS) */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
-        <h2 className="text-2xl font-semibold text-center">How it works for businesses</h2>
+      <section
+        className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10 overflow-hidden"
+        aria-labelledby="hiw-pro"
+      >
+        <h2 id="hiw-pro" className="text-2xl font-semibold text-center">How it works for businesses</h2>
         <ol className="mt-10 grid gap-6 sm:grid-cols-3">
           {[
             {
@@ -113,10 +123,9 @@ export default function ProfessionalsPage() {
               icon: <Fingerprint className="h-6 w-6 text-emerald-300" />,
               desc: (
                 <>
-                  Generate on-device: add a <strong>visible watermark</strong>, an{" "}
-                  <strong>invisible SHA-256</strong> fingerprint and an{" "}
-                  <strong>invisible DigitalMeve key</strong>. Certificate HTML is created and
-                  names your company as the issuer.
+                  Generate on-device: add a <strong>visible watermark</strong>, and an{" "}
+                  <strong>invisible proof</strong> (unique fingerprint + time) embedded in the file. A certificate (HTML)
+                  is created and names your company as the issuer.
                 </>
               ),
             },
@@ -156,8 +165,11 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* USE CASES */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
-        <h2 className="text-2xl font-semibold text-center">Where businesses use DigitalMeve</h2>
+      <section
+        className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10 overflow-hidden"
+        aria-labelledby="use-pro"
+      >
+        <h2 id="use-pro" className="text-2xl font-semibold text-center">Where businesses use DigitalMeve</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
           {[
             {
@@ -186,8 +198,11 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* PRICING (mirror of PRICING.md) */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
-        <h2 className="text-2xl font-semibold text-center">Professional plan</h2>
+      <section
+        className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10 overflow-hidden"
+        aria-labelledby="pricing-pro"
+      >
+        <h2 id="pricing-pro" className="text-2xl font-semibold text-center">Professional plan</h2>
         <p className="mt-3 text-center text-slate-300/90">
           Unlimited certifications with enterprise identity and DNS binding.
         </p>
@@ -201,7 +216,7 @@ export default function ProfessionalsPage() {
               {[
                 "5 files / month",
                 "Visible watermark",
-                "Invisible SHA-256 + DigitalMeve key",
+                "Invisible proof (embedded)",
                 "On-device processing · No storage",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2">
@@ -209,7 +224,10 @@ export default function ProfessionalsPage() {
                 </li>
               ))}
             </ul>
-            <Link href="/generate" className="mt-6 inline-flex w-full justify-center rounded-xl ring-1 ring-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5">
+            <Link
+              href="/generate"
+              className="mt-6 inline-flex w-full justify-center rounded-xl ring-1 ring-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5"
+            >
               Get started free
             </Link>
           </div>
@@ -221,9 +239,14 @@ export default function ProfessionalsPage() {
             </span>
             <h3 className="text-lg font-semibold">Professional</h3>
             <p className="mt-1 text-3xl font-bold">
-              €29.90 <span className="ml-1 align-middle text-sm font-normal text-slate-400">/ month · or €299/year</span>
+              €29.90{" "}
+              <span className="ml-1 align-middle text-sm font-normal text-slate-400">
+                / month · or €299/year
+              </span>
             </p>
-            <p className="mt-2 text-sm text-slate-400">Unlimited certifications with enterprise identity.</p>
+            <p className="mt-2 text-sm text-slate-400">
+              Unlimited certifications with enterprise identity.
+            </p>
             <ul className="mt-4 space-y-1 text-sm">
               {[
                 "Unlimited files · Priority checks",
@@ -252,8 +275,11 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* COMPLIANCE */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
-        <h2 className="text-2xl font-semibold text-center">Security & Compliance</h2>
+      <section
+        className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10 overflow-hidden"
+        aria-labelledby="compliance-pro"
+      >
+        <h2 id="compliance-pro" className="text-2xl font-semibold text-center">Security & Compliance</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
           {[
             { title: "GDPR (EU)", desc: "Privacy by design. No storage or tracking; on-device processing." },
@@ -267,14 +293,24 @@ export default function ProfessionalsPage() {
           ))}
         </div>
         <p className="mt-8 text-center text-sm">
-          Read more in <Link href="/security" className="underline decoration-dotted underline-offset-4 hover:opacity-90">Security</Link> and{" "}
-          <Link href="/docs" className="underline decoration-dotted underline-offset-4 hover:opacity-90">Standard</Link>.
+          Read more in{" "}
+          <Link href="/security" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
+            Security
+          </Link>{" "}
+          and{" "}
+          <Link href="/docs" className="underline decoration-dotted underline-offset-4 hover:opacity-90">
+            Standard
+          </Link>
+          .
         </p>
       </section>
 
       {/* FAQ (PRO) */}
-      <section className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10">
-        <h2 className="text-2xl font-semibold text-center">FAQ for professionals</h2>
+      <section
+        className="mx-auto max-w-6xl px-4 py-16 border-t border-white/10 overflow-hidden"
+        aria-labelledby="faq-pro"
+      >
+        <h2 id="faq-pro" className="text-2xl font-semibold text-center">FAQ for professionals</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {[
             {
@@ -287,7 +323,7 @@ export default function ProfessionalsPage() {
             },
             {
               q: "What is embedded in each file?",
-              a: "A visible watermark, an invisible SHA-256 fingerprint, and an invisible DigitalMeve key. Certificates (HTML) name your company.",
+              a: "A visible watermark and an invisible proof (unique fingerprint + time) are embedded. Certificates (HTML) name your company.",
             },
             {
               q: "Can we integrate with workflows?",
