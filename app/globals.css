@@ -143,6 +143,9 @@
 }
 .btn:hover { background: color-mix(in oklab, var(--surface) 75%, white 25%); }
 .btn:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
+/* micro-tuning */
+.btn:active { transform: translateY(1px); }
+.btn[disabled], .btn:disabled { opacity: .6; cursor: not-allowed; filter: grayscale(.1); }
 
 .btn-primary {
   color: #0B1220;
@@ -264,6 +267,9 @@
   border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-soft); transition:top .18s ease; }
 .skip-link:focus { top:.75rem; outline:none; box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
 
+/* Focus visible générique */
+a:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); border-radius: 10px; }
+
 /* ----------------------------- */
 /* Listes avec coche              */
 /* ----------------------------- */
@@ -273,4 +279,53 @@
   content:""; position:absolute; left:0; top:.35rem; width:1rem; height:1rem; border-radius:8px;
   background:var(--accent-2-weak);
   mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="white" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>') center / 100% 100% no-repeat;
-                        }
+}
+
+/* ============================================================
+   NAVIGATION (logo gauche, menu à droite, mobile ok)
+   ============================================================ */
+.site-header { position: relative; z-index: 50; border-bottom: 1px solid var(--border); background: var(--surface-weak); }
+.site-header.sticky { position: sticky; top: 0; backdrop-filter: saturate(120%) blur(8px); background: color-mix(in oklab, var(--surface-weak) 92%, transparent); }
+
+.nav { display: flex; align-items: center; height: 64px; gap: 0.75rem; }
+.nav__brand { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; color: var(--fg); }
+.nav__brand img { display: block; }
+
+/* ✅ Le menu desktop est poussé à droite par margin-left:auto */
+.nav__links { margin-left: auto; display: none; align-items: center; gap: 1.25rem; }
+.nav__links a { color: var(--fg); text-decoration: none; }
+.nav__links a:hover { opacity: .85; }
+
+/* Bouton burger (mobile) */
+.nav__toggle { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 90%, white 10%); }
+.nav__toggle:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring); }
+.nav__toggle svg { width: 22px; height: 22px; }
+
+/* Panel mobile */
+.nav__panel { position: absolute; right: 1rem; top: calc(64px + .5rem); display: none; min-width: 240px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: .75rem; }
+.nav__panel.open { display: block; }
+.nav__panel-inner { display: flex; flex-direction: column; align-items: flex-end; gap: .65rem; }
+.nav__panel a { color: var(--fg); text-decoration: none; padding: .5rem .25rem; width: 100%; text-align: right; border-radius: 10px; }
+.nav__panel a:hover { background: color-mix(in oklab, var(--surface) 85%, white 15%); }
+
+/* Desktop ≥ md */
+@media (min-width: 768px) {
+  .nav__links { display: inline-flex; }
+  .nav__toggle, .nav__panel { display: none !important; }
+}
+
+/* ============================================================
+   UX / ACCESSIBILITÉ — améliorations globales
+   ============================================================ */
+
+/* Respecte préférences d’animation */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .aurora, .beam, .noise { display: none !important; }
+}
+
+/* Cibles tactiles plus confortables */
+.btn, .nav__toggle, .badge, .input { min-height: 40px; }
+```0
