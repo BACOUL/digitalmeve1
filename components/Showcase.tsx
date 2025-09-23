@@ -1,4 +1,4 @@
-// components/Showcase.tsx
+// components/Showcase.tsx — v2.1 (accurate, non-jargon, clickable steps, no “anywhere”)
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -19,27 +19,27 @@ export default function Showcase() {
       {
         key: "upload",
         title: "Drop your file",
-        desc: "Works with common formats; your file stays on your device.",
+        desc: "Works with common formats. Everything happens on your device.",
         icon: <Upload className="h-5 w-5" aria-hidden />,
         cta: { href: "/generate", label: "Get started for free" },
       },
       {
-        key: "proof",
-        title: "Invisible .MEVE proof",
-        desc: "We embed a lightweight proof — nothing changes to your file.",
+        key: "protect",
+        title: "Protection added",
+        desc: "An invisible .MEVE proof + a small visible watermark are embedded. Stays readable & portable.",
         icon: <ShieldCheck className="h-5 w-5" aria-hidden />,
         cta: { href: "/generate", label: "Protect a file" },
       },
       {
-        key: "certificate",
-        title: "Certificate issued",
-        desc: "A verifiable certificate is generated alongside your file.",
+        key: "protected-file",
+        title: "Protected file",
+        desc: "You keep your file with proof inside (e.g., .meve.pdf). No account, no storage.",
         icon: <FileCheck2 className="h-5 w-5" aria-hidden />,
       },
       {
-        key: "verify",
-        title: "Verify anywhere",
-        desc: "Anyone can confirm authenticity in seconds.",
+        key: "quick-check",
+        title: "Quick check",
+        desc: "Anyone can confirm authenticity in seconds — right in the browser.",
         icon: <Radar className="h-5 w-5" aria-hidden />,
         cta: { href: "/verify", label: "Verify a document" },
       },
@@ -49,17 +49,22 @@ export default function Showcase() {
 
   const [active, setActive] = useState(0);
 
-  // Boucle automatique : change d'étape toutes les 3 secondes
+  // Autoplay: change step every 3s
   useEffect(() => {
-    const id = setInterval(() => {
-      setActive((i) => (i + 1) % STEPS.length);
-    }, 3000);
+    const id = setInterval(() => setActive((i) => (i + 1) % STEPS.length), 3000);
     return () => clearInterval(id);
   }, [STEPS.length]);
 
+  const handleKey = (e: React.KeyboardEvent<HTMLLIElement>, i: number) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setActive(i);
+    }
+  };
+
   return (
-    <section className="relative overflow-hidden px-4 py-20 sm:py-24">
-      {/* fond subtil */}
+    <section className="relative overflow-hidden px-4 py-20 sm:py-24" aria-label="How protection flows">
+      {/* subtle bg */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-40"
@@ -77,31 +82,36 @@ export default function Showcase() {
             Demo / Showcase
           </p>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-            From file to trust — live preview
+            From file to trusted — live preview
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
-            Watch the flow: upload → invisible proof → certificate → verify. No account, no storage — all in your browser.
+            See the flow: import → protection added → protected file → quick check. No account, no storage — all on your device.
           </p>
         </div>
 
-        {/* Carte de démo */}
+        {/* Demo card */}
         <div className="mt-8 rounded-2xl border border-white/10 bg-slate-900/50 p-5 sm:p-6 backdrop-blur">
-          {/* Barre d’étapes (responsive) */}
+          {/* Steps bar */}
           <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {STEPS.map((s, i) => {
               const isActive = i === active;
               return (
                 <li
                   key={s.key}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isActive}
+                  onClick={() => setActive(i)}
+                  onKeyDown={(e) => handleKey(e, i)}
                   className={[
-                    "group relative rounded-xl border bg-white/5 p-4 transition",
+                    "group relative rounded-xl border bg-white/5 p-4 transition outline-none",
                     "border-white/10",
                     isActive
                       ? "shadow-[0_0_40px_rgba(56,189,248,.18)] ring-1 ring-emerald-400/40"
-                      : "hover:bg-white/10"
+                      : "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-emerald-400/40"
                   ].join(" ")}
                 >
-                  {/* Glow d’arrière-plan (active) */}
+                  {/* Active glow */}
                   <div
                     aria-hidden
                     className={[
@@ -127,7 +137,6 @@ export default function Showcase() {
                     <h3 className="mt-3 text-sm font-semibold text-white">{s.title}</h3>
                     <p className="mt-1 text-xs leading-relaxed text-slate-400">{s.desc}</p>
 
-                    {/* CTA contextuel (optionnel) */}
                     {s.cta && (
                       <Link
                         href={s.cta.href}
@@ -142,23 +151,23 @@ export default function Showcase() {
                     )}
                   </div>
 
-                  {/* Barre de progression (active) */}
+                  {/* Progress */}
                   <ProgressBar active={isActive} durationMs={3000} />
                 </li>
               );
             })}
           </ol>
 
-          {/* Légende + CTA global */}
+          {/* Legend + CTA */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-slate-400">
-              The demo cycles automatically every 3 seconds. You can also click on any step.
+              The demo cycles every 3 seconds. You can also click any step.
             </p>
             <div className="flex gap-2">
               <Link
                 href="/generate"
                 className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_30px_rgba(56,189,248,.22)] hover:brightness-105"
-                aria-label="Get started for free — add a .MEVE certificate"
+                aria-label="Get started for free"
               >
                 Get started for free
               </Link>
@@ -173,7 +182,7 @@ export default function Showcase() {
           </div>
         </div>
 
-        {/* Astuce d’accessibilité : navigation manuelle par clic */}
+        {/* A11y manual nav (screen readers) */}
         <nav className="sr-only" aria-label="Showcase steps">
           {STEPS.map((_, i) => (
             <button key={i} onClick={() => setActive(i)}>
@@ -186,23 +195,18 @@ export default function Showcase() {
   );
 }
 
-/** Barre de progression qui se remplit sur la durée active */
 function ProgressBar({ active, durationMs = 3000 }: { active: boolean; durationMs?: number }) {
   return (
     <div className="relative mt-4 h-1 w-full overflow-hidden rounded-full bg-white/10">
       <div
-        className={[
-          "h-full w-0 rounded-full",
-          active ? "animate-none" : ""
-        ].join(" ")}
+        className="h-full w-0 rounded-full"
         style={{
           transition: `width ${durationMs}ms linear`,
           width: active ? "100%" : "0%",
-          background:
-            "linear-gradient(90deg, rgba(16,185,129,.9), rgba(56,189,248,.9))",
+          background: "linear-gradient(90deg, rgba(16,185,129,.9), rgba(56,189,248,.9))",
           boxShadow: "0 0 14px rgba(56,189,248,.35)",
         }}
       />
     </div>
   );
-          }
+  }
