@@ -1,4 +1,5 @@
-// components/HowItWorks.tsx — v2 (clear, non-jargon, a11y, no overflow)
+// components/HowItWorks.tsx — v3 (aligned with GitHub: watermark mandatory, plain-English, a11y)
+
 "use client";
 
 import Link from "next/link";
@@ -20,13 +21,13 @@ export default function HowItWorks() {
     },
     {
       icon: <ShieldCheck className="h-6 w-6 opacity-90" aria-hidden />,
-      title: "Add the invisible proof",
-      text: "We embed a self-contained certificate and (optionally) a visible watermark.",
+      title: "Invisible proof + watermark",
+      text: "We embed an invisible proof and a small visible watermark in your file.",
     },
     {
       icon: <Radar className="h-6 w-6 opacity-90" aria-hidden />,
       title: "Verify in seconds",
-      text: "Open standard. Anyone can confirm authenticity instantly, anywhere.",
+      text: "Anyone can confirm authenticity quickly using the same standard.",
     },
   ];
 
@@ -45,9 +46,7 @@ export default function HowItWorks() {
     if (!ref.current) return;
 
     const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) setVisible(true);
-      },
+      ([e]) => e.isIntersecting && setVisible(true),
       { rootMargin: "0px 0px -10% 0px", threshold: 0.15 }
     );
     io.observe(ref.current);
@@ -82,7 +81,7 @@ export default function HowItWorks() {
           Protect and prove — in 3 simple steps.
         </h2>
         <p className="mx-auto mt-2 max-w-3xl text-center text-[15px] sm:text-[17px] text-[var(--fg-muted)]">
-          Private by design, universal by default. No account, no storage — start in seconds.
+          Private by design. No account, no storage. Start in seconds on your device.
         </p>
 
         {/* Steps */}
@@ -136,7 +135,7 @@ export default function HowItWorks() {
 
         {/* Micro-footnote (concise, non-tech) */}
         <p className="mt-3 text-center text-xs text-slate-400">
-          Works with common formats (PDF, DOCX, images). The proof is embedded and travels with your file.
+          Works with common formats (PDF, DOCX, PNG, JPG). The proof and watermark stay with your file.
         </p>
       </div>
     </section>
