@@ -1,11 +1,10 @@
-// components/Hero.tsx — v16 (world-class, mobile-first, subtle FX, counter)
+// components/Hero.tsx — v16.1 (fix TS build + world-class polish)
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ShieldCheck, Radar, Sparkles, BadgeCheck } from "lucide-react";
 
-// Compteur de base (peut être remplacé plus tard par /api/stats)
 const BASELINE_TOTAL = 23573;
 
 function formatEN(n: number) {
@@ -13,11 +12,10 @@ function formatEN(n: number) {
 }
 
 export default function Hero() {
-  // Compteur animé (entrance + petit drift / 5min)
   const [display, setDisplay] = useState(0);
   const driftRef = useRef<number>(0);
 
-  // Animation d’entrée (révèle les éléments .reveal avec un léger décalage)
+  // Intersection reveal
   useEffect(() => {
     const io = new IntersectionObserver(
       (entries) => {
@@ -26,19 +24,20 @@ export default function Hero() {
           const el = entry.target as HTMLElement;
           const idx = Number(el.dataset.index || 0);
           el.classList.remove("opacity-0", "translate-y-3");
-          el.style.transitionDelay = `${80 + idx * 80}ms`;
+          (el as HTMLElement).style.transitionDelay = `${80 + idx * 80}ms`; // ✅ cast
           io.unobserve(el);
         }
       },
       { threshold: 0.2 }
     );
-    document.querySelectorAll<HTMLElement>("[data-reveal='1']").forEach((el) => io.observe(el));
+    document.querySelectorAll<HTMLElement>("[data-reveal='1']").forEach((el) =>
+      io.observe(el)
+    );
     return () => io.disconnect();
   }, []);
 
-  // Effet compteur (1) entrée de 0 → BASELINE_TOTAL, (2) drift régulier toutes 5 min
+  // Counter
   useEffect(() => {
-    // (1) comptage fluide sur 900ms
     const start = performance.now();
     const from = 0;
     const to = BASELINE_TOTAL;
@@ -51,12 +50,11 @@ export default function Hero() {
     };
     raf = requestAnimationFrame(tick);
 
-    // (2) drift : +5..+20 toutes 5min pour donner de la vie
     const id = setInterval(() => {
       const bump = Math.floor(Math.random() * 16) + 5;
       driftRef.current += bump;
       setDisplay(BASELINE_TOTAL + driftRef.current);
-    }, 300_000); // 5 minutes
+    }, 300_000);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -72,12 +70,22 @@ export default function Hero() {
       aria-label="DigitalMeve — Invisible proof. Visible trust."
       className="relative overflow-visible pb-[calc(84px+env(safe-area-inset-bottom))] sm:pb-20"
     >
-      {/* FX background (contraint à la largeur viewport) */}
+      {/* Background FX */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 -left-24 h-[520px] w-[520px] rounded-full opacity-25 blur-3xl"
-             style={{ background: "radial-gradient(closest-side, rgba(16,185,129,.35), transparent 65%)" }} />
-        <div className="absolute -top-28 right-[-10%] h-[560px] w-[560px] rounded-full opacity-25 blur-3xl"
-             style={{ background: "radial-gradient(closest-side, rgba(56,189,248,.28), transparent 65%)" }} />
+        <div
+          className="absolute -top-24 -left-24 h-[520px] w-[520px] rounded-full opacity-25 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(16,185,129,.35), transparent 65%)",
+          }}
+        />
+        <div
+          className="absolute -top-28 right-[-10%] h-[560px] w-[560px] rounded-full opacity-25 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(56,189,248,.28), transparent 65%)",
+          }}
+        />
         <div className="absolute inset-x-0 top-0 h-12 bg-white/90 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       </div>
 
@@ -90,7 +98,10 @@ export default function Hero() {
           className="reveal mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-semibold tracking-wide text-slate-200 backdrop-blur opacity-0 translate-y-3 transition-all duration-500"
           role="note"
         >
-          <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span
+            aria-hidden
+            className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"
+          />
           THE .MEVE STANDARD · Privacy-first · Certified integrity
         </div>
 
@@ -112,11 +123,11 @@ export default function Hero() {
           data-index="2"
           className="reveal mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)] opacity-0 translate-y-3 transition-all duration-500"
         >
-          Turn any file into a universal proof of authenticity — directly in your
-          browser, without storage.
+          Protect your documents in seconds — add an invisible proof of
+          authenticity, without ever storing your data.
         </p>
 
-        {/* Micro-claims clés (cohérent GitHub) */}
+        {/* Micro-claims */}
         <p
           data-reveal="1"
           data-index="3"
@@ -133,7 +144,6 @@ export default function Hero() {
         >
           <Link
             href="/generate"
-            aria-label="Try for free — 5 certificates included per month"
             className="btn btn-primary px-5 h-12 text-[15.5px] font-semibold shadow-[0_0_40px_rgba(56,189,248,.18)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 max-[360px]:w-full"
           >
             <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
@@ -142,7 +152,6 @@ export default function Hero() {
 
           <Link
             href="/verify"
-            aria-label="Verify a document"
             className="btn btn-outline px-5 h-11 text-[15px] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 max-[360px]:w-full"
           >
             <Radar aria-hidden className="h-[18px] w-[18px]" />
@@ -191,7 +200,10 @@ export default function Hero() {
       </div>
 
       {/* Separator */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      />
     </section>
   );
 }
