@@ -1,68 +1,47 @@
-/* app/globals.css
-   — Stable mobile (aucun blocage vertical), Next.js + Tailwind
-   — Pas de débordement horizontal, styles composants, FX cohérents
-*/
+/* app/globals.css — SAFE RESET (no lock, no surprises) */
 
-/* Tailwind */
+/* Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* -------------------- */
-/* Thème & base         */
-/* -------------------- */
+/* ---------- Base ultra-stable ---------- */
 
 :root {
-  --bg: #0b1220;               /* fond */
-  --fg: #e5edf5;               /* texte */
-  --fg-muted: #94a3b8;         /* texte secondaire */
+  --bg: #0b1220;
+  --fg: #e5edf5;
+  --fg-muted: #94a3b8;
   --border: rgba(255,255,255,0.12);
-
-  --accent-1: #34d399;         /* emerald */
-  --accent-2: #38bdf8;         /* sky */
   --ring: rgba(56,189,248,0.45);
-  --danger: #ef4444;
+  --accent-1: #34d399;
+  --accent-2: #38bdf8;
 }
 
 html, body {
-  height: 100%;
-  width: 100%;
+  /* IMPORTANT : pas de lock vertical */
   margin: 0;
-  /* IMPORTANT : on ne bloque PAS le scroll vertical */
-  overflow-x: hidden;          /* on coupe uniquement l’horizontal */
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
   background: var(--bg);
   color: var(--fg);
+  overflow-y: auto;         /* scroll vertical toujours autorisé */
+  overflow-x: hidden;       /* coupe uniquement l’horizontal */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Verrouillage propre du menu mobile (piloté par la classe, pas par style inline) */
-html.mm-open, body.mm-open {
-  overflow: hidden;            /* bloque le scroll de fond UNIQUEMENT quand menu ouvert */
-  overscroll-behavior: contain;
-}
+/* Ne JAMAIS verrouiller via classe globale.
+   Si tu avais ajouté .mm-open quelque part, elle ne change plus rien ici. */
 
-*, *::before, *::after { box-sizing: border-box; }
-
+/* Liens / focus */
 a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
+/* Sélection */
 ::selection { background: rgba(56,189,248,0.35); color: #0b1220; }
 
-/* Scrollbar (WebKit) */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); border-radius: 999px; }
-*::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.55); }
-
-/* Viewport heights fiables iOS */
-.h-svh { height: 100svh; }
-.h-dvh { height: 100dvh; }
-.h-lvh { height: 100lvh; }
-
-/* -------------------- */
-/* Composants utilitaires */
-/* -------------------- */
+/* ---------- Composants minimaux (cohérents avec le site) ---------- */
 
 @layer components {
   .btn {
@@ -74,144 +53,26 @@ a { color: inherit; text-decoration: none; }
     @apply bg-gradient-to-r from-emerald-500 to-sky-500 text-white border-0
            shadow-[0_0_24px_rgba(56,189,248,.22)] hover:brightness-110;
   }
-  .btn-outline {
-    @apply bg-transparent text-[var(--fg)] border border-[var(--border)] hover:bg-white/10;
-  }
-  .btn-ghost {
-    @apply bg-transparent border border-transparent text-[var(--fg)] hover:bg-white/5;
-  }
-  .shadow-glow { box-shadow: 0 0 40px rgba(56,189,248,0.18); }
+  .btn-outline { @apply bg-transparent text-[var(--fg)] border border-[var(--border)] hover:bg-white/10; }
+  .btn-ghost   { @apply bg-transparent border border-transparent text-[var(--fg)] hover:bg-white/5; }
 
   .badge {
     @apply inline-flex items-center gap-2 rounded-full border border-[var(--border)]
            bg-white/5 px-3 py-1 text-xs text-slate-300;
   }
-
-  .card {
-    @apply rounded-2xl border border-[var(--border)] bg-slate-900/50 backdrop-blur p-4;
-  }
-
+  .card  { @apply rounded-2xl border border-[var(--border)] bg-slate-900/50 backdrop-blur p-4; }
   .input {
     @apply w-full rounded-xl border border-[var(--border)] bg-white/5 px-3 py-2 text-sm
            placeholder:text-slate-400 text-[var(--fg)]
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)];
   }
-
-  .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1
-           text-xs text-slate-300;
-  }
+  .eyebrow { @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300; }
 }
 
-/* -------------------- */
-/* Effets visuels (FX)  */
-/* -------------------- */
+/* ---------- Helpers safe ---------- */
 
-/* IMPORTANT: ces couches doivent être dans un parent .relative .overflow-hidden */
-.aurora {
-  position: absolute;
-  inset: -18%;                 /* léger dépassement, mais CLIPPÉ par le parent */
-  filter: blur(28px);
-  opacity: 0.35;
-  pointer-events: none;
-}
-.aurora-1 {
-  background: radial-gradient(40% 30% at 15% 20%, rgba(16,185,129,.18), transparent 60%);
-}
-.aurora-2 {
-  background: radial-gradient(40% 30% at 85% 10%, rgba(56,189,248,.16), transparent 60%);
-}
-.aurora-3 {
-  background: radial-gradient(35% 25% at 50% 70%, rgba(20,184,166,.14), transparent 60%);
-}
-
-.beam {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(35% 12% at 50% -2%, rgba(255,255,255,0.28), transparent 70%),
-    radial-gradient(60% 20% at 50% 0%, rgba(56,189,248,0.08), transparent 70%);
-  mix-blend-mode: screen;
-  pointer-events: none;
-}
-
-.noise {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-  opacity: .6;
-  pointer-events: none;
-}
-
-/* Bande blanche translucide en haut du hero (anti-bord iOS) */
-.hero-topfade {
-  position: absolute;
-  inset-inline: -1px;
-  top: 0;
-  height: 48px;
-  background: rgba(255,255,255,0.9);
-  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
-          mask-image: linear-gradient(to bottom, black, transparent);
-  pointer-events: none;
-}
-
-/* -------------------- */
-/* Layout helpers       */
-/* -------------------- */
-
-main { overflow-x: hidden; }          /* filet de sécurité, ne bloque pas le scroll vertical */
-.container-6xl { max-width: 72rem; margin-inline: auto; padding-inline: 1rem; }
+main { overflow-x: hidden; }                 /* sécurité anti scroll latéral */
 .break-anywhere { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
 
-/* -------------------- */
-/* Animations           */
-/* -------------------- */
-
-@keyframes mmSlideIn {
-  from { transform: translateX(8%); opacity: 0.4; }
-  to   { transform: translateX(0%); opacity: 1; }
-}
-
-/* Fade utilitaire au scroll (optionnel) */
-@keyframes io-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.io { opacity: 0; transform: translateY(10px); }
-.io-in { animation: io-fade-up 600ms cubic-bezier(.22,.61,.36,1) forwards; }
-
-@media (prefers-reduced-motion: reduce) {
-  .io, .io-in { animation: none !important; transform: none !important; opacity: 1 !important; }
-}
-
-/* -------------------- */
-/* Dialog / Overlay UX  */
-/* -------------------- */
-
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 0.4);
-  backdrop-filter: blur(2px);
-}
-.dialog-panel {
-  outline: none;
-  overscroll-behavior-x: none;
-  overflow-x: hidden;          /* empêche les tirages latéraux dans le panel */
-}
-
-/* -------------------- */
-/* Tables (FAQ, pricing)*/
-/* -------------------- */
-
-.table-clean { width: 100%; border-collapse: separate; border-spacing: 0; }
-.table-clean th, .table-clean td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); }
-.table-clean th { text-align: left; font-weight: 600; color: #cbd5e1; }
-
-/* -------------------- */
-/* Helpers clavier      */
-/* -------------------- */
-
-.kbd { @apply inline-flex items-center rounded-md border border-[var(--border)] bg-white/5 px-1.5 py-0.5 text-[11px] font-mono; }
-
-/* Fin du fichier */
+/* Pas d’effets full-screen, pas d’overlays globaux ici.
+   On les réintroduira une fois que la navigation est confirmée OK. */
