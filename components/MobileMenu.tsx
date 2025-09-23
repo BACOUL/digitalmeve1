@@ -1,11 +1,22 @@
-// components/MobileMenu.tsx — v3 (world-class UX, no horizontal overflow, real routes, a11y, swipe-to-close)
+// components/MobileMenu.tsx — v4 (routes fixées, 404 évités, a11y + UX inchangés)
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { X, LogIn, UserPlus, LogOut, LayoutDashboard, User2, ExternalLink } from "lucide-react";
-import { useSessionSafe as useSession, signOutSafe as signOut } from "@/lib/safe-auth";
+import {
+  X,
+  LogIn,
+  UserPlus,
+  LogOut,
+  LayoutDashboard,
+  User2,
+  ExternalLink,
+} from "lucide-react";
+import {
+  useSessionSafe as useSession,
+  signOutSafe as signOut,
+} from "@/lib/safe-auth";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -25,21 +36,24 @@ export default function MobileMenu({ open, onClose }: Props) {
   const firstFocusRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusRef = useRef<HTMLButtonElement | null>(null);
 
-  // —— Close on route change (prevents stuck overlay) ——
+  // Close on route change
   useEffect(() => {
     if (!open) return;
     onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // —— Scroll lock + focus trap + Esc/Tab loop ——
+  // Scroll lock + focus trap + Esc/Tab loop
   useEffect(() => {
     if (!open) return;
     const prevOverflow = document.body.style.overflow;
     const prevOverscroll = document.body.style.overscrollBehaviorX;
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehaviorX = "none";
-    const to = setTimeout(() => (firstFocusRef.current ?? panelRef.current)?.focus(), 0);
+    const to = setTimeout(
+      () => (firstFocusRef.current ?? panelRef.current)?.focus(),
+      0
+    );
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") return onClose();
@@ -65,7 +79,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, [open, onClose]);
 
-  // —— Swipe-to-close (sans “tirer” au-delà et sans créer de scroll latéral) ——
+  // Swipe-to-close (no lateral scroll)
   const startX = useRef<number | null>(null);
   const dx = useRef(0);
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -86,7 +100,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     dx.current = 0;
   };
 
-  // —— Nav alignée avec tes routes EXISTANTES ——
+  // —— NAV: uniquement des routes existantes pour éviter les 404 ——
   const products = useMemo(
     () => [
       { href: "/generate", label: "Generate" },
@@ -94,31 +108,27 @@ export default function MobileMenu({ open, onClose }: Props) {
     ],
     []
   );
+
   const solutions = useMemo(
     () => [
-      { href: "/personal", label: "For Individuals" },
-      { href: "/pro", label: "For Business" },
+      { href: "/individuals", label: "For Individuals" },   // FIX
+      { href: "/professionals", label: "For Business" },    // FIX
     ],
     []
   );
+
   const resources = useMemo(
     () => [
       { href: "/pricing", label: "Pricing" },
-      { href: "/developers", label: "Developers" },
       { href: "/security", label: "Security" },
-      { href: "/status", label: "Status" },
-      { href: "/changelog", label: "Changelog" },
+      // Ajoute /docs ici si la page existe :
+      // { href: "/docs", label: "Docs" },
     ],
     []
   );
-  const company = useMemo(
-    () => [
-      { href: "/about", label: "About" },
-      { href: "/contact", label: "Contact" },
-      { href: "/legal", label: "Legal" },
-    ],
-    []
-  );
+
+  // Laisse vide tant que ces pages n'existent pas
+  const company = useMemo(() => [] as { href: string; label: string }[], []);
 
   if (!open) return null;
 
@@ -161,7 +171,9 @@ export default function MobileMenu({ open, onClose }: Props) {
         {/* Content */}
         <div className="flex h-[calc(100dvh-4rem)] flex-col">
           <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-6">
-            <h2 id="mobilemenu-title" className="sr-only">Main navigation</h2>
+            <h2 id="mobilemenu-title" className="sr-only">
+              Main navigation
+            </h2>
 
             {/* Quick actions */}
             <div className="mb-6 grid grid-cols-2 gap-3">
@@ -183,19 +195,34 @@ export default function MobileMenu({ open, onClose }: Props) {
 
             <Section title="Products">
               {products.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+                <Item
+                  key={it.href}
+                  {...it}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
               ))}
             </Section>
 
             <Section title="Solutions">
               {solutions.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+                <Item
+                  key={it.href}
+                  {...it}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
               ))}
             </Section>
 
             <Section title="Resources">
               {resources.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
+                <Item
+                  key={it.href}
+                  {...it}
+                  active={isActive(pathname, it.href)}
+                  onClose={onClose}
+                />
               ))}
               <li>
                 <a
@@ -211,11 +238,19 @@ export default function MobileMenu({ open, onClose }: Props) {
               </li>
             </Section>
 
-            <Section title="Company">
-              {company.map((it) => (
-                <Item key={it.href} {...it} active={isActive(pathname, it.href)} onClose={onClose} />
-              ))}
-            </Section>
+            {/* Company — masqué tant que les pages ne sont pas créées */}
+            {company.length > 0 && (
+              <Section title="Company">
+                {company.map((it) => (
+                  <Item
+                    key={it.href}
+                    {...it}
+                    active={isActive(pathname, it.href)}
+                    onClose={onClose}
+                  />
+                ))}
+              </Section>
+            )}
           </nav>
 
           {/* Account */}
@@ -228,7 +263,9 @@ export default function MobileMenu({ open, onClose }: Props) {
                       <User2 className="h-5 w-5 text-slate-200" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-100">{session.user.email}</p>
+                      <p className="truncate text-sm font-medium text-slate-100">
+                        {session.user.email}
+                      </p>
                       {role && <p className="text-xs text-slate-400">{role}</p>}
                     </div>
                   </div>
@@ -274,13 +311,22 @@ export default function MobileMenu({ open, onClose }: Props) {
 
       <style jsx global>{`
         @keyframes mmSlideIn {
-          from { transform: translateX(8%); opacity: 0.4; }
-          to { transform: translateX(0%); opacity: 1; }
+          from {
+            transform: translateX(8%);
+            opacity: 0.4;
+          }
+          to {
+            transform: translateX(0%);
+            opacity: 1;
+          }
         }
-        /* Pas de débordement pendant l'anim */
-        .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] { will-change: transform, opacity; }
+        .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] {
+          will-change: transform, opacity;
+        }
         @media (prefers-reduced-motion: reduce) {
-          .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] { animation: none !important; }
+          .animate-[mmSlideIn_220ms_cubic-bezier(0.22,0.61,0.36,1)] {
+            animation: none !important;
+          }
         }
       `}</style>
     </div>
@@ -292,15 +338,25 @@ export default function MobileMenu({ open, onClose }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-6">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        {title}
+      </p>
       <ul className="space-y-2">{children}</ul>
     </div>
   );
 }
 
 function Item({
-  href, label, onClose, active,
-}: { href: string; label: string; onClose: () => void; active?: boolean }) {
+  href,
+  label,
+  onClose,
+  active,
+}: {
+  href: string;
+  label: string;
+  onClose: () => void;
+  active?: boolean;
+}) {
   return (
     <li>
       <Link
@@ -308,7 +364,9 @@ function Item({
         onClick={onClose}
         className={[
           "block rounded-lg px-2 py-2 text-[15px] transition",
-          active ? "bg-slate-900 text-white" : "text-slate-200 hover:bg-slate-900 hover:text-white",
+          active
+            ? "bg-slate-900 text-white"
+            : "text-slate-200 hover:bg-slate-900 hover:text-white",
         ].join(" ")}
         aria-current={active ? "page" : undefined}
       >
@@ -322,13 +380,27 @@ function Item({
 
 function getFocusable(root: HTMLElement | null): HTMLElement[] {
   if (!root) return [];
-  const selectors = ["a[href]","button","input","select","textarea","[tabindex]:not([tabindex='-1'])"];
-  const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
-  return nodes.filter(el => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden") && el.tabIndex !== -1);
+  const selectors = [
+    "a[href]",
+    "button",
+    "input",
+    "select",
+    "textarea",
+    "[tabindex]:not([tabindex='-1'])",
+  ];
+  const nodes = Array.from(
+    root.querySelectorAll<HTMLElement>(selectors.join(","))
+  );
+  return nodes.filter(
+    (el) =>
+      !el.hasAttribute("disabled") &&
+      !el.getAttribute("aria-hidden") &&
+      el.tabIndex !== -1
+  );
 }
 
 function isActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-                    }
+}
