@@ -1,119 +1,130 @@
-// components/Footer.tsx — v3 (aligned routes, GitHub docs, a11y, dark theme)
+// components/Footer.tsx — v9.8 (world-class, clear IA, full links, a11y, no overflow)
 "use client";
 
 import Link from "next/link";
 
+const COLS: {
+  title: string;
+  links: { href: string; label: string }[];
+}[] = [
+  {
+    title: "Product",
+    links: [
+      { href: "/generate", label: "Generate" },
+      { href: "/verify", label: "Verify" },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/status", label: "Status" },
+      { href: "/changelog", label: "Changelog" },
+    ],
+  },
+  {
+    title: "Solutions",
+    links: [
+      { href: "/individuals", label: "Individuals" },
+      { href: "/professionals", label: "Professionals" },
+      { href: "/use-cases", label: "Use cases" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { href: "/docs", label: "Docs" },
+      { href: "/security", label: "Security" },
+      { href: "/faq", label: "FAQ" },
+      { href: "/partners", label: "Partners" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
+      { href: "/legal", label: "Legal" },
+      { href: "https://github.com/BACOUL/Digitalmeve-standard-", label: "GitHub" },
+    ],
+  },
+];
+
 export default function Footer() {
   const year = new Date().getFullYear();
-
   return (
-    <footer className="bg-slate-950 text-slate-100 border-t border-white/10">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        {/* Grid */}
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Branding */}
-          <div>
-            <Link
-              href="/"
-              className="text-xl font-extrabold tracking-tight"
-              aria-label="DigitalMeve – Home"
-            >
-              <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-                Digital
-              </span>
-              <span className="bg-gradient-to-r from-sky-400 to-sky-300 bg-clip-text text-transparent">
-                Meve
-              </span>
-            </Link>
-            <p className="mt-3 text-sm text-slate-400">
-              Invisible proof. Visible trust. Protect & verify files with on-device certification.
-            </p>
-            <p className="mt-2 text-xs text-slate-500">
-              No storage • In-browser • Verifiable anywhere
-            </p>
-          </div>
+    <footer
+      className="relative z-0 border-t border-white/10 bg-slate-950"
+      style={{ contain: "layout paint", overscrollBehaviorX: "none" }}
+    >
+      {/* Subtle background veil */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            "radial-gradient(900px 420px at 12% 0%, rgba(16,185,129,.06), transparent 42%), radial-gradient(840px 360px at 88% 0%, rgba(56,189,248,.05), transparent 44%)",
+        }}
+      />
 
-          {/* Explore */}
-          <nav aria-label="Explore">
-            <h4 className="text-sm font-semibold text-white">Explore</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li><Link href="/generate" className="hover:text-white">Protect a file</Link></li>
-              <li><Link href="/verify" className="hover:text-white">Verify a document</Link></li>
-              <li><Link href="/individuals" className="hover:text-white">For Individuals</Link></li>
-              <li><Link href="/professionals" className="hover:text-white">For Professionals</Link></li>
-            </ul>
-          </nav>
+      <div className="relative mx-auto max-w-6xl px-4 py-10 sm:py-14">
+        {/* Top brand + short value prop */}
+        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+          <Link href="/" className="inline-flex items-center gap-2 text-lg font-semibold">
+            <span className="text-emerald-400">Digital</span>
+            <span className="text-sky-400">Meve</span>
+            <span className="sr-only">— Home</span>
+          </Link>
+          <p className="max-w-xl text-sm text-slate-400">
+            Invisible proof. Visible trust. Protect and verify any file — private by design, universal by default.
+          </p>
+        </div>
 
-          {/* Resources (site ↔ GitHub) */}
-          <nav aria-label="Resources">
-            <h4 className="text-sm font-semibold text-white">Resources</h4>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li><Link href="/docs" className="hover:text-white">Standard</Link></li>
-              <li><Link href="/security" className="hover:text-white">Security</Link></li>
-              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
-              <li><Link href="/roadmap" className="hover:text-white">Roadmap</Link></li>
-              <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
-              <li>
-                <a
-                  href="https://github.com/BACOUL/Digitalmeve-standard-"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white"
-                  aria-label="Open GitHub repository in a new tab"
-                >
-                  GitHub
-                </a>
-              </li>
-            </ul>
-          </nav>
-
-          {/* Company + Legal */}
-          <div>
-            <nav aria-label="Company">
-              <h4 className="text-sm font-semibold text-white">Company</h4>
-              <ul className="mt-3 space-y-2 text-sm text-slate-400">
-                <li>
-                  <a
-                    href="mailto:support@digitalmeve.org"
-                    className="underline hover:text-white"
-                    aria-label="Contact support via email"
-                  >
-                    support@digitalmeve.org
-                  </a>
-                </li>
-                <li>
-                  <Link href="/partners" className="hover:text-white">
-                    Partners
-                  </Link>
-                </li>
+        {/* Link columns */}
+        <div className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-4">
+          {COLS.map((col) => (
+            <nav key={col.title} aria-label={col.title}>
+              <h2 className="text-sm font-semibold text-white">{col.title}</h2>
+              <ul className="mt-3 space-y-2">
+                {col.links.map((l) => (
+                  <li key={l.href}>
+                    {l.href.startsWith("http") ? (
+                      <a
+                        href={l.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-slate-300 hover:text-white"
+                      >
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link href={l.href} className="text-sm text-slate-300 hover:text-white">
+                        {l.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
               </ul>
             </nav>
-
-            <nav aria-label="Legal" className="mt-6">
-              <h4 className="text-sm font-semibold text-white">Legal</h4>
-              <ul className="mt-3 space-y-2 text-sm text-slate-400">
-                <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
-                <li><Link href="/refunds" className="hover:text-white">Refund Policy</Link></li>
-                <li><Link href="/cookies" className="hover:text-white">Cookies</Link></li>
-              </ul>
-            </nav>
-          </div>
+          ))}
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <div className="rounded-full bg-white px-5 py-2 text-xs font-semibold text-slate-900 shadow-sm">
-            © {year} DigitalMeve
+        <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-5 text-xs text-slate-400 sm:flex-row sm:items-center">
+          <p>© {year} DigitalMeve. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/legal#privacy" className="hover:text-white">Privacy</Link>
+            <span aria-hidden>·</span>
+            <Link href="/legal#terms" className="hover:text-white">Terms</Link>
+            <span aria-hidden>·</span>
+            <Link href="/security" className="hover:text-white">Security</Link>
+            <span aria-hidden>·</span>
+            <a
+              href="https://github.com/BACOUL/Digitalmeve-standard-"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white"
+            >
+              GitHub
+            </a>
           </div>
-          <p className="text-xs text-slate-500">
-            Security reports →{" "}
-            <Link href="/security" className="underline hover:text-white">
-              Responsible Disclosure
-            </Link>
-          </p>
         </div>
       </div>
     </footer>
   );
-}
+       }
