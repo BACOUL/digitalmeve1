@@ -1,4 +1,4 @@
-// app/layout.tsx
+// app/layout.tsx — Global layout (world-class: SEO, a11y, performance-safe)
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Inter, Sora } from "next/font/google";
@@ -8,14 +8,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 
-// Polices
+// ---------------- Fonts ----------------
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
 
-// Base URL (sans slash final)
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com").replace(/\/+$/, "");
+// ---------------- Site base URL ----------------
+// Fallback sécurisé si la var n'est pas définie (pas de / final).
+const RAW_BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com";
+const SITE_URL = RAW_BASE.replace(/\/+$/, "");
 
-/** Viewport (mobile + zoom) */
+// ---------------- Viewport ----------------
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -26,24 +28,30 @@ export const viewport: Viewport = {
   ],
 };
 
-// Métadonnées
+// ---------------- Metadata (SEO) ----------------
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: "DigitalMeve — The .MEVE Standard",
-  description: "DigitalMeve fournit une preuve numérique simple et universelle — gratuite pour les particuliers.",
+  metadataBase: new URL(SITE_URL),
+  applicationName: "DigitalMeve",
+  title: {
+    default: "DigitalMeve — The .MEVE Standard",
+    template: "%s · DigitalMeve",
+  },
+  description:
+    "Protect any file with an invisible, universal proof — private by design, verifiable anywhere. Free for individuals.",
   alternates: {
     canonical: "/",
     languages: {
-      en: `${siteUrl}/?lang=en`,
-      fr: `${siteUrl}/?lang=fr`,
+      en: `${SITE_URL}/?lang=en`,
+      fr: `${SITE_URL}/?lang=fr`,
     },
   },
   openGraph: {
     type: "website",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: "DigitalMeve",
     title: "DigitalMeve — The .MEVE Standard",
-    description: "DigitalMeve fournit une preuve numérique simple et universelle — gratuite pour les particuliers.",
+    description:
+      "Protect any file with an invisible, universal proof — private by design, verifiable anywhere.",
     images: [
       {
         url: "/og/og-image.png",
@@ -56,83 +64,105 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DigitalMeve — The .MEVE Standard",
-    description: "DigitalMeve fournit une preuve numérique simple et universelle — gratuite pour les particuliers.",
+    description:
+      "Protect any file with an invisible, universal proof — private by design, verifiable anywhere.",
     images: ["/og/og-image.png"],
+    creator: "@digitalmeve",
   },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  applicationName: "DigitalMeve",
   referrer: "strict-origin-when-cross-origin",
-  other: { "theme-color": "#0B1220" },
 };
 
-// Script thème exécuté avant paint (évite le flash clair/sombre)
+// ---------------- Pre-hydration theme script ----------------
+// Appliqué avant le paint pour éviter le flash de thème.
 const THEME_INIT = `
 (function() {
   try {
     var ls = typeof window !== 'undefined' ? window.localStorage : null;
-    var pref = ls ? ls.getItem('dm-theme') : null; // "dark" | "light" | null
+    var pref = ls ? ls.getItem('dm-theme') : null; // 'dark' | 'light' | null
+    var el = document.documentElement;
+    var meta = document.querySelector('meta[name="theme-color"]');
     if (pref === 'light') {
-      document.documentElement.classList.add('theme-light');
-      var meta = document.querySelector('meta[name="theme-color"]');
+      el.classList.add('theme-light');
       if (meta) meta.setAttribute('content', '#FFFFFF');
     } else {
-      document.documentElement.classList.remove('theme-light');
-      var meta2 = document.querySelector('meta[name="theme-color"]');
-      if (meta2) meta2.setAttribute('content', '#0B1220');
+      el.classList.remove('theme-light');
+      if (meta) meta.setAttribute('content', '#0B1220');
     }
-  } catch (e) {}
+  } catch (_) {}
 })();
 `;
 
-// JSON-LD Organization
+// ---------------- JSON-LD ----------------
 const ORG_JSONLD = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  url: siteUrl,
+  url: SITE_URL,
   name: "DigitalMeve",
   legalName: "DigitalMeve",
-  logo: `${siteUrl}/og/og-image.png`,
+  logo: `${SITE_URL}/og/og-image.png`,
   sameAs: [],
   contactPoint: [
-    { "@type": "ContactPoint", contactType: "customer support", email: "support@digitalmeve.com", availableLanguage: ["en", "fr"] },
-    { "@type": "ContactPoint", contactType: "security", email: "security@digitalmeve.com", availableLanguage: ["en", "fr"] },
+    {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: "support@digitalmeve.com",
+      availableLanguage: ["en", "fr"],
+    },
+    {
+      "@type": "ContactPoint",
+      contactType: "security",
+      email: "security@digitalmeve.com",
+      availableLanguage: ["en", "fr"],
+    },
   ],
 };
 
-// JSON-LD WebSite
 const WEBSITE_JSONLD = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  url: siteUrl,
+  url: SITE_URL,
   name: "DigitalMeve",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="fr"
+      lang="en"
       className={`antialiased ${inter.variable} ${sora.variable}`}
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
-      {/* Init thème AVANT l’interactif pour éviter le FOUC */}
+      {/* Init theme BEFORE hydration */}
       <Script id="dm-theme-init" strategy="beforeInteractive">
         {THEME_INIT}
       </Script>
 
+      {/* JSON-LD (afterInteractive pour éviter de bloquer le TTI) */}
+      <Script
+        id="ld-org"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }}
+      />
+      <Script
+        id="ld-website"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSONLD) }}
+      />
+
       <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)]">
-        {/* Skip-link accessibilité */}
-        <a href="#main" className="skip-link">Aller au contenu</a>
+        {/* Skip link (a11y) */}
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
 
-        {/* JSON-LD SEO (Organization + WebSite) */}
-        <Script id="ld-org" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }} />
-        <Script id="ld-website" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSONLD) }} />
-
-        {/* Tout ce qui consomme useSession est sous Providers */}
+        {/* Providers englobe next-auth & autres contextes */}
         <Providers>
           <Header />
           <main id="main" className="flex-1">
