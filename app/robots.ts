@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
   const base =
-    (process.env.NEXT_PUBLIC_SITE_URL || "https://jeason1.vercel.app").replace(/\/+$/, "");
+    (process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com").replace(/\/+$/, "");
 
   return {
     rules: [
@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           "/dashboard",
           "/admin",
           "/server-sitemap.xml",
-          "/api/", // bloqué si tu veux que rien en /api ne soit indexé
+          "/api/", // bloque toutes les routes API de l’indexation
         ],
       },
     ],
