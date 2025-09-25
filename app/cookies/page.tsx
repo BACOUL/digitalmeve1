@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   },
 };
 
+const LAST_UPDATED = "2025-09-25"; // TODO: update when you materially change this policy
+
 export default function CookiesPage() {
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
@@ -32,7 +34,7 @@ export default function CookiesPage() {
             We keep cookies to the strict minimum needed for a fast, private experience.
           </p>
           <p className="mt-1 text-xs text-[var(--fg-muted)]">
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: <time dateTime={LAST_UPDATED}>{LAST_UPDATED}</time>
           </p>
         </div>
       </section>
@@ -45,7 +47,8 @@ export default function CookiesPage() {
             <ul className="mt-3 list-disc pl-5 text-sm text-[var(--fg-muted)] space-y-1">
               <li>No advertising or cross-site tracking cookies.</li>
               <li>No file contents ever leave your device (generation and checks run locally).</li>
-              <li>Only essential cookies for quota & preferences. Analytics is cookieless.</li>
+              <li>Only essential cookies for quota & preferences.</li>
+              <li>Analytics is <b>cookieless</b> and <b>optional</b> (consent-based).</li>
             </ul>
           </div>
         </div>
@@ -88,38 +91,43 @@ export default function CookiesPage() {
                 </tbody>
               </table>
             </div>
+
+            <p className="mt-3 text-xs text-[var(--fg-muted)]">
+              We do <b>not</b> use third-party advertising cookies.
+            </p>
           </div>
 
           {/* Analytics & Reliability */}
           <div className="card p-6">
             <h3 className="h2">Analytics & reliability</h3>
-            <h4 className="mt-2 font-semibold">Cookieless analytics</h4>
+
+            <h4 className="mt-2 font-semibold">Cookieless analytics (opt-in)</h4>
             <p className="mt-1 text-sm text-[var(--fg-muted)]">
               We use{" "}
               <a
                 href="https://plausible.io/data-policy"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="link"
               >
                 Plausible
               </a>{" "}
-              for aggregated usage metrics — no cookies, no cross-site tracking.
+              for aggregated usage metrics — no cookies, no cross-site tracking. Analytics runs only if you consent via the banner.
             </p>
 
             <h4 className="mt-4 font-semibold">Error monitoring</h4>
             <p className="mt-1 text-sm text-[var(--fg-muted)]">
-              We use Sentry to monitor errors and improve reliability. Event payloads are minimized and
-              exclude file contents.
+              We use Sentry to monitor errors and improve reliability. Event payloads are minimized and exclude file contents.
+              IPs are masked or discarded where supported.
             </p>
           </div>
 
-          {/* Managing cookies */}
+          {/* Consent & managing cookies */}
           <div className="card p-6 lg:col-span-2">
-            <h3 className="h2">Managing cookies</h3>
+            <h3 className="h2">Consent & managing cookies</h3>
             <p className="mt-2 text-[var(--fg-muted)]">
-              You can clear or block cookies at the browser level. Some essential features
-              (like free-tier limits) may require a basic cookie to work as intended.
+              Use the cookie banner to accept all cookies or keep only the necessary ones. You can also clear or block cookies
+              at the browser level. Some essential features (like free-tier limits) may require a basic cookie to work.
             </p>
 
             <div className="mt-4 flex flex-wrap gap-3">
@@ -133,6 +141,52 @@ export default function CookiesPage() {
                 Security
               </Link>
             </div>
+          </div>
+
+          {/* Vendors & data transparency */}
+          <div className="card p-6 lg:col-span-2">
+            <h3 className="h2">Vendors & data</h3>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-[var(--fg-muted)] border-b border-[var(--border)]">
+                  <tr>
+                    <th className="py-2 pr-3">Vendor</th>
+                    <th className="py-2 pr-3">Purpose</th>
+                    <th className="py-2 pr-3">Cookies</th>
+                    <th className="py-2">Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="align-top">
+                  <tr className="border-b border-[var(--border)]">
+                    <td className="py-3 pr-3 font-medium">Plausible</td>
+                    <td className="py-3 pr-3">Aggregated analytics</td>
+                    <td className="py-3 pr-3">None</td>
+                    <td className="py-3">
+                      Cookieless; no cross-site tracking; see{" "}
+                      <a
+                        href="https://plausible.io/data-policy"
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="link"
+                      >
+                        data policy
+                      </a>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-3 font-medium">Sentry</td>
+                    <td className="py-3 pr-3">Error monitoring</td>
+                    <td className="py-3 pr-3">None by default</td>
+                    <td className="py-3">
+                      Event payloads minimized; file contents excluded; IPs masked/discarded where supported.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-[var(--fg-muted)]">
+              We aim to keep third-party data to a strict minimum and never include file contents.
+            </p>
           </div>
         </div>
       </section>
