@@ -8,11 +8,15 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 
-// Polices
+// NEW: cookie consent + gated analytics (load only on consent)
+import CookieBanner from "@/components/CookieBanner";
+import AnalyticsGate from "@/components/AnalyticsGate";
+
+// Fonts
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
 
-// Base URL (sans slash final)
+// Base URL (no trailing slash)
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com").replace(/\/+$/, "");
 
 /** Viewport (mobile + zoom) */
@@ -26,11 +30,15 @@ export const viewport: Viewport = {
   ],
 };
 
-// Métadonnées
+// Metadata (EN for global reach)
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "DigitalMeve — The .MEVE Standard",
-  description: "DigitalMeve fournit une preuve numérique simple et universelle — gratuite pour les particuliers.",
+  title: {
+    default: "DigitalMeve — The .MEVE Standard",
+    template: "%s | DigitalMeve",
+  },
+  description:
+    "DigitalMeve provides a privacy-first, on-device proof of authenticity — simple, universal, and free for individuals.",
   alternates: {
     canonical: "/",
     languages: {
@@ -43,7 +51,8 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: "DigitalMeve",
     title: "DigitalMeve — The .MEVE Standard",
-    description: "DigitalMeve fournit une preuve numérique simple et universelle — gratuite pour les particuliers.",
+    description:
+      "Privacy-first, on-device proof of authenticity. Protect and verify documents instantly. No uploads. No storage.",
     images: [
       {
         url: "/og/og-image.png",
@@ -56,7 +65,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DigitalMeve — The .MEVE Standard",
-    description: "DigitalMeve fournit une preuve numérique simple et universelle — gratuite pour les particuliers.",
+    description:
+      "Privacy-first, on-device proof of authenticity. Protect and verify documents instantly. No uploads. No storage.",
     images: ["/og/og-image.png"],
   },
   icons: {
@@ -69,7 +79,7 @@ export const metadata: Metadata = {
   other: { "theme-color": "#0B1220" },
 };
 
-// Script thème exécuté avant paint (évite le flash clair/sombre)
+// Theme init before paint (avoid FOUC)
 const THEME_INIT = `
 (function() {
   try {
@@ -114,25 +124,35 @@ const WEBSITE_JSONLD = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="fr"
+      lang="en"
       className={`antialiased ${inter.variable} ${sora.variable}`}
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
-      {/* Init thème AVANT l’interactif pour éviter le FOUC */}
+      {/* Theme init BEFORE interactive to avoid flash */}
       <Script id="dm-theme-init" strategy="beforeInteractive">
         {THEME_INIT}
       </Script>
 
       <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)]">
-        {/* Skip-link accessibilité */}
-        <a href="#main" className="skip-link">Aller au contenu</a>
+        {/* Accessibility skip-link */}
+        <a href="#main" className="skip-link">Skip to content</a>
 
         {/* JSON-LD SEO (Organization + WebSite) */}
-        <Script id="ld-org" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }} />
-        <Script id="ld-website" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSONLD) }} />
+        <Script
+          id="ld-org"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }}
+        />
+        <Script
+          id="ld-website"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSONLD) }}
+        />
 
-        {/* Tout ce qui consomme useSession est sous Providers */}
+        {/* Everything that needs providers (e.g., session) */}
         <Providers>
           <Header />
           <main id="main" className="flex-1">
@@ -140,7 +160,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <Footer />
         </Providers>
+
+        {/* Load analytics only if user consented (domain can be your Vercel URL for now) */}
+        <AnalyticsGate domain={new URL(siteUrl).host} />
+        {/* Cookie consent banner */}
+        <CookieBanner />
       </body>
     </html>
   );
-        }
+}
