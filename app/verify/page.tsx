@@ -1,7 +1,7 @@
 // app/verify/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -18,6 +18,10 @@ import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf";
 import { readInvisibleWatermarkDocx } from "@/lib/wm/docx"; // DOCX
 
+/** --- Constants / helpers --- */
+const MAX_SIZE_MB = 10;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
 type VerifyResult = {
   ok: boolean;
   reason?: string;
@@ -29,60 +33,97 @@ type VerifyResult = {
 
 type Toast = { type: "success" | "error" | "info"; message: string } | null;
 
+function isPdf(f: File) {
+  const mt = (f.type || "").toLowerCase();
+  const name = f.name.toLowerCase();
+  return mt === "application/pdf" || name.endsWith(".pdf");
+}
+function isDocx(f: File) {
+  const mt = (f.type || "").toLowerCase();
+  const name = f.name.toLowerCase();
+  return (
+    mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    name.endsWith(".docx")
+  );
+}
+function guessKind(f: File): "pdf" | "docx" | "other" {
+  if (isPdf(f)) return "pdf";
+  if (isDocx(f)) return "docx";
+  return "other";
+}
+function formatWhen(iso?: string) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    const date = new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }).format(d);
+    const time = new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+    return `${date} — ${time}`;
+  } catch {
+    return iso;
+  }
+}
+
 export default function VerifyPage() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<VerifyResult | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const resetBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const kind = useMemo<"pdf" | "docx" | "other">(() => {
-    if (!file) return "other";
-    const mt = (file.type || "").toLowerCase();
-    const name = file.name.toLowerCase();
-    if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
-    if (
-      mt ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      name.endsWith(".docx")
-    )
-      return "docx";
-    return "other";
+    return file ? guessKind(file) : "other";
   }, [file]);
 
-  function guessKind(f: File): "pdf" | "docx" | "other" {
-    const mt = (f.type || "").toLowerCase();
-    const name = f.name.toLowerCase();
-    if (mt === "application/pdf" || name.endsWith(".pdf")) return "pdf";
-    if (
-      mt ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      name.endsWith(".docx")
-    )
-      return "docx";
-    return "other";
-  }
+  const showToast = useCallback((t: Toast, ms = 2500) => {
+    setToast(t);
+    if (t) {
+      window.setTimeout(() => setToast(null), ms);
+    }
+  }, []);
+
+  const onSelected = useCallback((f: File | null) => {
+    setRes(null);
+    if (!f) {
+      setFile(null);
+      return;
+    }
+    if (f.size > MAX_SIZE_BYTES) {
+      showToast({ type: "error", message: `Max size is ${MAX_SIZE_MB} MB.` });
+      setFile(null);
+      return;
+    }
+    const k = guessKind(f);
+    if (k === "other") {
+      showToast({
+        type: "error",
+        message: "Only PDF or DOCX with a .MEVE proof are supported.",
+      });
+      setFile(null);
+      return;
+    }
+    setFile(f);
+  }, [showToast]);
 
   function humanError(e: unknown) {
     const m = (e as any)?.message || "";
     if (/pdf|docx|type/i.test(m))
       return "Only PDF or DOCX with a .MEVE proof are supported.";
-    if (/size|10 ?mb/i.test(m)) return "Max size is 10 MB.";
+    if (/size|10 ?mb/i.test(m)) return `Max size is ${MAX_SIZE_MB} MB.`;
     return "Unable to verify this file.";
   }
 
-  async function onVerify() {
+  const onVerify = useCallback(async () => {
     if (!file) return;
     setBusy(true);
     setRes(null);
     setToast(null);
-
-    const end = (t?: Toast) => {
-      setBusy(false);
-      if (t) {
-        setToast(t);
-        setTimeout(() => setToast(null), 3000);
-      }
-    };
 
     try {
       const k = guessKind(file);
@@ -92,7 +133,8 @@ export default function VerifyPage() {
           reason: "Unsupported file. Use a .meve.pdf or .meve.docx file.",
           fileName: file.name,
         });
-        return end({ type: "error", message: "Unsupported file." });
+        showToast({ type: "error", message: "Unsupported file." });
+        return;
       }
 
       const meta: any =
@@ -106,7 +148,8 @@ export default function VerifyPage() {
           reason: "No MEVE watermark found.",
           fileName: file.name,
         });
-        return end({ type: "error", message: "No MEVE watermark found." });
+        showToast({ type: "error", message: "No MEVE watermark found." });
+        return;
       }
 
       const whenISO: string | undefined =
@@ -116,8 +159,10 @@ export default function VerifyPage() {
         meta.timestamp ??
         meta.ts ??
         undefined;
+
       const issuer: string | undefined =
         meta.issuer ?? meta.issuerEmail ?? meta.issuerId ?? undefined;
+
       const hash: string | undefined =
         meta.hash ?? meta.sha256 ?? meta.docHash ?? undefined;
 
@@ -132,7 +177,7 @@ export default function VerifyPage() {
         issuer,
       });
 
-      end(
+      showToast(
         ok
           ? { type: "success", message: "Valid .MEVE proof." }
           : { type: "error", message: "Incomplete watermark payload." }
@@ -144,11 +189,13 @@ export default function VerifyPage() {
         reason: "Unable to read the file.",
         fileName: file?.name,
       });
-      end({ type: "error", message: humanError(e) });
+      showToast({ type: "error", message: humanError(e) });
+    } finally {
+      setBusy(false);
     }
-  }
+  }, [file, showToast]);
 
-  function downloadCert() {
+  const onDownloadCert = useCallback(() => {
     if (!res?.ok || !res.hash || !res.whenISO || !res.fileName) return;
     const issuer = res.issuer ?? "";
     exportHtmlCertificate(
@@ -157,11 +204,30 @@ export default function VerifyPage() {
       res.whenISO,
       issuer
     );
-  }
+  }, [res]);
+
+  const onCopyHash = useCallback(async () => {
+    if (!res?.hash) return;
+    try {
+      // clipboard API (fallback if denied)
+      await navigator.clipboard.writeText(res.hash);
+      showToast({ type: "info", message: "SHA-256 copied to clipboard" }, 1500);
+    } catch {
+      // Fallback: select+copy via prompt
+      window.prompt?.("Copy SHA-256", res.hash);
+    }
+  }, [res, showToast]);
+
+  const onReset = useCallback(() => {
+    setFile(null);
+    setRes(null);
+    // focus pour a11y
+    resetBtnRef.current?.focus();
+  }, []);
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)] relative">
-      {/* Fond premium (cohérent home/generate) */}
+      {/* Fond premium */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 opacity-50"
@@ -171,21 +237,22 @@ export default function VerifyPage() {
         }}
       />
 
-      {/* SR status pour lecteurs d’écran */}
+      {/* SR status */}
       <p aria-live="polite" className="sr-only">
         {busy ? "Checking…" : res ? "Verification done." : "Idle"}
       </p>
 
+      {/* HEADER */}
       <section className="border-b border-[var(--border)] bg-[var(--bg)]">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Verify a <span className="text-[var(--accent-1)]">.MEVE</span> file
           </h1>
           <p className="mt-3 text-lg text-[var(--fg-muted)]">
-            Upload a .MEVE file (PDF or DOCX with embedded proof). We’ll check its
+            Select a .MEVE file (PDF or DOCX with embedded proof). We’ll check its
             invisible watermark and show whether the document is{" "}
             <span className="font-semibold">valid</span> or{" "}
-            <span className="font-semibold">tampered</span>.
+            <span className="font-semibold">tampered</span>. Everything runs locally.
           </p>
 
           {/* Trust badges */}
@@ -206,22 +273,20 @@ export default function VerifyPage() {
             )}
           </div>
 
-          {/* Dropzone en carte avec glow */}
+          {/* DROPZONE */}
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur transition hover:bg-white/10 hover:shadow-[0_0_36px_rgba(56,189,248,.18)]">
             <FileDropzone
-              onSelected={(f) => {
-                setFile(f);
-                setRes(null);
-              }}
+              onSelected={onSelected}
               label="Choose a file"
-              maxSizeMB={10}
-              hint="Drag & drop or tap to select. Max 10 MB."
+              maxSizeMB={MAX_SIZE_MB}
+              hint={`Drag & drop or tap to select. Max ${MAX_SIZE_MB} MB.`}
               accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               role="button"
               tabIndex={0}
             />
           </div>
 
+          {/* ACTIONS */}
           <div className="mt-6 flex items-center gap-3">
             <button
               onClick={onVerify}
@@ -242,10 +307,8 @@ export default function VerifyPage() {
 
             {file && (
               <button
-                onClick={() => {
-                  setFile(null);
-                  setRes(null);
-                }}
+                ref={resetBtnRef}
+                onClick={onReset}
                 disabled={busy}
                 className="btn btn-ghost"
                 aria-disabled={busy}
@@ -256,7 +319,6 @@ export default function VerifyPage() {
               </button>
             )}
 
-            {/* Lien utile : générer un fichier si l’utilisateur s’est trompé */}
             {!busy && (
               <Link
                 href="/generate"
@@ -268,23 +330,19 @@ export default function VerifyPage() {
             )}
           </div>
 
-          {/* Résultat */}
+          {/* RESULT */}
           {res && (
             <div className="mt-8 card p-5">
               <div className="flex items-center gap-2">
                 {res.ok ? (
                   <>
                     <ShieldCheck className="h-5 w-5 text-[var(--accent-1)]" />
-                    <h2 className="text-lg font-semibold text-[var(--accent-1)]">
-                      Valid
-                    </h2>
+                    <h2 className="text-lg font-semibold text-[var(--accent-1)]">Valid</h2>
                   </>
                 ) : (
                   <>
                     <ShieldX className="h-5 w-5 text-rose-600" />
-                    <h2 className="text-lg font-semibold text-rose-600">
-                      Invalid
-                    </h2>
+                    <h2 className="text-lg font-semibold text-rose-600">Invalid</h2>
                   </>
                 )}
               </div>
@@ -302,16 +360,7 @@ export default function VerifyPage() {
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       <dt className="text-[var(--fg-muted)]">Date / Time</dt>
                       <dd className="col-span-2 sm:col-span-3">
-                        {new Date(res.whenISO!).toLocaleDateString(undefined, {
-                          year: "numeric",
-                          month: "short",
-                          day: "2-digit",
-                        })}{" "}
-                        —{" "}
-                        {new Date(res.whenISO!).toLocaleTimeString(undefined, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatWhen(res.whenISO)}
                       </dd>
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -327,14 +376,7 @@ export default function VerifyPage() {
                           <code className="text-xs break-all">{res.hash}</code>
                           {res.hash && (
                             <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(res.hash!);
-                                setToast({
-                                  type: "info",
-                                  message: "SHA-256 copied to clipboard",
-                                });
-                                setTimeout(() => setToast(null), 2000);
-                              }}
+                              onClick={onCopyHash}
                               className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
                               aria-label="Copy SHA-256 to clipboard"
                             >
@@ -346,7 +388,7 @@ export default function VerifyPage() {
                     </div>
 
                     <div className="mt-5">
-                      <button onClick={downloadCert} className="btn" aria-label="Download certificate as HTML">
+                      <button onClick={onDownloadCert} className="btn" aria-label="Download certificate as HTML">
                         <FileCheck2 className="h-4 w-4 text-[var(--accent-2)]" />
                         Download Certificate (.html)
                       </button>
@@ -372,14 +414,14 @@ export default function VerifyPage() {
             </div>
           )}
 
-          {/* Micro-claims (cohérence home) */}
+          {/* Micro-claims (cohérence produit) */}
           <p className="mt-10 text-center text-xs text-[var(--fg-muted)]">
-            Privacy by design · In-browser only · Works with all file types
+            Privacy by design · In-browser only · PDF/DOCX today (more coming)
           </p>
         </div>
       </section>
 
-      {/* Toast simple */}
+      {/* Toast */}
       {toast && (
         <div
           role="status"
@@ -396,4 +438,4 @@ export default function VerifyPage() {
       )}
     </main>
   );
-  }
+      }
