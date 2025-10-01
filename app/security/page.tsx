@@ -1,6 +1,5 @@
 // app/security/page.tsx
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -22,9 +21,16 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
+export const metadata: Metadata = {
+  title: "Security & Trust – DigitalMeve",
+  description:
+    "Privacy by design, on-device by default, and open cryptography. Learn how DigitalMeve protects integrity and authenticity without storing your files.",
+};
+
 export default function SecurityPage() {
   const toc = [
     { id: "principles", label: "Principles", icon: <ShieldCheck className="h-4 w-4" /> },
+    { id: "disclaimer", label: "Legal disclaimer", icon: <ShieldAlert className="h-4 w-4" /> },
     { id: "model", label: "Security model", icon: <Lock className="h-4 w-4" /> },
     { id: "privacy", label: "Privacy & data", icon: <Eye className="h-4 w-4" /> },
     { id: "crypto", label: "Cryptography", icon: <Key className="h-4 w-4" /> },
@@ -58,7 +64,6 @@ export default function SecurityPage() {
         </div>
       </section>
 
-      {/* Body with sticky TOC on desktop */}
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
           {/* TOC */}
@@ -124,6 +129,27 @@ export default function SecurityPage() {
               </div>
             </Section>
 
+            {/* DISCLAIMER */}
+            <Section
+              id="disclaimer"
+              title="Legal disclaimer"
+              icon={<ShieldAlert className="h-5 w-5 text-[var(--accent-1)]" />}
+            >
+              <Callout
+                title="Not legal advice — Not a legal proof by itself"
+                items={[
+                  "DigitalMeve is not a law firm and does not provide legal advice.",
+                  "DigitalMeve is not a Qualified Trust Service Provider (QTSP) and does not issue Qualified Electronic Signatures (QES).",
+                  "Any proof or verification artifact created with DigitalMeve does not, by itself, constitute legally binding evidence.",
+                  "Admissibility and legal weight depend on applicable laws and context. Consult a qualified attorney.",
+                ]}
+              />
+              <p className="mt-3 text-sm text-[var(--fg-muted)]">
+                See <Link href="/terms" className="underline hover:opacity-90">Terms of Service</Link> and{" "}
+                <Link href="/privacy" className="underline hover:opacity-90">Privacy Policy</Link>.
+              </p>
+            </Section>
+
             {/* SECURITY MODEL */}
             <Section
               id="model"
@@ -131,21 +157,11 @@ export default function SecurityPage() {
               icon={<Lock className="h-5 w-5 text-[var(--accent-1)]" />}
             >
               <ul className="space-y-3">
-                <Bullet text={<><b>Built-in proof:</b> we embed a timestamped fingerprint inside the file. The file stays a valid PDF/DOCX.</>} />
+                <Bullet text={<><b>Built-in proof:</b> we embed a timestamped SHA-256 fingerprint inside the file. The file stays a valid PDF/DOCX.</>} />
                 <Bullet text={<><b>Tamper-evident:</b> any single-byte change alters the fingerprint and fails verification.</>} />
                 <Bullet text={<><b>Local by default:</b> for individuals, hashing runs in the browser — your content doesn’t leave your device.</>} />
                 <Bullet text={<><b>Enterprise controls:</b> SLAs/DPA, SSO/SCIM, audit logs, and region pinning/on-prem (roadmap).</>} />
               </ul>
-
-              <Callout
-                title="Threat model (high level)"
-                icon={<ShieldCheck className="h-5 w-5 text-[var(--accent-2)]" />}
-                items={[
-                  "Integrity: detect any post-issuance modification of a document.",
-                  "Authenticity: bind an issuer identifier and optional metadata.",
-                  "Replay/Impersonation: proofs include timestamps and issuer context.",
-                ]}
-              />
             </Section>
 
             {/* PRIVACY & DATA */}
@@ -175,10 +191,14 @@ export default function SecurityPage() {
 
               <p className="mt-4 text-sm text-[var(--fg-muted)]">
                 See our{" "}
-                <Link href="/legal" className="underline hover:opacity-90">
-                  Legal &amp; Privacy
+                <Link href="/privacy" className="underline hover:opacity-90">
+                  Privacy Policy
                 </Link>{" "}
-                for details and DPA.
+                and{" "}
+                <Link href="/terms" className="underline hover:opacity-90">
+                  Terms of Service
+                </Link>
+                .
               </p>
             </Section>
 
@@ -388,17 +408,17 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 function Callout({
   title,
-  icon,
   items,
+  icon,
 }: {
   title: string;
-  icon?: React.ReactNode;
   items: string[];
+  icon?: React.ReactNode;
 }) {
   return (
     <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5">
       <div className="flex items-center gap-2 text-emerald-700">
-        {icon}
+        {icon ?? <ShieldCheck className="h-5 w-5" />}
         <h3 className="text-base font-semibold">{title}</h3>
       </div>
       <ul className="mt-2 list-disc pl-5 text-sm text-emerald-800 space-y-1">
@@ -447,4 +467,4 @@ function Line({
       <span>{text}</span>
     </li>
   );
-          }
+                }
