@@ -25,6 +25,7 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
 
+    "allowJs": true,                 // ⬅️ Next l’ajoute automatiquement : on l’explicite
     "sourceMap": true,
 
     "baseUrl": ".",
