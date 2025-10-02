@@ -1,4 +1,4 @@
-// components/HowItWorks.tsx — v3 (aligned with GitHub: watermark mandatory, plain-English, a11y)
+// components/HowItWorks.tsx — v3 (safe for strict TS / noUncheckedIndexedAccess)
 
 "use client";
 
@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Upload, ShieldCheck, Radar } from "lucide-react";
 
 type Step = {
-  icon: JSX.Element;
+  icon: React.ReactNode; // plus souple que JSX.Element
   title: string;
   text: string;
 };
@@ -39,17 +39,28 @@ export default function HowItWorks() {
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
     if (reduced) {
       setVisible(true);
       return;
     }
-    if (!ref.current) return;
+
+    const el = ref.current;
+    if (!el) return;
 
     const io = new IntersectionObserver(
-      ([e]) => e.isIntersecting && setVisible(true),
+      (entries: IntersectionObserverEntry[]) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) {
+          setVisible(true);
+          // Optionnel: on peut arrêter l’observation après le premier reveal
+          io.disconnect();
+        }
+      },
       { rootMargin: "0px 0px -10% 0px", threshold: 0.15 }
     );
-    io.observe(ref.current);
+
+    io.observe(el);
     return () => io.disconnect();
   }, []);
 
