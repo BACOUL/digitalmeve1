@@ -79,20 +79,27 @@ export default function MobileMenu({ open, onClose }: Props) {
     };
   }, [open, onClose]);
 
-  // Swipe-to-close (no lateral scroll)
+  // Swipe-to-close (type-safe)
   const startX = useRef<number | null>(null);
   const dx = useRef(0);
+
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    startX.current = e.touches[0].clientX;
+    const t = e.touches.item(0);
+    if (!t) return;
+    startX.current = t.clientX;
     dx.current = 0;
   };
+
   const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (startX.current == null) return;
-    dx.current = e.touches[0].clientX - startX.current;
+    const t = e.touches.item(0);
+    if (!t) return;
+    dx.current = t.clientX - startX.current;
     if (panelRef.current && dx.current > 0) {
       panelRef.current.style.transform = `translateX(${Math.min(80, dx.current)}px)`;
     }
   };
+
   const onTouchEnd = () => {
     if (panelRef.current) panelRef.current.style.transform = "";
     if (dx.current > 60) onClose();
@@ -111,8 +118,8 @@ export default function MobileMenu({ open, onClose }: Props) {
 
   const solutions = useMemo(
     () => [
-      { href: "/individuals", label: "For Individuals" },   // FIX
-      { href: "/professionals", label: "For Business" },    // FIX
+      { href: "/individuals", label: "For Individuals" }, // FIX
+      { href: "/professionals", label: "For Business" },  // FIX
     ],
     []
   );
@@ -121,8 +128,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     () => [
       { href: "/pricing", label: "Pricing" },
       { href: "/security", label: "Security" },
-      // Ajoute /docs ici si la page existe :
-      // { href: "/docs", label: "Docs" },
+      // { href: "/docs", label: "Docs" }, // à décommenter si la page existe
     ],
     []
   );
