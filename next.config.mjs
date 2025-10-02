@@ -7,17 +7,20 @@ import { withSentryConfig } from "@sentry/nextjs";
    - CSP stricte compatible Next 15
    - Stripe (js + checkout + api)
    - Sentry (US + EU)
-   - En-têtes sécurité niveau "A"
+   - Plausible (cookieless analytics)
+   - X-Robots-Tag sur /api & /admin
    ============================= */
 
-// ------------ ENV ------------
 const isProd = process.env.NODE_ENV === "production";
 const hasSentry = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+// Domaine canonique (si besoin pour redirects)
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://digitalmeve.com").replace(/\/+$/, "");
 
 // Domaines externes utiles (ajuste au besoin)
 const IMG_WHITELIST = [
   "https://images.unsplash.com",
-  "https://*.stripe.com",      // logos/iframes Stripe éventuels
+  "https://*.stripe.com",
 ];
 
 // Sentry browser + ingest (US/EU)
@@ -28,48 +31,51 @@ const SENTRY_INGEST = [
   "https://sentry.io",
 ].join(" ");
 
-// Stripe domains
+// Stripe
 const STRIPE_JS = "https://js.stripe.com";
 const STRIPE_CHECKOUT = "https://checkout.stripe.com";
 const STRIPE_API = "https://api.stripe.com";
+
+// Plausible (cookieless)
+const PLAUSIBLE = "https://plausible.io";
 
 // ------------ CSP ------------
 const cspParts = [
   "default-src 'self'",
 
-  // Next hydrate le DOM → 'unsafe-inline' requis; en dev on autorise aussi 'unsafe-eval'
-  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} blob: ${STRIPE_JS}${hasSentry ? " " + SENTRY_SCRIPT : ""}`,
+  // Next 15 + Tailwind → inline autorisé. 'unsafe-eval' seulement hors prod.
+  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} blob: ${STRIPE_JS}${hasSentry ? " " + SENTRY_SCRIPT : ""} ${PLAUSIBLE}`,
 
-  // Autoriser styles inline (tailwind injecte parfois) + fonts locales
+  // Styles inline OK (TW JIT / inline critical)
   "style-src 'self' 'unsafe-inline'",
 
-  // Images : self, data: (icônes/preview), blob:, et whitelists
+  // Images (self + data + blob + whitelists)
   `img-src 'self' data: blob: ${IMG_WHITELIST.join(" ")}`,
 
-  // Fonts locales (si webfonts), data: ok
+  // Fonts locales (next/font → self + data:)
   "font-src 'self' data:",
 
-  // Connexions sortantes (SSE/WebSocket/Stripe/Sentry)
-  `connect-src 'self' https: wss: ${STRIPE_API}${hasSentry ? " " + SENTRY_INGEST : ""}`,
+  // Connexions sortantes (APIs, Sentry, Plausible)
+  `connect-src 'self' https: wss: ${STRIPE_API}${hasSentry ? " " + SENTRY_INGEST : ""} ${PLAUSIBLE}`,
 
-  // Média/Workers (PDF preview, file blobs)
+  // Media/Workers (PDF/Docx processing en local)
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
 
-  // Encadrements/iframes (Stripe Checkout)
+  // Frames (Stripe Checkout & js.stripe)
   `frame-src 'self' ${STRIPE_JS} ${STRIPE_CHECKOUT}`,
 
-  // Empêche plugins
+  // Pas de plugins
   "object-src 'none'",
 
-  // Sécurise base URI et formulaires (Stripe Checkout)
+  // Sécurise base et formulaires (Checkout)
   "base-uri 'self'",
   `form-action 'self' ${STRIPE_CHECKOUT}`,
 
-  // Empêche l’embed du site dans un autre (clickjacking)
+  // Anti-embed (clickjacking)
   "frame-ancestors 'none'",
 
-  // Optionnel : upgrade HTTP → HTTPS (peut être laissé à HSTS)
+  // Optionnel (souvent redondant avec HSTS)
   "upgrade-insecure-requests",
 ];
 
@@ -77,18 +83,13 @@ const csp = cspParts.join("; ");
 
 // ------------ Security Headers ------------
 const securityHeaders = [
-  // HSTS seulement en prod (évite de gêner dev/tunnels)
   isProd && {
     key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload", // 2 ans
+    value: "max-age=63072000; includeSubDomains; preload",
   },
-  // Anti-clickjacking
   { key: "X-Frame-Options", value: "DENY" },
-  // Anti-MIME sniff
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Référent
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Permissions (durci, on ouvre seulement ce qui sert)
   {
     key: "Permissions-Policy",
     value: [
@@ -105,7 +106,7 @@ const securityHeaders = [
       "idle-detection=()",
       "microphone=()",
       "midi=()",
-      "payment=()", // on utilise checkout Stripe (redir/iframe), pas PaymentRequest API
+      "payment=()",
       "picture-in-picture=(self)",
       "publickey-credentials-get=(self)",
       "screen-wake-lock=()",
@@ -114,11 +115,8 @@ const securityHeaders = [
       "xr-spatial-tracking=()",
     ].join(", "),
   },
-  // COOP/CORP sûrs par défaut (attention à COEP qui casserait des workers/blobs)
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-site" },
-
-  // CSP construite ci-dessus
   { key: "Content-Security-Policy", value: csp },
 ].filter(Boolean);
 
@@ -127,26 +125,42 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
-  // Si tu utilises <Image>, préfère configurer les domaines plutôt que unoptimized:true.
-  // Gardé ici pour éviter les surprises tant que la stack images n'est pas finalisée.
-  images: { unoptimized: true },
+  // Laisse "unoptimized" pour ne rien casser maintenant ;
+  // quand tu voudras passer à <Image>, configure "remotePatterns" ci-dessous et enlève "unoptimized".
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      // { protocol: "https", hostname: "images.unsplash.com" },
+      // { protocol: "https", hostname: "cdn.digitalmeve.com" },
+    ],
+  },
 
-  // Sentry: sources maps prod (utile si tu veux corréler les erreurs front)
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: true, // utile pour Sentry en prod
 
   async headers() {
     return [
-      {
-        source: "/:path*",
-        headers: securityHeaders,
-      },
+      // Sécurité globale
+      { source: "/:path*", headers: securityHeaders },
+
+      // SEO: évite l’indexation de zones techniques
+      { source: "/api/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+    ];
+  },
+
+  async redirects() {
+    return [
+      // (Optionnel) — forcer le host canonique.
+      // Exemple: forcer sans "www"
+      // {
+      //   source: "/:path*",
+      //   has: [{ type: "host", value: "www.digitalmeve.com" }],
+      //   destination: `${SITE_URL}/:path*`,
+      //   permanent: true,
+      // },
     ];
   },
 };
 
-// ➜ IMPORTANT : wrap avec Sentry
-export default withSentryConfig(nextConfig, {
-  silent: true,
-  // Si beaucoup de fichiers client → décommente :
-  // widenClientFileUpload: true,
-});
+// Wrap Sentry
+export default withSentryConfig(nextConfig, { silent: true });
