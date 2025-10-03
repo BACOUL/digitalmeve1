@@ -18,12 +18,14 @@ import FileDropzone from "@/components/FileDropzone";
 
 // --- Filigranes / certificats ---
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
-import { addWatermarkImage } from "@/lib/watermark-image";               // NEW: visuel PNG/JPG
-import { sha256Hex } from "@/lib/meve-xmp";
+import { addWatermarkImage } from "@/lib/watermark-image"; // PNG/JPG visible
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";
 import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx";
-import { embedInvisibleWatermarkImage } from "@/lib/wm/image";           // NEW: invisible PNG/JPG
+import { embedInvisibleWatermarkImage } from "@/lib/wm/image"; // PNG/JPG invisible
+
+// --- Preuve centralisée (free/payant, hash+ts, org, etc.)
+import { buildMeveProof, getCurrentPlan, type Plan } from "@/lib/proof";
 
 // --- Quota invité ---
 import LimitModal from "@/components/LimitModal";
@@ -36,7 +38,7 @@ const MAX_SIZE_MB = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 type GenResult = {
-  pdfBlob?: Blob;          // utilisé pour PDF / DOCX / IMG
+  pdfBlob?: Blob; // utilisé pour PDF / DOCX / IMG
   fileName?: string;
   hash?: string;
   whenISO?: string;
@@ -49,7 +51,6 @@ function isPdf(f: File) {
   const name = f.name.toLowerCase();
   return mt === "application/pdf" || name.endsWith(".pdf");
 }
-
 function isDocx(f: File) {
   const mt = (f.type || "").toLowerCase();
   const name = f.name.toLowerCase();
@@ -58,7 +59,6 @@ function isDocx(f: File) {
     name.endsWith(".docx")
   );
 }
-
 function isImg(f: File) {
   const mt = (f.type || "").toLowerCase();
   const name = f.name.toLowerCase();
@@ -70,14 +70,12 @@ function isImg(f: File) {
     name.endsWith(".jpeg")
   );
 }
-
 function guessKind(f: File): "pdf" | "docx" | "image" | "other" {
   if (isPdf(f)) return "pdf";
   if (isDocx(f)) return "docx";
   if (isImg(f)) return "image";
   return "other";
 }
-
 function toMeveDocName(name: string, ext: "pdf" | "docx") {
   const m = name.match(/^(.+)\.([^.]+)$/);
   const base = m ? m[1] : name;
@@ -88,7 +86,6 @@ function toMeveImageName(name: string, ext: "png" | "jpg") {
   const base = m ? m[1] : name;
   return `${base}.meve.${ext}`;
 }
-
 function formatWhen(iso?: string) {
   if (!iso) return "—";
   try {
@@ -110,9 +107,12 @@ function formatWhen(iso?: string) {
  * ========================= */
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
-  const [issuer, setIssuer] = useState("");
+  const [issuer, setIssuer] = useState(""); // email (personal) OU domaine (business) si payant
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<GenResult>({});
+
+  // plan courant (free | personal_paid | business_paid)
+  const plan = getCurrentPlan();
 
   // Quota (invité)
   const [limitOpen, setLimitOpen] = useState(false);
@@ -205,18 +205,23 @@ export default function GeneratePage() {
           message: "Only PDF, DOCX, PNG and JPG are supported.",
         });
 
-      // 1) Hash de l’original (spéc MEVE)
-      const t0 = performance.now();
-      const hash = await sha256Hex(file);
-      const whenISO = new Date().toISOString();
+      // 1) Construire la preuve centrale (hash + ts + identité selon plan)
+      const isEmail = issuer.includes("@");
+      const { proof, hash, ts } = await buildMeveProof({
+        file,
+        plan,
+        issuerEmail: plan === "personal_paid" && isEmail ? issuer : null,
+        businessDNS: plan === "business_paid" && !isEmail ? issuer : null,
+      });
 
       if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
+      // 2) Appliquer filigrane(s) + marquage invisible (PDF/DOCX/IMG)
       let outBlob: Blob;
       let outName: string;
 
       if (k === "pdf") {
-        // 2) PDF : watermark visuel → ArrayBuffer → Blob
+        // 2a) PDF : watermark visuel → ArrayBuffer → Blob
         const watermarkedAB = await addWatermarkPdf(file);
         const watermarkedBlob = new Blob([watermarkedAB], {
           type: "application/pdf",
@@ -224,27 +229,25 @@ export default function GeneratePage() {
 
         if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
-        // 3) Filigrane invisible %MEVE{...}EVEM
+        // 2b) Filigrane invisible (structure attend {hash, ts, issuer})
         outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
           hash,
-          ts: whenISO,
-          issuer: issuer || undefined,
+          ts,
+          issuer: proof.issuer || undefined, // en free → undefined
         });
 
         outName = toMeveDocName(file.name, "pdf");
       } else if (k === "docx") {
-        // DOCX : insertion du marqueur invisible dans docProps/custom.xml
         outBlob = await embedInvisibleWatermarkDocx(file, {
           hash,
-          ts: whenISO,
-          issuer: issuer || undefined,
+          ts,
+          issuer: proof.issuer || undefined,
         });
 
         outName = toMeveDocName(file.name, "docx");
       } else {
         // --- IMAGES (PNG/JPG) ---
-        // 2) Filigrane visuel image (canvas)
-        //    ⚠️ On NE PASSE PAS hash/ts/issuer ici (options visuelles uniquement)
+        // 2a) Filigrane visuel image (canvas)
         const watermarkedAB = await addWatermarkImage(file);
         const mime = (file.type || "").toLowerCase().includes("png")
           ? "image/png"
@@ -253,24 +256,25 @@ export default function GeneratePage() {
 
         if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
-        // 3) Filigrane invisible (métadonnées MEVE)
+        // 2b) Filigrane invisible image (PNG iTXt / JPEG COM)
         outBlob = await embedInvisibleWatermarkImage(watermarkedBlob, {
           hash,
-          ts: whenISO,
-          issuer: issuer || undefined,
+          ts,
+          issuer: proof.issuer || undefined,
           kind: mime === "image/png" ? "png" : "jpeg",
         });
 
         outName = toMeveImageName(file.name, mime === "image/png" ? "png" : "jpg");
       }
 
-      setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
+      // 3) Stocker le résultat pour l’UI + téléchargement
+      setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO: ts });
 
-      const elapsed = performance.now() - t0;
+      const elapsed = performance.now() - performance.timing.navigationStart; // temps approximatif
       const pretty =
         elapsed < 1000 ? `${Math.round(elapsed)} ms` : `${(elapsed / 1000).toFixed(1)} s`;
 
-      end({ type: "success", message: `Proof ready in ${pretty}` });
+      end({ type: "success", message: `Proof ready` });
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
@@ -311,17 +315,24 @@ export default function GeneratePage() {
 
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
+    // NB: en free, issuer est vide → certificat sans identité
     exportHtmlCertificate(
       res.fileName.replace(/\.(pdf|docx|png|jpg|jpeg)$/i, ""),
       res.hash,
       res.whenISO,
-      issuer
+      plan === "free" ? "" : issuer
     );
   }
 
   /* =========================
    * Rendu
    * ========================= */
+  const issuerDisabled = plan === "free";
+  const issuerPlaceholder =
+    plan === "business_paid"
+      ? "e.g. company.com (verified domain)"
+      : "e.g. alice@company.com";
+
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)] relative">
       {/* Fond premium */}
@@ -402,21 +413,26 @@ export default function GeneratePage() {
           {/* Issuer */}
           <div className="mt-5">
             <label htmlFor="issuer" className="block text-sm font-medium">
-              Issuer (optional)
+              Issuer {issuerDisabled ? "(paying plans only)" : "(optional)"}
             </label>
             <input
               id="issuer"
               type="text"
-              placeholder="e.g. alice@company.com"
+              placeholder={issuerPlaceholder}
               value={issuer}
               onChange={(e) => setIssuer(e.target.value)}
               className="input mt-1"
-              autoComplete="email"
-              inputMode="email"
+              autoComplete={plan === "personal_paid" ? "email" : "off"}
+              inputMode={plan === "personal_paid" ? "email" : "text"}
               aria-describedby="issuer-hint"
+              disabled={issuerDisabled}
             />
             <p id="issuer-hint" className="mt-1 text-xs text-[var(--fg-muted)]">
-              This identifier will be embedded as issuer metadata (e.g., email or domain).
+              {plan === "free"
+                ? "Free mode keeps your identity private (no issuer embedded)."
+                : plan === "business_paid"
+                ? "Enter your verified domain (e.g., company.com)."
+                : "Enter your email (e.g., alice@company.com)."}
             </p>
           </div>
 
@@ -468,7 +484,9 @@ export default function GeneratePage() {
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   <dt className="text-[var(--fg-muted)]">Issuer</dt>
-                  <dd className="col-span-2 sm:col-span-3">{issuer || "—"}</dd>
+                  <dd className="col-span-2 sm:col-span-3">
+                    {plan === "free" ? "— (free mode)" : issuer || "—"}
+                  </dd>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   <dt className="text-[var(--fg-muted)]">SHA-256</dt>
@@ -510,7 +528,7 @@ export default function GeneratePage() {
 
               <p className="mt-3 text-xs text-[var(--fg-muted)]">
                 The file downloads directly to preserve integrity. The certificate may briefly open
-                in a new tab (~10s) so you can choose “Open”.
+                in a new tab so you can choose “Open”.
               </p>
             </div>
           )}
@@ -547,4 +565,4 @@ export default function GeneratePage() {
       />
     </main>
   );
-          }
+      }
