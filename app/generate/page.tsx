@@ -12,13 +12,17 @@ import {
   Lock,
   BadgeCheck,
   FileCheck,
+  Image as ImageIcon,
 } from "lucide-react";
+
 import FileDropzone from "@/components/FileDropzone";
 import { addWatermarkPdf } from "@/lib/watermark-pdf";
+import { addWatermarkImage } from "@/lib/watermark-image";           // ⬅️ NEW (visuel PNG/JPG)
 import { sha256Hex } from "@/lib/meve-xmp";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { embedInvisibleWatermarkPdf } from "@/lib/wm/pdf";
 import { embedInvisibleWatermarkDocx } from "@/lib/wm/docx";
+import { embedInvisibleWatermarkImage } from "@/lib/wm/image";        // ⬅️ NEW (invisible PNG/JPG)
 
 import LimitModal from "@/components/LimitModal";
 import { checkFreeQuota } from "@/lib/quotaClient";
@@ -28,13 +32,16 @@ const MAX_SIZE_MB = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 type GenResult = {
-  pdfBlob?: Blob;
+  outBlob?: Blob;           // generic (PDF/DOCX/IMG)
   fileName?: string;
   hash?: string;
   whenISO?: string;
+  invisibleOk?: boolean;    // ⬅️ indique si l’invisible est bien intégré
 };
 
 type Toast = { type: "success" | "error" | "info"; message: string } | null;
+
+type Kind = "pdf" | "docx" | "png" | "jpg" | "jpeg" | "other";
 
 function isPdf(f: File) {
   const mt = (f.type || "").toLowerCase();
@@ -49,15 +56,28 @@ function isDocx(f: File) {
     name.endsWith(".docx")
   );
 }
-function guessKind(f: File): "pdf" | "docx" | "other" {
+function isPng(f: File) {
+  const mt = (f.type || "").toLowerCase();
+  const name = f.name.toLowerCase();
+  return mt === "image/png" || name.endsWith(".png");
+}
+function isJpeg(f: File) {
+  const mt = (f.type || "").toLowerCase();
+  const name = f.name.toLowerCase();
+  return mt === "image/jpeg" || name.endsWith(".jpg") || name.endsWith(".jpeg");
+}
+
+function guessKind(f: File): Kind {
   if (isPdf(f)) return "pdf";
   if (isDocx(f)) return "docx";
+  if (isPng(f)) return "png";
+  if (isJpeg(f)) return "jpg";
   return "other";
 }
-function toMeveName(name: string, kind: "pdf" | "docx") {
+function toMeveName(name: string, ext: "pdf" | "docx" | "png" | "jpg") {
   const m = name.match(/^(.+)\.([^.]+)$/);
   const base = m ? m[1] : name;
-  return `${base}.meve.${kind}`;
+  return `${base}.meve.${ext}`;
 }
 function formatWhen(iso?: string) {
   if (!iso) return "—";
@@ -90,36 +110,42 @@ export default function GeneratePage() {
   const [toast, setToast] = useState<Toast>(null);
   const cancelRef = useRef(false);
 
-  const kind = useMemo<"pdf" | "docx" | "other">(() => (file ? guessKind(file) : "other"), [file]);
+  const kind = useMemo<Kind>(() => (file ? guessKind(file) : "other"), [file]);
 
   const showToast = useCallback((t: Toast, ms = 2500) => {
     setToast(t);
     if (t) window.setTimeout(() => setToast(null), ms);
   }, []);
 
-  const onSelected = useCallback((f: File | null) => {
-    setRes({});
-    if (!f) {
-      setFile(null);
-      return;
-    }
-    if (f.size > MAX_SIZE_BYTES) {
-      showToast({ type: "error", message: `Max size is ${MAX_SIZE_MB} MB.` });
-      setFile(null);
-      return;
-    }
-    const k = guessKind(f);
-    if (k === "other") {
-      showToast({ type: "error", message: "Only PDF and DOCX are supported." });
-      setFile(null);
-      return;
-    }
-    setFile(f);
-  }, [showToast]);
+  const onSelected = useCallback(
+    (f: File | null) => {
+      setRes({});
+      if (!f) {
+        setFile(null);
+        return;
+      }
+      if (f.size > MAX_SIZE_BYTES) {
+        showToast({ type: "error", message: `Max size is ${MAX_SIZE_MB} MB.` });
+        setFile(null);
+        return;
+      }
+      const k = guessKind(f);
+      if (k === "other") {
+        showToast({
+          type: "error",
+          message: "Supported today: PDF, DOCX, PNG, JPG. More formats coming.",
+        });
+        setFile(null);
+        return;
+      }
+      setFile(f);
+    },
+    [showToast]
+  );
 
   function humanError(e: unknown) {
     const msg = (e as any)?.message || "";
-    if (/pdf|docx|type/i.test(msg)) return "Only PDF or DOCX are supported.";
+    if (/pdf|docx|png|jpg|jpeg|type/i.test(msg)) return "File type not supported yet.";
     if (/size|10 ?mb/i.test(msg)) return `Max size is ${MAX_SIZE_MB} MB.`;
     return "Something went wrong while generating the proof.";
   }
@@ -154,7 +180,11 @@ export default function GeneratePage() {
       if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
       const k = guessKind(file);
-      if (k === "other") return end({ type: "error", message: "Only PDF and DOCX are supported." });
+      if (k === "other")
+        return end({
+          type: "error",
+          message: "Supported today: PDF, DOCX, PNG, JPG. More formats coming.",
+        });
 
       const t0 = performance.now();
       const hash = await sha256Hex(file);
@@ -164,13 +194,16 @@ export default function GeneratePage() {
 
       let outBlob: Blob;
       let outName: string;
+      let invisibleOk = true;
 
       if (k === "pdf") {
+        // 1) watermark visuel
         const watermarkedAB = await addWatermarkPdf(file);
         const watermarkedBlob = new Blob([watermarkedAB], { type: "application/pdf" });
 
         if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
 
+        // 2) watermark invisible
         outBlob = await embedInvisibleWatermarkPdf(watermarkedBlob, {
           hash,
           ts: whenISO,
@@ -178,22 +211,55 @@ export default function GeneratePage() {
         });
 
         outName = toMeveName(file.name, "pdf");
-      } else {
+      } else if (k === "docx") {
         outBlob = await embedInvisibleWatermarkDocx(file, {
           hash,
           ts: whenISO,
           issuer: issuer || undefined,
         });
-
         outName = toMeveName(file.name, "docx");
+      } else {
+        // Images: PNG/JPG
+        // 1) watermark visuel (canvas)
+        const watermarkedBlob = await addWatermarkImage(file, {
+          hash,
+          ts: whenISO,
+          issuer: issuer || undefined,
+        });
+
+        if (cancelRef.current) return end({ type: "info", message: "Cancelled." });
+
+        // 2) watermark invisible (stub safe, améliorable)
+        try {
+          outBlob = await embedInvisibleWatermarkImage(watermarkedBlob, {
+            hash,
+            ts: whenISO,
+            issuer: issuer || undefined,
+            kind: k,
+          });
+          invisibleOk = true;
+        } catch {
+          // fallback: on garde le visuel + on proposera le certificat HTML
+          outBlob = watermarkedBlob;
+          invisibleOk = false;
+        }
+
+        outName = toMeveName(file.name, k === "png" ? "png" : "jpg");
       }
 
-      setRes({ pdfBlob: outBlob, fileName: outName, hash, whenISO });
+      setRes({ outBlob, fileName: outName, hash, whenISO, invisibleOk });
 
       const elapsed = performance.now() - t0;
       const pretty = elapsed < 1000 ? `${Math.round(elapsed)} ms` : `${(elapsed / 1000).toFixed(1)} s`;
 
-      end({ type: "success", message: `Proof ready in ${pretty}` });
+      if (invisibleOk) {
+        end({ type: "success", message: `Proof ready in ${pretty}` });
+      } else {
+        end({
+          type: "info",
+          message: `Proof ready (image watermark OK). Extra certificate recommended.`,
+        });
+      }
     } catch (e) {
       console.error(e);
       end({ type: "error", message: humanError(e) });
@@ -217,8 +283,8 @@ export default function GeneratePage() {
   }
 
   function downloadFile() {
-    if (!res.pdfBlob || !res.fileName) return;
-    const url = URL.createObjectURL(res.pdfBlob);
+    if (!res.outBlob || !res.fileName) return;
+    const url = URL.createObjectURL(res.outBlob);
     const a = document.createElement("a");
     a.href = url;
     a.download = res.fileName;
@@ -231,12 +297,12 @@ export default function GeneratePage() {
 
   function downloadCert() {
     if (!res.fileName || !res.hash || !res.whenISO) return;
-    exportHtmlCertificate(res.fileName.replace(/\.(pdf|docx)$/i, ""), res.hash, res.whenISO, issuer);
+    exportHtmlCertificate(res.fileName.replace(/\.(pdf|docx|png|jpg)$/i, ""), res.hash, res.whenISO, issuer);
   }
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--fg)] relative">
-      {/* Fond premium (cohérent verify/home) */}
+      {/* Fond premium */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 opacity-50"
@@ -247,7 +313,9 @@ export default function GeneratePage() {
       />
 
       {/* SR status */}
-      <p aria-live="polite" className="sr-only">{busy ? "Generating…" : res.fileName ? "Generation done." : "Idle"}</p>
+      <p aria-live="polite" className="sr-only">
+        {busy ? "Generating…" : res.fileName ? "Generation done." : "Idle"}
+      </p>
 
       <section className="border-b border-[var(--border)] bg-[var(--bg)]">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
@@ -256,8 +324,11 @@ export default function GeneratePage() {
           </h1>
 
           <p className="mt-3 text-lg text-[var(--fg-muted)]">
-            Select your document (PDF or DOCX). We embed a lightweight, invisible proof. You’ll get{" "}
-            <span className="font-semibold">name<span className="opacity-60">.meve</span>.pdf/.docx</span>{" "}
+            Select your file (PDF, DOCX, PNG, JPG). We add a visible watermark and an invisible proof (when supported).
+            You’ll receive{" "}
+            <span className="font-semibold">
+              name<span className="opacity-60">.meve</span>.pdf/.docx/.png/.jpg
+            </span>{" "}
             and an optional human-readable certificate (.html).
           </p>
 
@@ -266,7 +337,13 @@ export default function GeneratePage() {
             <span className="badge"><Lock className="h-4 w-4 text-[var(--accent-1)]" /> No storage — runs locally</span>
             <span className="badge"><BadgeCheck className="h-4 w-4 text-[var(--accent-2)]" /> Works offline</span>
             {file && kind !== "other" && (
-              <span className="badge"><FileCheck className="h-4 w-4 text-[var(--accent-1)]" /> {kind.toUpperCase()} detected</span>
+              <span className="badge">
+                {isPng(file) || isJpeg(file) ? <ImageIcon className="h-4 w-4 text-[var(--accent-1)]" /> : <FileCheck className="h-4 w-4 text-[var(--accent-1)]" />}
+                {kind.toUpperCase()} detected
+              </span>
+            )}
+            {typeof quotaRemaining === "number" && (
+              <span className="badge">{quotaRemaining} free left today</span>
             )}
           </div>
 
@@ -276,7 +353,11 @@ export default function GeneratePage() {
               label="Choose a file"
               maxSizeMB={MAX_SIZE_MB}
               hint={`Drag & drop or tap to select. Max ${MAX_SIZE_MB} MB.`}
-              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept={[
+                ".pdf","application/pdf",
+                ".docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".png","image/png",".jpg",".jpeg","image/jpeg",
+              ].join(",")}
               role="button"
               tabIndex={0}
             />
@@ -296,7 +377,7 @@ export default function GeneratePage() {
               aria-describedby="issuer-hint"
             />
             <p id="issuer-hint" className="mt-1 text-xs text-[var(--fg-muted)]">
-              This identifier will be embedded as issuer metadata (e.g., email or domain).
+              This identifier is embedded in the proof metadata (e.g., email or domain).
             </p>
           </div>
 
@@ -324,7 +405,7 @@ export default function GeneratePage() {
             </button>
           </div>
 
-          {res.pdfBlob && res.fileName && (
+          {res.outBlob && res.fileName && (
             <div className="mt-8 card p-5">
               <h2 className="text-lg font-semibold">Proof Preview</h2>
 
@@ -355,10 +436,7 @@ export default function GeneratePage() {
                           >
                             <Clipboard className="h-3.5 w-3.5" /> Copy
                           </button>
-                          <Link
-                            href={`/verify?hash=${encodeURIComponent(res.hash)}`}
-                            className="text-xs underline"
-                          >
+                          <Link href={`/verify?hash=${encodeURIComponent(res.hash)}`} className="text-xs underline">
                             Verify now →
                           </Link>
                         </>
@@ -368,10 +446,18 @@ export default function GeneratePage() {
                 </div>
               </dl>
 
+              <div className="mt-4">
+                {res.invisibleOk === false && (
+                  <p className="text-xs text-amber-300/90">
+                    Invisible proof fallback on images — we recommend downloading the certificate for audit trail.
+                  </p>
+                )}
+              </div>
+
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button onClick={downloadFile} className="btn" aria-label="Download .MEVE document">
+                <button onClick={downloadFile} className="btn" aria-label="Download .MEVE file">
                   <FileDown className="h-4 w-4 text-[var(--accent-1)]" />
-                  Download .MEVE document
+                  Download .MEVE file
                 </button>
                 <button onClick={downloadCert} className="btn" aria-label="Download certificate as HTML">
                   <FileCheck2 className="h-4 w-4 text-[var(--accent-2)]" />
@@ -383,7 +469,7 @@ export default function GeneratePage() {
 
           {/* Micro-claims */}
           <p className="mt-10 text-center text-xs text-[var(--fg-muted)]">
-            Privacy by design · In-browser only · PDF/DOCX today (more coming)
+            Privacy by design · In-browser only · PDF/DOCX/PNG/JPG today — more formats coming
           </p>
         </div>
       </section>
@@ -407,4 +493,4 @@ export default function GeneratePage() {
       <LimitModal open={limitOpen} onClose={() => setLimitOpen(false)} count={quotaCount} resetDayUTC={quotaResetDay} />
     </main>
   );
-                 }
+                                         }
