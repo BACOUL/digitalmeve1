@@ -1,11 +1,11 @@
-// components/Hero.tsx — v17 (copy aligned with GitHub spec)
+// components/Hero.tsx — v18 (world-class: a11y, perf, reduced-motion, no global selectors)
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ShieldCheck, Radar, Sparkles, BadgeCheck } from "lucide-react";
 
-const BASELINE_TOTAL = 23573;
+const BASELINE_TOTAL = 23573; // seed côté client (peut être remplacé par une valeur serveur)
 
 function formatEN(n: number) {
   return new Intl.NumberFormat("en-US").format(n);
@@ -14,28 +14,61 @@ function formatEN(n: number) {
 export default function Hero() {
   const [display, setDisplay] = useState(0);
   const driftRef = useRef<number>(0);
+  const rootRef = useRef<HTMLElement | null>(null);
+  const reducedMotion = useRef<boolean>(false);
 
+  // Respecte prefers-reduced-motion (désactive révélations + count-up)
   useEffect(() => {
+    try {
+      reducedMotion.current =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    } catch {
+      reducedMotion.current = false;
+    }
+  }, []);
+
+  // Révélations douces, scoped au composant (évite querySelectorAll global)
+  useEffect(() => {
+    if (!rootRef.current) return;
+    if (reducedMotion.current) {
+      // si motion réduite → montrer direct
+      rootRef.current
+        .querySelectorAll<HTMLElement>("[data-reveal='1']")
+        .forEach((el) => {
+          el.classList.remove("opacity-0", "translate-y-3");
+          el.style.transitionDelay = "0ms";
+        });
+      return;
+    }
+
     const io = new IntersectionObserver(
-      (entries) => {
+      (entries, obs) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const el = entry.target as HTMLElement;
           const idx = Number(el.dataset.index || 0);
           el.classList.remove("opacity-0", "translate-y-3");
           el.style.transitionDelay = `${80 + idx * 80}ms`;
-          io.unobserve(el);
+          obs.unobserve(el);
         }
       },
       { threshold: 0.2 }
     );
-    document.querySelectorAll<HTMLElement>("[data-reveal='1']").forEach((el) =>
-      io.observe(el)
-    );
-    return () => io.disconnect();
-  }, []);
 
+    rootRef.current
+      .querySelectorAll<HTMLElement>("[data-reveal='1']")
+      .forEach((el) => io.observe(el));
+
+    return () => io.disconnect();
+  }, [rootRef.current]);
+
+  // Compteur progressif (désactivé si motion réduite)
   useEffect(() => {
+    if (reducedMotion.current) {
+      setDisplay(BASELINE_TOTAL);
+      return;
+    }
     const start = performance.now();
     const to = BASELINE_TOTAL;
     let raf = 0;
@@ -47,7 +80,8 @@ export default function Hero() {
     };
     raf = requestAnimationFrame(tick);
 
-    const id = setInterval(() => {
+    // drift léger toutes les 5 min (évite reflow fréquent)
+    const id = window.setInterval(() => {
       const bump = Math.floor(Math.random() * 16) + 5;
       driftRef.current += bump;
       setDisplay(BASELINE_TOTAL + driftRef.current);
@@ -64,24 +98,19 @@ export default function Hero() {
   return (
     <section
       id="hero"
+      ref={rootRef}
       aria-label="DigitalMeve — Protect your documents, effortlessly."
       className="relative overflow-visible pb-[calc(84px+env(safe-area-inset-bottom))] sm:pb-20"
     >
-      {/* Background FX */}
+      {/* Background FX (peu d’opacité → pas de gêne lisibilité / LCP) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
           className="absolute -top-24 -left-24 h-[520px] w-[520px] rounded-full opacity-25 blur-3xl"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(16,185,129,.35), transparent 65%)",
-          }}
+          style={{ background: "radial-gradient(closest-side, rgba(16,185,129,.35), transparent 65%)" }}
         />
         <div
           className="absolute -top-28 right-[-10%] h-[560px] w-[560px] rounded-full opacity-25 blur-3xl"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(56,189,248,.28), transparent 65%)",
-          }}
+          style={{ background: "radial-gradient(closest-side, rgba(56,189,248,.28), transparent 65%)" }}
         />
         <div className="absolute inset-x-0 top-0 h-12 bg-white/90 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       </div>
@@ -95,10 +124,7 @@ export default function Hero() {
           className="reveal mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-[6px] text-[.68rem] sm:text-[.7rem] font-semibold tracking-wide text-slate-200 backdrop-blur opacity-0 translate-y-3 transition-all duration-500"
           role="note"
         >
-          <span
-            aria-hidden
-            className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"
-          />
+          <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
           THE .MEVE STANDARD · Privacy-first · Certified integrity
         </div>
 
@@ -111,14 +137,14 @@ export default function Hero() {
           Protect your documents, effortlessly.
         </h1>
 
-        {/* Subheadline */}
+        {/* Subheadline (clarifie proposition leader / “unique au monde”) */}
         <p
           data-reveal="1"
           data-index="2"
           className="reveal mx-auto mt-3 max-w-3xl text-[15px] sm:text-lg text-[var(--fg-muted)] opacity-0 translate-y-3 transition-all duration-500"
         >
-          Add a visible watermark and an invisible proof in seconds — processed
-          on your device, private by design.
+          DigitalMeve is the first open, on-device standard that adds a visible watermark
+          and an invisible proof in seconds — private by design, verifiable anywhere.
         </p>
 
         {/* Micro-claims */}
@@ -155,11 +181,12 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Social proof */}
+        {/* Social proof (aria-live polite pour lecteurs d’écran) */}
         <div
           data-reveal="1"
           data-index="5"
           className="reveal mx-auto mt-4 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-300/90 opacity-0 translate-y-3 transition-all duration-500"
+          aria-live="polite"
         >
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-transparent px-3 py-1.5">
             {totalDocs} documents protected
