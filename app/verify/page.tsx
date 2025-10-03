@@ -16,7 +16,8 @@ import {
 import FileDropzone from "@/components/FileDropzone";
 import { exportHtmlCertificate } from "@/lib/certificate-html";
 import { readInvisibleWatermarkPdf } from "@/lib/wm/pdf";
-import { readInvisibleWatermarkDocx } from "@/lib/wm/docx"; // DOCX
+import { readInvisibleWatermarkDocx } from "@/lib/wm/docx";
+import { readInvisibleWatermarkImage } from "@/lib/wm/image"; // NEW: PNG/JPG
 
 /** --- Constants / helpers --- */
 const MAX_SIZE_MB = 10;
@@ -42,13 +43,26 @@ function isDocx(f: File) {
   const mt = (f.type || "").toLowerCase();
   const name = f.name.toLowerCase();
   return (
-    mt === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    mt ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
     name.endsWith(".docx")
   );
 }
-function guessKind(f: File): "pdf" | "docx" | "other" {
+function isImg(f: File) {
+  const mt = (f.type || "").toLowerCase();
+  const name = f.name.toLowerCase();
+  return (
+    mt === "image/png" ||
+    mt === "image/jpeg" ||
+    name.endsWith(".png") ||
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg")
+  );
+}
+function guessKind(f: File): "pdf" | "docx" | "image" | "other" {
   if (isPdf(f)) return "pdf";
   if (isDocx(f)) return "docx";
+  if (isImg(f)) return "image";
   return "other";
 }
 function formatWhen(iso?: string) {
@@ -77,44 +91,46 @@ export default function VerifyPage() {
   const [toast, setToast] = useState<Toast>(null);
   const resetBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  const kind = useMemo<"pdf" | "docx" | "other">(() => {
-    return file ? guessKind(file) : "other";
-  }, [file]);
+  const kind = useMemo<"pdf" | "docx" | "image" | "other">(
+    () => (file ? guessKind(file) : "other"),
+    [file]
+  );
 
   const showToast = useCallback((t: Toast, ms = 2500) => {
     setToast(t);
-    if (t) {
-      window.setTimeout(() => setToast(null), ms);
-    }
+    if (t) window.setTimeout(() => setToast(null), ms);
   }, []);
 
-  const onSelected = useCallback((f: File | null) => {
-    setRes(null);
-    if (!f) {
-      setFile(null);
-      return;
-    }
-    if (f.size > MAX_SIZE_BYTES) {
-      showToast({ type: "error", message: `Max size is ${MAX_SIZE_MB} MB.` });
-      setFile(null);
-      return;
-    }
-    const k = guessKind(f);
-    if (k === "other") {
-      showToast({
-        type: "error",
-        message: "Only PDF or DOCX with a .MEVE proof are supported.",
-      });
-      setFile(null);
-      return;
-    }
-    setFile(f);
-  }, [showToast]);
+  const onSelected = useCallback(
+    (f: File | null) => {
+      setRes(null);
+      if (!f) {
+        setFile(null);
+        return;
+      }
+      if (f.size > MAX_SIZE_BYTES) {
+        showToast({ type: "error", message: `Max size is ${MAX_SIZE_MB} MB.` });
+        setFile(null);
+        return;
+      }
+      const k = guessKind(f);
+      if (k === "other") {
+        showToast({
+          type: "error",
+          message: "Only PDF, DOCX, PNG or JPG with a .MEVE proof are supported.",
+        });
+        setFile(null);
+        return;
+      }
+      setFile(f);
+    },
+    [showToast]
+  );
 
   function humanError(e: unknown) {
     const m = (e as any)?.message || "";
-    if (/pdf|docx|type/i.test(m))
-      return "Only PDF or DOCX with a .MEVE proof are supported.";
+    if (/pdf|docx|image|png|jpg|jpeg|type/i.test(m))
+      return "Only PDF, DOCX, PNG or JPG with a .MEVE proof are supported.";
     if (/size|10 ?mb/i.test(m)) return `Max size is ${MAX_SIZE_MB} MB.`;
     return "Unable to verify this file.";
   }
@@ -130,7 +146,8 @@ export default function VerifyPage() {
       if (k === "other") {
         setRes({
           ok: false,
-          reason: "Unsupported file. Use a .meve.pdf or .meve.docx file.",
+          reason:
+            "Unsupported file. Use a .meve.pdf / .meve.docx / .meve.png / .meve.jpg file.",
           fileName: file.name,
         });
         showToast({ type: "error", message: "Unsupported file." });
@@ -140,7 +157,9 @@ export default function VerifyPage() {
       const meta: any =
         k === "pdf"
           ? await readInvisibleWatermarkPdf(file)
-          : await readInvisibleWatermarkDocx(file);
+          : k === "docx"
+          ? await readInvisibleWatermarkDocx(file)
+          : await readInvisibleWatermarkImage(file);
 
       if (!meta) {
         setRes({
@@ -199,7 +218,7 @@ export default function VerifyPage() {
     if (!res?.ok || !res.hash || !res.whenISO || !res.fileName) return;
     const issuer = res.issuer ?? "";
     exportHtmlCertificate(
-      res.fileName.replace(/\.(pdf|docx)$/i, ""),
+      res.fileName.replace(/\.(pdf|docx|png|jpg|jpeg)$/i, ""),
       res.hash,
       res.whenISO,
       issuer
@@ -209,11 +228,9 @@ export default function VerifyPage() {
   const onCopyHash = useCallback(async () => {
     if (!res?.hash) return;
     try {
-      // clipboard API (fallback if denied)
       await navigator.clipboard.writeText(res.hash);
       showToast({ type: "info", message: "SHA-256 copied to clipboard" }, 1500);
     } catch {
-      // Fallback: select+copy via prompt
       window.prompt?.("Copy SHA-256", res.hash);
     }
   }, [res, showToast]);
@@ -221,7 +238,6 @@ export default function VerifyPage() {
   const onReset = useCallback(() => {
     setFile(null);
     setRes(null);
-    // focus pour a11y
     resetBtnRef.current?.focus();
   }, []);
 
@@ -249,10 +265,9 @@ export default function VerifyPage() {
             Verify a <span className="text-[var(--accent-1)]">.MEVE</span> file
           </h1>
           <p className="mt-3 text-lg text-[var(--fg-muted)]">
-            Select a .MEVE file (PDF or DOCX with embedded proof). We’ll check its
-            invisible watermark and show whether the document is{" "}
-            <span className="font-semibold">valid</span> or{" "}
-            <span className="font-semibold">tampered</span>. Everything runs locally.
+            Select a .MEVE file (PDF, DOCX, PNG or JPG with embedded proof).
+            We’ll check its invisible watermark and confirm whether the document is{" "}
+            <span className="font-semibold">valid</span>. Everything runs locally.
           </p>
 
           {/* Trust badges */}
@@ -280,7 +295,17 @@ export default function VerifyPage() {
               label="Choose a file"
               maxSizeMB={MAX_SIZE_MB}
               hint={`Drag & drop or tap to select. Max ${MAX_SIZE_MB} MB.`}
-              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept={[
+                ".pdf",
+                "application/pdf",
+                ".docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".png",
+                "image/png",
+                ".jpg",
+                ".jpeg",
+                "image/jpeg",
+              ].join(",")}
               role="button"
               tabIndex={0}
             />
@@ -388,7 +413,11 @@ export default function VerifyPage() {
                     </div>
 
                     <div className="mt-5">
-                      <button onClick={onDownloadCert} className="btn" aria-label="Download certificate as HTML">
+                      <button
+                        onClick={onDownloadCert}
+                        className="btn"
+                        aria-label="Download certificate as HTML"
+                      >
                         <FileCheck2 className="h-4 w-4 text-[var(--accent-2)]" />
                         Download Certificate (.html)
                       </button>
@@ -407,16 +436,17 @@ export default function VerifyPage() {
               {!res.ok && (
                 <p className="mt-3 text-xs text-[var(--fg-muted)]">
                   If you generated this file with DigitalMeve, make sure you are
-                  uploading the <span className="font-medium">.meve.pdf</span> or{" "}
-                  <span className="font-medium">.meve.docx</span> file (not the original).
+                  uploading the{" "}
+                  <span className="font-medium">.meve.pdf/.meve.docx/.meve.png/.meve.jpg</span>{" "}
+                  file (not the original).
                 </p>
               )}
             </div>
           )}
 
-          {/* Micro-claims (cohérence produit) */}
+          {/* Micro-claims */}
           <p className="mt-10 text-center text-xs text-[var(--fg-muted)]">
-            Privacy by design · In-browser only · PDF/DOCX today (more coming)
+            Privacy by design · In-browser only · PDF/DOCX/PNG/JPG
           </p>
         </div>
       </section>
@@ -438,4 +468,4 @@ export default function VerifyPage() {
       )}
     </main>
   );
-      }
+        }
