@@ -1,4 +1,4 @@
-// components/Header.tsx — v2 (aligned nav, dark glass, proper a11y)
+// components/Header.tsx — v3 (nav alignée, no 404, a11y + cohérence MobileMenu)
 "use client";
 
 import Link from "next/link";
@@ -12,6 +12,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  // état d'en-tête (verre sombre après scroll)
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
@@ -19,28 +20,25 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // fermer le menu mobile quand hash/route change
   useEffect(() => {
-    // Fermer le menu mobile quand on change de hash/route
     const close = () => setOpen(false);
     window.addEventListener("hashchange", close);
     return () => window.removeEventListener("hashchange", close);
   }, []);
 
-  // Navigation principale (EN) — EXACTEMENT ce qu’on a validé
+  // ✅ Nav alignée aux pages existantes (comme dans MobileMenu)
   const nav = useMemo(
     () => [
-      { href: "/docs", label: "Standard" },
-      { href: "/security", label: "Security" },
+      { href: "/generate", label: "Generate" },
+      { href: "/verify", label: "Verify" },
       { href: "/pricing", label: "Pricing" },
-      { href: "/roadmap", label: "Roadmap" },
-      { href: "/faq", label: "FAQ" },
-      // GitHub externe (mets l’URL de ton repo)
+      { href: "/security", label: "Security" },
       { href: "https://github.com/BACOUL/Digitalmeve-standard-", label: "GitHub", external: true },
     ],
     []
   );
 
-  // CTAs persistants (droite)
   const ctas = useMemo(
     () => [
       { href: "/verify", label: "Verify a file", variant: "primary" as const },
@@ -97,6 +95,7 @@ export default function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   aria-current={isActive(item.href) ? "page" : undefined}
                   className={`px-1 -mx-1 rounded-lg transition ${
                     isActive(item.href)
@@ -119,6 +118,7 @@ export default function Header() {
                 <Link
                   key={c.href}
                   href={c.href}
+                  prefetch={false}
                   className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 px-3.5 py-2 text-sm font-medium text-white shadow-[0_0_24px_rgba(56,189,248,.22)] hover:brightness-105"
                 >
                   {c.label}
@@ -127,6 +127,7 @@ export default function Header() {
                 <Link
                   key={c.href}
                   href={c.href}
+                  prefetch={false}
                   className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-medium text-slate-100 hover:bg-white/10"
                 >
                   {c.label}
@@ -139,6 +140,8 @@ export default function Header() {
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"
+            aria-controls="mobile-menu"
+            aria-expanded={open}
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 md:hidden"
           >
             <Menu className="h-5 w-5 text-slate-100" />
@@ -146,8 +149,11 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Menu mobile — assure-toi que MobileMenu lise les mêmes items */}
-      <MobileMenu open={open} onClose={() => setOpen(false)} />
+      {/* Menu mobile */}
+      <div id="mobile-menu" aria-hidden={!open}>
+        <MobileMenu open={open} onClose={() => setOpen(false)} />
+      </div>
+
       <span id="main" className="sr-only" />
     </>
   );
