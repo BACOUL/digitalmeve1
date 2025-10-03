@@ -1,4 +1,5 @@
-// components/Footer.tsx — v3 (aligned routes, GitHub docs, a11y, dark theme)
+// components/Footer.tsx — v4 (routes existantes uniquement, cohérent Header/MobileMenu, a11y)
+
 "use client";
 
 import Link from "next/link";
@@ -33,14 +34,14 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Explore */}
+          {/* Explore (pages existantes) */}
           <nav aria-label="Explore">
             <h4 className="text-sm font-semibold text-white">Explore</h4>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
               <li><Link href="/generate" className="hover:text-white">Protect a file</Link></li>
               <li><Link href="/verify" className="hover:text-white">Verify a document</Link></li>
-              <li><Link href="/individuals" className="hover:text-white">For Individuals</Link></li>
-              <li><Link href="/professionals" className="hover:text-white">For Professionals</Link></li>
+              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
+              <li><Link href="/security" className="hover:text-white">Security</Link></li>
             </ul>
           </nav>
 
@@ -48,11 +49,11 @@ export default function Footer() {
           <nav aria-label="Resources">
             <h4 className="text-sm font-semibold text-white">Resources</h4>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
+              {/* Quand /docs, /roadmap, /faq seront prêts, dé-commente :
               <li><Link href="/docs" className="hover:text-white">Standard</Link></li>
-              <li><Link href="/security" className="hover:text-white">Security</Link></li>
-              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
               <li><Link href="/roadmap" className="hover:text-white">Roadmap</Link></li>
               <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
+              */}
               <li>
                 <a
                   href="https://github.com/BACOUL/Digitalmeve-standard-"
@@ -64,6 +65,9 @@ export default function Footer() {
                   GitHub
                 </a>
               </li>
+              <li>
+                <Link href="/contact" className="hover:text-white">Contact</Link>
+              </li>
             </ul>
           </nav>
 
@@ -74,18 +78,16 @@ export default function Footer() {
               <ul className="mt-3 space-y-2 text-sm text-slate-400">
                 <li>
                   <a
-                    href="mailto:support@digitalmeve.org"
+                    href="mailto:support@digitalmeve.com"
                     className="underline hover:text-white"
                     aria-label="Contact support via email"
                   >
-                    support@digitalmeve.org
+                    support@digitalmeve.com
                   </a>
                 </li>
-                <li>
-                  <Link href="/partners" className="hover:text-white">
-                    Partners
-                  </Link>
-                </li>
+                {/* Quand /partners sera prêt :
+                <li><Link href="/partners" className="hover:text-white">Partners</Link></li>
+                */}
               </ul>
             </nav>
 
@@ -94,8 +96,10 @@ export default function Footer() {
               <ul className="mt-3 space-y-2 text-sm text-slate-400">
                 <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
                 <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
+                {/* Si tu crées ces pages plus tard :
                 <li><Link href="/refunds" className="hover:text-white">Refund Policy</Link></li>
                 <li><Link href="/cookies" className="hover:text-white">Cookies</Link></li>
+                */}
               </ul>
             </nav>
           </div>
@@ -116,4 +120,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+            }
