@@ -1,22 +1,41 @@
 // lib/proof.ts
-// ============================================================
-// DigitalMeve — Construction & sérialisation de la preuve .MEVE
-// - 100% navigateur (aucun stockage serveur)
-// - Free : aucune info d’identité dans la preuve
-// - Personal (payant) : email dans issuer + certification (placeholder)
-// - Business (payant) : domaine + signature locale (clé EC P-256) + certification (placeholder)
-// - Garde les utilitaires existants (hash, JSON canonique, rendu lisible)
-// ============================================================
+// Centrale: plan courant, construction de la preuve (.MEVE), utilitaires crypto.
+// Aucune donnée n'est stockée côté serveur — tout est local.
 
 /* ──────────────────────────────────────────────────────────────
- * 1) Hash & helpers
+ * Types & plan courant
  * ────────────────────────────────────────────────────────────── */
+export type Plan = "free" | "personal_paid" | "business_paid";
 
+export function getCurrentPlan(): Plan {
+  // 🔧 À brancher plus tard sur ta session/billing réelle.
+  // Ordre de priorité: window.__DM_PLAN (dev), localStorage('dm-plan'), sinon 'free'.
+  if (typeof window !== "undefined") {
+    const anyWin = window as any;
+    const fromWin = anyWin.__DM_PLAN as Plan | undefined;
+    if (fromWin === "free" || fromWin === "personal_paid" || fromWin === "business_paid") {
+      return fromWin;
+    }
+    try {
+      const ls = window.localStorage?.getItem("dm-plan");
+      if (ls === "free" || ls === "personal_paid" || ls === "business_paid") return ls;
+    } catch {
+      /* no-op */
+    }
+  }
+  return "free";
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Hash & helpers
+ * ────────────────────────────────────────────────────────────── */
 export async function sha256Hex(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
   const hash = await crypto.subtle.digest("SHA-256", buf);
   const bytes = new Uint8Array(hash);
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // Tri récursif des clés (copie immuable) pour un rendu stable
@@ -45,253 +64,24 @@ export function stringifyCanonical(obj: unknown): string {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────
- * 2) Types & “plan” (mode d’utilisation)
- * ────────────────────────────────────────────────────────────── */
-
-export type Plan = "free" | "personal_paid" | "business_paid";
-
-/** Placeholder très simple (à remplacer plus tard par la vraie logique billing/session) */
-export function getCurrentPlan(): Plan {
-  try {
-    const v = typeof window !== "undefined" ? localStorage.getItem("dm-plan") : null;
-    if (v === "personal_paid" || v === "business_paid") return v;
-  } catch {}
-  return "free";
+function splitName(name?: string) {
+  if (!name) return { base: "file", ext: "bin" };
+  const m = name.match(/^(.+)\.([^.]+)$/);
+  return m ? { base: m[1], ext: m[2] } : { base: name, ext: "bin" };
 }
 
-/* ──────────────────────────────────────────────────────────────
- * 3) Objet de preuve .MEVE (canonique à embarquer)
- * ────────────────────────────────────────────────────────────── */
-
-export type MeveProof = {
-  v: 1;
-  kind: "dm-proof";
-  hash: string;      // SHA-256 du fichier d’origine (hex)
-  ts: string;        // ISO 8601 (création)
-  issuer?: string;   // Personal: email ; Business: domaine
-  org?: {            // Présent uniquement en Business
-    domain: string;
-    kid: string;     // identifiant de la clé locale
-    alg: "ES256";
-    sig: string;     // base64url(ECDSA-SHA256( "MEVE|domain|hash|ts" ))
-  };
-  cert?: {           // Certification DigitalMeve (placeholder pour le moment)
-    label: string;   // pour affichage
-    attestation?: string; // (plus tard) renvoyée par l’API
-  };
-};
-
-/* ──────────────────────────────────────────────────────────────
- * 4) Gestion de la clé locale Business (EC P-256 via WebCrypto)
- * ────────────────────────────────────────────────────────────── */
-
-const LS_PRIV = "dm_org_priv_jwk_v1";
-const LS_PUB  = "dm_org_pub_jwk_v1";
-const LS_KID  = "dm_org_kid_v1";
-
-type OrgKeyBundle = {
-  kid: string;
-  privateKey: CryptoKey;
-  publicJwk: JsonWebKey;
-};
-
-async function ensureOrgKey(): Promise<OrgKeyBundle> {
-  if (typeof window === "undefined" || !window.crypto?.subtle) {
-    throw new Error("WebCrypto not available");
-  }
-  const subtle = window.crypto.subtle;
-
-  const privJwkRaw = localStorage.getItem(LS_PRIV);
-  const pubJwkRaw  = localStorage.getItem(LS_PUB);
-  const kidStored  = localStorage.getItem(LS_KID);
-
-  if (privJwkRaw && pubJwkRaw && kidStored) {
-    const privJwk = JSON.parse(privJwkRaw) as JsonWebKey;
-    const pubJwk  = JSON.parse(pubJwkRaw) as JsonWebKey;
-    const privateKey = await subtle.importKey(
-      "jwk",
-      privJwk,
-      { name: "ECDSA", namedCurve: "P-256" },
-      true,
-      ["sign"]
-    );
-    return { kid: kidStored, privateKey, publicJwk: pubJwk };
-  }
-
-  // Génère une nouvelle paire
-  const keyPair = await subtle.generateKey(
-    { name: "ECDSA", namedCurve: "P-256" },
-    true,
-    ["sign", "verify"]
-  );
-  const privJwk = await subtle.exportKey("jwk", keyPair.privateKey);
-  const pubJwk  = await subtle.exportKey("jwk", keyPair.publicKey);
-
-  // kid = hash base64url du JWK public minimal
-  const kidSrc = JSON.stringify({ kty: (pubJwk as any).kty, crv: (pubJwk as any).crv, x: (pubJwk as any).x, y: (pubJwk as any).y });
-  const kid = await sha256TextBase64url(kidSrc);
-
-  localStorage.setItem(LS_PRIV, JSON.stringify(privJwk));
-  localStorage.setItem(LS_PUB, JSON.stringify(pubJwk));
-  localStorage.setItem(LS_KID, kid);
-
-  return { kid, privateKey: keyPair.privateKey, publicJwk: pubJwk };
-}
-
-async function sha256TextBase64url(txt: string) {
-  const enc = new TextEncoder().encode(txt);
-  const h = await crypto.subtle.digest("SHA-256", enc);
-  return base64url(new Uint8Array(h));
-}
-function base64url(u8: Uint8Array) {
-  let s = "";
-  for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-async function signES256(privateKey: CryptoKey, data: Uint8Array): Promise<string> {
-  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, privateKey, data);
-  return base64url(new Uint8Array(sig));
-}
-
-/** Construit org{domain,kid,alg,sig} si plan Business */
-async function maybeBuildOrgBlock(
-  plan: Plan,
-  businessDNS: string | null | undefined,
-  hash: string,
-  ts: string
-): Promise<MeveProof["org"] | undefined> {
-  if (plan !== "business_paid") return undefined;
-  const domain = (businessDNS || "").trim().toLowerCase();
-  if (!domain) return undefined;
-
-  const bundle = await ensureOrgKey();
-  const msg = `MEVE|${domain}|${hash}|${ts}`;
-  const sig = await signES256(bundle.privateKey, new TextEncoder().encode(msg));
-
-  return { domain, kid: bundle.kid, alg: "ES256", sig };
-}
-
-/* ──────────────────────────────────────────────────────────────
- * 5) Certification DigitalMeve (placeholder — rien côté gratuit)
- * ────────────────────────────────────────────────────────────── */
-
-async function maybeGetDmCertification(plan: Plan): Promise<{ label: string; attestation?: string } | undefined> {
-  if (plan === "free") return undefined;
-  // Quand l’API existera, on échangera (hash, ts, issuer/org) contre une “attestation” signée DM.
-  return { label: "DigitalMeve Certification" };
-}
-
-/* ──────────────────────────────────────────────────────────────
- * 6) Construction de la preuve (API principale)
- * ────────────────────────────────────────────────────────────── */
-
-export async function buildMeveProof(input: {
-  file: File;
-  plan?: Plan;                 // défaut: getCurrentPlan()
-  issuerEmail?: string | null; // perso payant
-  businessDNS?: string | null; // pro payant
-}): Promise<{ proof: MeveProof; hash: string; ts: string }> {
-  const plan = input.plan ?? getCurrentPlan();
-
-  // 1) hash + ts
-  const [hash, ts] = await Promise.all([sha256Hex(input.file), Promise.resolve(new Date().toISOString())]);
-
-  // 2) identité selon plan (NE RIEN METTRE en free)
-  let issuer: string | undefined = undefined;
-  if (plan === "personal_paid" && input.issuerEmail) {
-    issuer = String(input.issuerEmail).trim();
-  }
-  if (plan === "business_paid" && input.businessDNS) {
-    issuer = String(input.businessDNS).trim().toLowerCase();
-  }
-
-  // 3) bloc org (business uniquement)
-  const org = await maybeBuildOrgBlock(plan, input.businessDNS, hash, ts);
-
-  // 4) certification (placeholder pour paid)
-  const cert = await maybeGetDmCertification(plan);
-
-  // 5) objet de preuve
-  const proof: MeveProof = {
-    v: 1,
-    kind: "dm-proof",
-    hash,
-    ts,
-    issuer,
-    org,
-    cert,
-  };
-
-  return { proof, hash, ts };
-}
-
-/* ──────────────────────────────────────────────────────────────
- * 7) Aides de rendu / téléchargement (compatibles avec ton code)
- * ────────────────────────────────────────────────────────────── */
-
-/** JSON lisible “pro” (trié + indentation + en-tête explicatif) */
-export async function proofReadableBlob(proof: unknown): Promise<Blob> {
-  const pretty = JSON.stringify(sortKeysDeep(proof), null, 2);
-  const header =
-    "// DigitalMeve — .MEVE Proof (human-readable)\n" +
-    "// More: https://digitalmeve.com/docs/proof\n\n";
-  return new Blob([header, pretty, "\n"], { type: "application/json;charset=utf-8" });
-}
-
-/** JSON canonical minifié (pour vérification machine/empreinte) */
-export async function proofCanonicalBlob(proof: unknown): Promise<Blob> {
-  const min = stringifyCanonical(proof);
-  return new Blob([min], { type: "application/json;charset=utf-8" });
-}
-
-/** Nom conseillé pour la preuve sidecar */
-export function proofFilenameFor(originalName: string) {
-  const { base, ext } = splitName(originalName);
-  return `${base}.${ext}.meve.json`;
-}
-
-/* ──────────────────────────────────────────────────────────────
- * 8) Variante historique (garde la compatibilité si déjà utilisée)
- *    -> construit un objet “descriptif” lisible, non signé
- * ────────────────────────────────────────────────────────────── */
-export async function buildProofObject(file: File, issuer?: string) {
-  const head = file.slice(0, 256); // petit aperçu optionnel
-  const [sha256, previewB64] = await Promise.all([sha256Hex(file), blobToBase64(head)]);
-
-  const mime = file.type || guessMime(file.name) || "application/octet-stream";
-
-  return sortKeysDeep({
-    version: "meve/1",
-    created_at: new Date().toISOString(),
-    doc: {
-      name: file.name,
-      mime,
-      size: file.size,
-      sha256,
-      preview_b64: previewB64,
-    },
-    issuer: {
-      name: "DigitalMeve",
-      identity: issuer || "",
-      type: "personal",
-      website: "https://digitalmeve.com",
-      verified_domain: false,
-    },
-  });
-}
-
-/* ──────────────────────────────────────────────────────────────
- * 9) Utilitaires internes
- * ────────────────────────────────────────────────────────────── */
 function guessMime(name: string): string | undefined {
   const ext = name.split(".").pop()?.toLowerCase();
   if (!ext) return;
   if (ext === "pdf") return "application/pdf";
   if (ext === "png") return "image/png";
   if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "docx") {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
   return;
 }
+
 function blobToBase64(b: Blob): Promise<string> {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -300,8 +90,148 @@ function blobToBase64(b: Blob): Promise<string> {
     r.readAsDataURL(b);
   });
 }
-function splitName(name?: string) {
-  if (!name) return { base: "file", ext: "bin" };
-  const m = name.match(/^(.+)\.([^.]+)$/);
-  return m ? { base: m[1], ext: m[2] } : { base: name, ext: "bin" };
+
+function base64url(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Signatures locales (business) — optionnelles, futures
+ * ────────────────────────────────────────────────────────────── */
+async function importES256Private(pkcs8Der: ArrayBuffer): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "pkcs8",
+    pkcs8Der,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"]
+  );
+}
+
+// ✅ FIX CRYPTO: passer un ArrayBuffer "pur" à subtle.sign
+async function signES256(privateKey: CryptoKey, data: Uint8Array): Promise<string> {
+  // On découpe l’ArrayBuffer sous-jacent pour n’avoir que la fenêtre utile
+  const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, privateKey, ab);
+  return base64url(new Uint8Array(sig));
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Preuve centrale (.MEVE)
+ * ────────────────────────────────────────────────────────────── */
+export type BuildMeveProofInput = {
+  file: File;
+  plan: Plan;
+  issuerEmail?: string | null;  // personal_paid
+  businessDNS?: string | null;  // business_paid
+  // Optionnellement: clé pro locale (futur)
+  businessKeyPkcs8Der?: ArrayBuffer; // si fourni, on signera org.signature
+};
+
+export type BuildMeveProofOutput = {
+  proof: {
+    version: "meve/1";
+    created_at: string;
+    doc: {
+      name: string;
+      mime: string;
+      size: number;
+      sha256: string;
+      preview_b64: string;
+    };
+    // identité légère (affichable)
+    issuer?: string; // email (personal) ou domaine (business), absent en free
+    // bloc business optionnel prêt pour l’avenir
+    org?: {
+      domain: string;
+      key_id?: string; // TODO
+      signature?: string; // base64url ECDSA
+      algo?: "ES256";
+    };
+  };
+  hash: string;
+  ts: string; // created_at
+};
+
+export async function buildMeveProof(input: BuildMeveProofInput): Promise<BuildMeveProofOutput> {
+  const { file, plan, issuerEmail, businessDNS, businessKeyPkcs8Der } = input;
+
+  // 1) Empreinte du fichier original (spéc MEVE)
+  const [sha256, preview_b64] = await Promise.all([
+    sha256Hex(file),
+    blobToBase64(file.slice(0, 256)),
+  ]);
+  const ts = new Date().toISOString();
+  const mime = file.type || guessMime(file.name) || "application/octet-stream";
+
+  // 2) Identité légère selon le plan (free = aucune)
+  let issuer: string | undefined = undefined;
+  if (plan === "personal_paid" && issuerEmail) issuer = issuerEmail;
+  if (plan === "business_paid" && businessDNS) issuer = businessDNS;
+
+  // 3) Bloc organisation (pro) – optionnel, sans stockage
+  let org:
+    | {
+        domain: string;
+        key_id?: string;
+        signature?: string;
+        algo?: "ES256";
+      }
+    | undefined = undefined;
+
+  if (plan === "business_paid" && businessDNS) {
+    org = { domain: businessDNS };
+
+    // Signature locale (facultative pour l’instant) :
+    // on signe le tuple canonique "domain + sha256 + ts"
+    if (businessKeyPkcs8Der) {
+      const key = await importES256Private(businessKeyPkcs8Der);
+      const payload = stringifyCanonical({ domain: businessDNS, sha256, ts });
+      const bytes = new TextEncoder().encode(payload);
+      const signature = await signES256(key, bytes);
+      org.signature = signature;
+      org.algo = "ES256";
+      // key_id à gérer plus tard (rotation de clés)
     }
+  }
+
+  // 4) Assemble la preuve lisible + stable
+  const proof = sortKeysDeep({
+    version: "meve/1" as const,
+    created_at: ts,
+    doc: {
+      name: file.name,
+      mime,
+      size: file.size,
+      sha256,
+      preview_b64,
+    },
+    ...(issuer ? { issuer } : {}),
+    ...(org ? { org } : {}),
+  });
+
+  return { proof, hash: sha256, ts };
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Rendus / téléchargement de preuves (optionnel)
+ * ────────────────────────────────────────────────────────────── */
+export async function proofReadableBlob(proof: unknown): Promise<Blob> {
+  const pretty = JSON.stringify(sortKeysDeep(proof), null, 2);
+  const header =
+    "// DigitalMeve — .MEVE Proof (human-readable)\n" +
+    "// More: https://digitalmeve.com/docs/proof\n\n";
+  return new Blob([header, pretty, "\n"], { type: "application/json;charset=utf-8" });
+}
+
+export async function proofCanonicalBlob(proof: unknown): Promise<Blob> {
+  const min = stringifyCanonical(proof);
+  return new Blob([min], { type: "application/json;charset=utf-8" });
+}
+
+export function proofFilenameFor(originalName: string) {
+  const { base, ext } = splitName(originalName);
+  return `${base}.${ext}.meve.json`;
+  }
