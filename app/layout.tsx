@@ -1,11 +1,11 @@
-// app/layout.tsx — v3 (SEO/OG polis, thème sans FOUC, canonical robuste, robots conditionnels)
+// app/layout.tsx — v4 (Layout 2.0: modern Nav, updated messaging, SEO/OG polished, FOUC-safe theme)
 
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Inter, Sora } from "next/font/google";
 import Script from "next/script";
 
-import Header from "@/components/Header";
+import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 
@@ -14,16 +14,16 @@ import CookieBanner from "@/components/CookieBanner";
 import AnalyticsGate from "@/components/AnalyticsGate";
 
 /* =========================
-   Host / URLs canoniques
+   Host / Canonical base URL
    ========================= */
 const RAW_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
-const siteUrl = RAW_SITE_URL.replace(/\/+$/, ""); // no trailing slash
+const siteUrl = RAW_SITE_URL.replace(/\/+$/, ""); // strip trailing slash
 
 /* =========================
-   Fonts auto-hébergées (next/font)
+   Fonts (next/font) self-hosted
    ========================= */
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
@@ -46,8 +46,12 @@ export const viewport: Viewport = {
    - Robots indexables uniquement si NEXT_PUBLIC_INDEXABLE !== "false"
    - Canonical propre
    - OpenGraph/Twitter complets
+   - Messaging aligné (Hero/Tagline)
    ========================= */
 const INDEXABLE = process.env.NEXT_PUBLIC_INDEXABLE !== "false";
+
+const DESCRIPTION =
+  "The simplest and safest way to prove a file’s authenticity. Digital proof, simple and private. Generate and verify on your device — no account, no storage, no tracking.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -55,10 +59,10 @@ export const metadata: Metadata = {
     default: "DigitalMeve — The .MEVE Standard",
     template: "%s | DigitalMeve",
   },
-  description:
-    "DigitalMeve provides a privacy-first, on-device proof of authenticity — simple, universal, and free for individuals.",
+  description: DESCRIPTION,
   keywords: [
     ".MEVE",
+    "digital proof",
     "document authenticity",
     "invisible watermark",
     "on-device",
@@ -66,6 +70,7 @@ export const metadata: Metadata = {
     "verification",
     "PDF",
     "DOCX",
+    "PNG",
   ],
   applicationName: "DigitalMeve",
   referrer: "strict-origin-when-cross-origin",
@@ -81,8 +86,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: "DigitalMeve",
     title: "DigitalMeve — The .MEVE Standard",
-    description:
-      "Privacy-first, on-device proof of authenticity. Protect and verify documents instantly. No uploads. No storage.",
+    description: DESCRIPTION,
     images: [
       {
         url: "/og/og-image.png",
@@ -96,8 +100,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DigitalMeve — The .MEVE Standard",
-    description:
-      "Privacy-first, on-device proof of authenticity. Protect and verify documents instantly. No uploads. No storage.",
+    description: DESCRIPTION,
     images: ["/og/og-image.png"],
   },
   icons: {
@@ -105,7 +108,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  manifest: "/site.webmanifest", // crée ce fichier quand tu veux PWA + icônes
+  manifest: "/site.webmanifest",
   robots: INDEXABLE
     ? { index: true, follow: true, googleBot: { index: true, follow: true } }
     : { index: false, follow: false, googleBot: { index: false, follow: false, noimageindex: true } },
@@ -120,8 +123,8 @@ export const metadata: Metadata = {
 };
 
 /* =========================
-   Thème avant paint (évite FOUC)
-   - Respecte la préférence utilisateur si aucune préférence locale
+   Theme before paint (avoid FOUC)
+   Respects user preference if no local override
    ========================= */
 const THEME_INIT = `
 (function() {
@@ -160,13 +163,13 @@ const ORG_JSONLD = {
     {
       "@type": "ContactPoint",
       contactType: "customer support",
-      email: "support@digitalmeve.com",
+      email: "support@digitalmeve.org",
       availableLanguage: ["en", "fr"],
     },
     {
       "@type": "ContactPoint",
       contactType: "security",
-      email: "security@digitalmeve.com",
+      email: "security@digitalmeve.org",
       availableLanguage: ["en", "fr"],
     },
   ],
@@ -190,7 +193,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
-      {/* Thème avant hydration pour éviter tout flash */}
+      {/* Theme before hydration (prevents FOUC) */}
       <Script id="dm-theme-init" strategy="beforeInteractive">
         {THEME_INIT}
       </Script>
@@ -199,7 +202,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Skip link a11y */}
         <a href="#main" className="skip-link">Skip to content</a>
 
-        {/* JSON-LD SEO (Organization + WebSite) */}
+        {/* JSON-LD SEO */}
         <Script
           id="ld-org"
           type="application/ld+json"
@@ -213,21 +216,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSONLD) }}
         />
 
-        {/* Providers (session, etc.) + layout global */}
+        {/* Providers (session, theme, etc.) + global layout */}
         <Providers>
-          <Header />
+          <Nav />
           <main id="main" className="flex-1">
             {children}
           </main>
           <Footer />
         </Providers>
 
-        {/* Analytics conditionnels (après consentement) */}
+        {/* Analytics (after consent) */}
         <AnalyticsGate domain={new URL(siteUrl).host} />
 
-        {/* Bandeau cookies (consent) */}
+        {/* Cookie banner (consent) */}
         <CookieBanner />
       </body>
     </html>
   );
-  }
+}
